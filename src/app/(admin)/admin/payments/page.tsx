@@ -75,7 +75,7 @@ export default function AdminPaymentsPage() {
 
       <PageHeader
         title="Payment records"
-        description="Track institute fees and payments recorded manually or via Stripe"
+        description="Track tuition fees and payments recorded manually or via Stripe"
         action={
           <div className="flex flex-wrap items-center gap-2">
             <ExportCsvButton

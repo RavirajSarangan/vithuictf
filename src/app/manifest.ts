@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: BRAND.colors.surface,
     theme_color: BRAND.colors.navy,
     icons: [
-      { src: BRAND.logo, sizes: "any", type: "image/svg+xml" },
+      { src: BRAND.favicon, sizes: "512x512", type: "image/png" },
       { src: BRAND.logoLight, sizes: "any", type: "image/svg+xml", purpose: "maskable" },
     ],
   };

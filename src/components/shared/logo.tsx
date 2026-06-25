@@ -7,7 +7,7 @@ interface LogoProps {
   className?: string;
   showText?: boolean;
   light?: boolean;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "footer";
   /** What to show beside the mark when `showText` is true. */
   text?: "name" | "tagline" | "fullName";
   /** Show brand text on mobile (default: hidden below sm). */
@@ -23,6 +23,7 @@ const logoSizeMap: Record<NonNullable<LogoProps["size"]>, BrandLogoSize> = {
   md: "md",
   lg: "lg",
   xl: "xl",
+  footer: "footer",
 };
 
 export function Logo({

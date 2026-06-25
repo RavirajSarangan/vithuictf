@@ -87,7 +87,7 @@ function PortalSidebar({
     >
       <SidebarHeader className="border-b border-white/10 px-4 py-5">
         <Link href={brandHref} className="inline-flex" aria-label={BRAND.name}>
-          <BrandLogo size="lg" light />
+          <BrandLogo size="md" light />
         </Link>
       </SidebarHeader>
 

@@ -70,7 +70,14 @@ export type MarketingUiKey =
   | "companies.subtitle"
   | "marketing.comingSoon.eyebrow"
   | "marketing.comingSoon.title"
+  | "marketing.comingSoon.titleLead"
+  | "marketing.comingSoon.titleAccent"
   | "marketing.comingSoon.subtitle"
+  | "marketing.comingSoon.chipPrograms"
+  | "marketing.comingSoon.chipResults"
+  | "marketing.comingSoon.chipCenters"
+  | "marketing.comingSoon.chipStatus"
+  | "marketing.comingSoon.building"
   | "marketing.siteStatus.comingSoon.eyebrow"
   | "marketing.siteStatus.comingSoon.title"
   | "marketing.siteStatus.comingSoon.subtitle"
@@ -317,7 +324,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "nav.faq": { en: "FAQ", ta: "கேள்விகள்" },
   "nav.contact": { en: "Contact", ta: "தொடர்பு" },
   "nav.register": { en: "Register", ta: "பதிவு" },
-  "nav.institute": { en: "Institute", ta: "நிறுவனம்" },
+  "nav.institute": { en: "Tuition", ta: "பயிற்சி" },
   "btn.login": { en: "Login", ta: "உள்நுழை" },
   "btn.dashboard": { en: "Dashboard", ta: "டாஷ்போர்டு" },
   "btn.apply": { en: "Register Now", ta: "இப்போது பதிவு செய்" },
@@ -345,7 +352,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "hero.coursesOffered": { en: "Courses Offered", ta: "வழங்கப்படும் பாடங்கள்" },
   "hero.placementRate": { en: "Placement Rate", ta: "வேலைவாய்ப்பு விகிதம்" },
   "hero.yearsExperience": { en: "Years Experience", ta: "அனுபவ ஆண்டுகள்" },
-  "hero.badge": { en: "ICTF Institute · Jaffna", ta: "ICTF நிறுவனம் · யாழ்ப்பாணம்" },
+  "hero.badge": { en: "ICTF Tuition · Jaffna", ta: "ICTF பயிற்சி · யாழ்ப்பாணம்" },
   "hero.title": { en: "O/L & A/L ICT Tuition", ta: "O/L & A/L ICT பயிற்சி" },
   "hero.accent": { en: "Islandwide", ta: "தீவு முழுவதும்" },
   "hero.subtitle": {
@@ -398,13 +405,23 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     en: "Physical centers and online classrooms working together for every learner.",
     ta: "ஒவ்வொரு மாணவருக்கும் உடல் மையங்களும் ஆன்லைன் வகுப்பறைகளும் ஒன்றிணைந்து.",
   },
-  "marketing.comingSoon.eyebrow": { en: "ICTF Institute", ta: "ICTF Institute" },
+  "marketing.comingSoon.eyebrow": { en: "ICTF Tuition", ta: "ICTF பயிற்சி" },
   "marketing.comingSoon.title": { en: "Coming Soon", ta: "விரைவில் வருகிறது" },
+  "marketing.comingSoon.titleLead": { en: "Coming", ta: "விரைவில்" },
+  "marketing.comingSoon.titleAccent": { en: "Soon", ta: "வருகிறது" },
   "marketing.comingSoon.subtitle": {
     en: "New sections are being prepared for O/L & A/L ICT students across Sri Lanka. Please check back shortly.",
     ta: "இலங்கை முழுவதும் உள்ள O/L & A/L ICT மாணவர்களுக்கான புதிய பிரிவுகள் தயாரிக்கப்படுகின்றன. விரைவில் மீண்டும் பார்வையிடுங்கள்.",
   },
-  "marketing.siteStatus.comingSoon.eyebrow": { en: "ICTF Institute", ta: "ICTF Institute" },
+  "marketing.comingSoon.chipPrograms": { en: "Programs & Courses", ta: "திட்டங்கள் & வகுப்புகள்" },
+  "marketing.comingSoon.chipResults": { en: "Results & Rankings", ta: "முடிவுகள் & தரவரிசை" },
+  "marketing.comingSoon.chipCenters": { en: "Islandwide Centers", ta: "தீவு முழுவதும் மையங்கள்" },
+  "marketing.comingSoon.chipStatus": { en: "Preparing", ta: "தயாராகிறது" },
+  "marketing.comingSoon.building": {
+    en: "New sections are loading",
+    ta: "புதிய பிரிவுகள் ஏற்றப்படுகின்றன",
+  },
+  "marketing.siteStatus.comingSoon.eyebrow": { en: "ICTF Tuition", ta: "ICTF பயிற்சி" },
   "marketing.siteStatus.comingSoon.title": { en: "Coming Soon", ta: "விரைவில் வருகிறது" },
   "marketing.siteStatus.comingSoon.subtitle": {
     en: "We are preparing something great for students across Sri Lanka. The full site will open shortly.",
@@ -666,8 +683,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.newStudent": { en: "New student?", ta: "புதிய மாணவரா?" },
   "auth.registerNow": { en: "Register Now", ta: "இப்போது பதிவு செய்" },
   "auth.registerCardDesc": {
-    en: "Islandwide online ICT institute — study from anywhere through ICTF.",
-    ta: "தீவு முழுவதும் ஆன்லைன் ICT நிறுவனம் — ICTF மூலம் எங்கிருந்தும் படியுங்கள்.",
+    en: "Islandwide online ICT tuition — study from anywhere through ICTF.",
+    ta: "தீவு முழுவதும் ஆன்லைன் ICT பயிற்சி — ICTF மூலம் எங்கிருந்தும் படியுங்கள்.",
   },
   "auth.islandwide": { en: "Islandwide", ta: "தீவு முழுவதும்" },
   "auth.paperCenters": { en: "Paper Centers", ta: "பேப்பர் மையங்கள்" },

@@ -16,7 +16,7 @@ export function AuthLoginShell() {
       <div className="flex min-h-screen flex-1 flex-col justify-center bg-white px-6 py-10 sm:px-10 lg:w-1/2 lg:px-14 lg:py-12 xl:px-20">
         <div className="mb-8 flex flex-col items-center gap-2 text-center lg:hidden">
           <Link href="/" className="flex flex-col items-center gap-2" aria-label={t("auth.studentPortal")}>
-            <BrandLogo size="lg" priority />
+            <BrandLogo size="authLogin" priority />
             <p className="text-xs text-icvf-text-light">{t("auth.studentPortal")}</p>
           </Link>
         </div>

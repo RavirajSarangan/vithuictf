@@ -9,6 +9,7 @@ export interface SectionHeadingProps {
   accent?: string;
   align?: "left" | "center";
   light?: boolean;
+  titleId?: string;
   className?: string;
 }
 
@@ -20,6 +21,7 @@ export function SectionHeading({
   accent,
   align = "center",
   light = true,
+  titleId,
   className,
 }: SectionHeadingProps) {
   return (
@@ -30,6 +32,7 @@ export function SectionHeading({
         </CanvasEyebrow>
       ) : null}
       <h2
+        id={titleId}
         className={cn(
           "text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]",
           light ? "text-white" : "text-icvf-text-dark"

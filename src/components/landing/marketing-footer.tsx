@@ -53,13 +53,13 @@ export function MarketingFooter() {
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:py-20">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Logo light size="xl" linked={false} />
+            <Logo light size="footer" linked={false} />
             <p className="mt-4 text-sm font-medium text-white/80">
               {BRAND.name} — {BRAND.fullName}
             </p>
             <p className="mt-1 text-sm leading-relaxed break-words text-white/60">{BRAND.legalName}</p>
             <p className="mt-3 text-sm leading-relaxed text-white/50">
-              O/L & A/L ICT institute, Zoom classes, paper center practice, and the {BRAND.platformName} — islandwide.
+              O/L & A/L ICT tuition, Zoom classes, paper center practice, and the {BRAND.platformName} — islandwide.
             </p>
             <div className="mt-4 space-y-1 text-sm leading-relaxed break-words text-white/50">
               <p>{BRAND.contact.email}</p>

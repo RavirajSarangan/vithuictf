@@ -152,7 +152,7 @@ const AL_ICT: Record<MarketingLocale, ProgramContent> = {
 const ONLINE_ZOOM: Record<MarketingLocale, ProgramContent> = {
   en: {
     intro:
-      "Study O/L and A/L ICT from anywhere in Sri Lanka with ICTF online Zoom classes. Our islandwide institute connects students in every district to expert faculty, live sessions, class recordings, and digital study materials through the ICTF Student Portal.",
+      "Study O/L and A/L ICT from anywhere in Sri Lanka with ICTF online Zoom classes. Our islandwide tuition connects students in every district to expert faculty, live sessions, class recordings, and digital study materials through the ICTF Student Portal.",
     sections: [
       {
         heading: "How online ICT classes work",

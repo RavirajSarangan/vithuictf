@@ -50,7 +50,7 @@ export function AdminPaymentSettingsPanel() {
 
   const onSave = async () => {
     if (tuition < 1) {
-      toast.error("Default institute fee must be at least LKR 1");
+      toast.error("Default tuition fee must be at least LKR 1");
       return;
     }
     setSaving(true);
@@ -112,7 +112,7 @@ export function AdminPaymentSettingsPanel() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="default-institute-fee" className="text-white">
-            Default institute fee (LKR)
+            Default tuition fee (LKR)
           </Label>
           <Input
             id="default-institute-fee"

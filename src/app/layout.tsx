@@ -25,8 +25,8 @@ export const metadata: Metadata = {
     template: `%s | ${BRAND.name}`,
   },
   icons: {
-    icon: BRAND.logo,
-    apple: BRAND.logo,
+    icon: [{ url: BRAND.favicon, type: "image/png" }],
+    apple: BRAND.favicon,
   },
   verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
     ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }

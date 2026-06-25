@@ -98,7 +98,7 @@ export function MarketingHeader() {
         )}
       >
         <div className="flex min-h-[52px] items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 md:min-h-[53px] md:px-4 md:py-2.5">
-          <NavBrand className="min-w-0 flex-1" />
+          <NavBrand className="shrink-0" />
 
           <div className="hidden items-center gap-[1.875rem] md:flex">
             {desktopNavLinks}

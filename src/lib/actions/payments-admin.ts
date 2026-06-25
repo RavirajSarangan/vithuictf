@@ -12,7 +12,7 @@ export async function updatePlatformPaymentSettings(data: {
   await requireAdmin();
 
   if (data.defaultTuitionLkr < 1) {
-    throw new Error("Default institute fee must be at least LKR 1");
+    throw new Error("Default tuition fee must be at least LKR 1");
   }
 
   const supabase = await createClient();

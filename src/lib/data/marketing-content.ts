@@ -57,7 +57,7 @@ export const trustPills = [
   { label: "Online via Zoom", labelTa: "Zoom வழியாக ஆன்லைன்" },
   { label: "O/L & A/L ICT Classes", labelTa: "O/L & A/L ICT வகுப்புகள்" },
   { label: "Paper Center Network", labelTa: "பேப்பர் மைய நெட்வொர்க்" },
-  { label: "Islandwide Institute", labelTa: "தீவு முழுவதும் நிறுவனம்" },
+  { label: "Islandwide Tuition", labelTa: "தீவு முழுவதும் பயிற்சி" },
 ] as const;
 
 export const instituteAbout = {
@@ -68,7 +68,7 @@ export const instituteAbout = {
   intro:
     "ICT Foundation (ICTF) advances education and professional development in information and communication technology — delivering high-quality academic and professional courses aligned with both Sri Lankan and United Kingdom curricula.",
   introTa:
-    "ICT அடித்தளம் (ICTF) என்பது தகவல் தொழில்நுட்ப கல்வி மற்றும் தொழில்முறை வளர்ச்சியை முன்னெடுக்கும் நிறுவனம் — இலங்கை மற்றும் UK பாடத்திட்டங்களுடன் இணைந்த தரமான பாடங்களை வழங்குகிறது.",
+    "ICT அடித்தளம் (ICTF) என்பது தகவல் தொழில்நுட்ப கல்வி மற்றும் தொழில்முறை வளர்ச்சியை முன்னெடுக்கும் பயிற்சி மையம் — இலங்கை மற்றும் UK பாடத்திட்டங்களுடன் இணைந்த தரமான பாடங்களை வழங்குகிறது.",
   note:
     "All classes are conducted online via Zoom, giving students flexible access to learning regardless of location. ICTF supports students in achieving academic goals and preparing for professional success.",
   pillars: [

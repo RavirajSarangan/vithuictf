@@ -28,7 +28,7 @@ export function AuthRegisterShell() {
 
           <div className="mb-6 flex flex-col items-center gap-2 text-center lg:hidden">
             <Link href="/" className="flex flex-col items-center gap-2" aria-label={t("auth.registerHeading")}>
-              <BrandLogo size="lg" priority />
+              <BrandLogo size="authLogin" priority />
               <p className="text-xs text-icvf-text-light">{t("auth.registerHeading")}</p>
             </Link>
           </div>

@@ -25,7 +25,7 @@ function founderContent(locale: MarketingLocale, bio: string, credentials: strin
         paragraphs: [credentials],
       },
       {
-        heading: locale === "ta" ? "ICTF நிறுவனம்" : locale === "si" ? "ICTF ආයතනය" : "ICT Foundation institute",
+        heading: locale === "ta" ? "ICTF பயிற்சி" : locale === "si" ? "ICTF ටියුෂන්" : "ICT Foundation tuition",
         paragraphs: [
           locale === "ta"
             ? "ICT அடித்தளம் (ICTF) இலங்கை முழுவதும் O/L மற்றும் A/L ICT பயிற்சியை வழங்குகிறது — யாழ்ப்பாணம் தலைமையகம், தீவு முழுவதும் Zoom வகுப்புகள்."

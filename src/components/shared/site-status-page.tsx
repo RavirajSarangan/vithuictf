@@ -1,6 +1,7 @@
 "use client";
 
-import { ComingSoonBackdrop, ComingSoonPanel } from "@/components/shared/coming-soon-panel";
+import { ComingSoonPanel } from "@/components/shared/coming-soon-panel";
+import { MarketingContainer } from "@/components/landing/marketing-layout";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { BRAND } from "@/lib/constants";
 import type { SitePublicMode } from "@/types";
@@ -25,12 +26,10 @@ export function SiteStatusPage({ variant }: SiteStatusPageProps) {
 
   return (
     <section
-      className="marketing-coming-soon-shell relative isolate mx-auto flex min-h-[calc(100dvh-var(--marketing-header-offset)-8rem)] w-full max-w-[100rem] items-center overflow-hidden"
+      className="flex min-h-[calc(100dvh-var(--marketing-header-offset)-8rem)] items-center py-20 sm:py-24"
       aria-labelledby="site-status-title"
     >
-      <ComingSoonBackdrop dark />
-
-      <div className="relative z-10 flex w-full items-center justify-center px-4 py-10 sm:px-6 sm:py-16">
+      <MarketingContainer className="flex w-full justify-center">
         <ComingSoonPanel
           eyebrow={t(eyebrowKey)}
           title={t(titleKey)}
@@ -40,7 +39,7 @@ export function SiteStatusPage({ variant }: SiteStatusPageProps) {
           headingLevel="h1"
           footer={
             !isMaintenance ? (
-              <p className="text-sm text-icvf-navy/70">
+              <p className="text-sm text-icvf-text-light">
                 <a
                   href={`mailto:${BRAND.contact.email}`}
                   className="font-medium text-icvf-navy underline-offset-4 transition-colors hover:text-icvf-accent hover:underline"
@@ -51,7 +50,7 @@ export function SiteStatusPage({ variant }: SiteStatusPageProps) {
             ) : null
           }
         />
-      </div>
+      </MarketingContainer>
     </section>
   );
 }
