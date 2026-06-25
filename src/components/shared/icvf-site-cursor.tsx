@@ -2,30 +2,17 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-const POINTER_SPRING = { stiffness: 700, damping: 42, mass: 0.4 };
-const LABEL_SPRING = { stiffness: 320, damping: 32, mass: 0.55 };
+const POINTER_SPRING = { stiffness: 620, damping: 40, mass: 0.32 };
+const RING_SPRING = { stiffness: 260, damping: 26, mass: 0.62 };
+const LABEL_SPRING = { stiffness: 200, damping: 24, mass: 0.72 };
 
-/** App routes use the native cursor for better usability. */
-const NATIVE_CURSOR_PREFIXES = [
-  "/",
-  "/rankings",
-  "/login",
-  "/register",
-  "/admin",
-  "/parent",
-  "/dashboard",
-  "/onboarding",
-  "/settings",
-  "/results",
-  "/resources",
-  "/calendar",
-  "/achievements",
-  "/leaderboard",
-  "/profile-card",
-  "/ai-assistant",
-];
+const INTERACTIVE_SELECTOR =
+  'a, button, [role="button"], label, summary, input[type="checkbox"], input[type="radio"], select, [data-cursor-hover]';
+
+const TEXT_FIELD_SELECTOR =
+  'input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]), textarea, [contenteditable="true"]';
 
 function getCustomCursorEnabled() {
   if (typeof window === "undefined") return false;
@@ -56,35 +43,44 @@ function useCustomCursorEnabled() {
   );
 }
 
-function useNativeCursorRoute(pathname: string) {
-  if (pathname === "/") return true;
-  return NATIVE_CURSOR_PREFIXES.filter((p) => p !== "/").some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+function resolveHoverState(target: Element | null) {
+  if (!target) {
+    return { interactive: false, textField: false };
+  }
+
+  const textField = Boolean(target.closest(TEXT_FIELD_SELECTOR));
+  const interactive = !textField && Boolean(target.closest(INTERACTIVE_SELECTOR));
+
+  return { interactive, textField };
 }
 
 export function IcvfSiteCursor() {
   const enabled = useCustomCursorEnabled();
-  const pathname = usePathname();
-  const useNative = useNativeCursorRoute(pathname);
   const [visible, setVisible] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const [pressing, setPressing] = useState(false);
+  const [textField, setTextField] = useState(false);
 
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
+  const ringX = useMotionValue(0);
+  const ringY = useMotionValue(0);
   const labelX = useMotionValue(0);
   const labelY = useMotionValue(0);
 
   const springPointerX = useSpring(pointerX, POINTER_SPRING);
   const springPointerY = useSpring(pointerY, POINTER_SPRING);
+  const springRingX = useSpring(ringX, RING_SPRING);
+  const springRingY = useSpring(ringY, RING_SPRING);
   const springLabelX = useSpring(labelX, LABEL_SPRING);
   const springLabelY = useSpring(labelY, LABEL_SPRING);
 
-  const active = enabled && !useNative;
+  const active = enabled && !textField;
   const label = "ICTF";
-  const showLabel = pathname === "/" || pathname.startsWith("/coming-soon");
+  const isShown = visible && active;
 
   useEffect(() => {
-    if (!active) {
+    if (!enabled) {
       document.documentElement.classList.remove("icvf-custom-cursor");
       return;
     }
@@ -94,18 +90,38 @@ export function IcvfSiteCursor() {
     if (!style) {
       style = document.createElement("style");
       style.id = styleId;
-      style.textContent =
-        "html.icvf-custom-cursor, html.icvf-custom-cursor * { cursor: none !important; }";
+      style.textContent = `
+        html.icvf-custom-cursor,
+        html.icvf-custom-cursor * {
+          cursor: none !important;
+        }
+        html.icvf-custom-cursor input,
+        html.icvf-custom-cursor textarea,
+        html.icvf-custom-cursor select,
+        html.icvf-custom-cursor [contenteditable="true"] {
+          cursor: text !important;
+        }
+      `;
       document.head.appendChild(style);
     }
 
     document.documentElement.classList.add("icvf-custom-cursor");
 
     const onMove = (event: PointerEvent) => {
-      pointerX.set(event.clientX);
-      pointerY.set(event.clientY);
-      labelX.set(event.clientX + 18);
-      labelY.set(event.clientY + 22);
+      const x = event.clientX;
+      const y = event.clientY;
+      const target = document.elementFromPoint(x, y);
+      const hoverState = resolveHoverState(target);
+
+      pointerX.set(x);
+      pointerY.set(y);
+      ringX.set(x);
+      ringY.set(y);
+      labelX.set(x + 18);
+      labelY.set(y + 22);
+
+      setTextField(hoverState.textField);
+      setHovering(hoverState.interactive);
       setVisible(true);
     };
 
@@ -113,32 +129,66 @@ export function IcvfSiteCursor() {
     const onBlur = () => {
       if (document.visibilityState === "hidden") setVisible(false);
     };
+    const onDown = () => setPressing(true);
+    const onUp = () => setPressing(false);
 
     window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    window.addEventListener("pointerup", onUp, { passive: true });
     document.documentElement.addEventListener("pointerleave", onLeave);
     document.addEventListener("visibilitychange", onBlur);
 
     return () => {
       document.documentElement.classList.remove("icvf-custom-cursor");
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointerup", onUp);
       document.documentElement.removeEventListener("pointerleave", onLeave);
       document.removeEventListener("visibilitychange", onBlur);
     };
-  }, [active, labelX, labelY, pointerX, pointerY]);
+  }, [enabled, labelX, labelY, pointerX, pointerY, ringX, ringY]);
 
-  if (!active) return null;
+  if (!enabled) return null;
 
-  const isShown = visible;
+  const ringSize = hovering ? 44 : pressing ? 26 : 34;
+  const pointerScale = pressing ? 0.88 : hovering ? 1.06 : 1;
 
   return (
     <>
       <motion.div
         aria-hidden
         className="pointer-events-none fixed left-0 top-0 z-[10000] will-change-transform"
+        style={{ x: springRingX, y: springRingY }}
+        initial={false}
+        animate={{
+          opacity: isShown ? (hovering ? 0.95 : 0.72) : 0,
+          scale: isShown ? 1 : 0.85,
+        }}
+        transition={{ duration: 0.14 }}
+      >
+        <motion.div
+          className={cn(
+            "absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-icvf-accent/55 bg-icvf-accent/[0.08] shadow-[0_0_24px_-4px_rgba(245,166,35,0.45)] backdrop-blur-[2px]",
+            hovering && "border-icvf-accent bg-icvf-accent/15",
+          )}
+          animate={{
+            width: ringSize,
+            height: ringSize,
+          }}
+          transition={{ type: "spring", stiffness: 420, damping: 28, mass: 0.45 }}
+        />
+      </motion.div>
+
+      <motion.div
+        aria-hidden
+        className="pointer-events-none fixed left-0 top-0 z-[10001] will-change-transform"
         style={{ x: springPointerX, y: springPointerY }}
         initial={false}
-        animate={{ opacity: isShown ? 1 : 0, scale: isShown ? 1 : 0.85 }}
-        transition={{ duration: 0.12 }}
+        animate={{
+          opacity: isShown ? 1 : 0,
+          scale: isShown ? pointerScale : 0.85,
+        }}
+        transition={{ type: "spring", stiffness: 520, damping: 32, mass: 0.35 }}
       >
         <svg
           width="22"
@@ -147,7 +197,7 @@ export function IcvfSiteCursor() {
           className="text-icvf-accent"
           style={{
             transform: "translate(1px, 1px)",
-            filter: "drop-shadow(0 0 6px color-mix(in srgb, var(--icvf-accent) 45%, transparent))",
+            filter: "drop-shadow(0 0 8px color-mix(in srgb, var(--icvf-accent) 50%, transparent))",
           }}
         >
           <path
@@ -157,20 +207,29 @@ export function IcvfSiteCursor() {
         </svg>
       </motion.div>
 
-      {showLabel ? (
-        <motion.div
-          aria-hidden
-          className="pointer-events-none fixed left-0 top-0 z-[9999] will-change-transform"
-          style={{ x: springLabelX, y: springLabelY }}
-          initial={false}
-          animate={{ opacity: isShown ? 1 : 0, scale: isShown ? 1 : 0.9 }}
-          transition={{ duration: 0.15 }}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none fixed left-0 top-0 z-[9999] will-change-transform"
+        style={{ x: springLabelX, y: springLabelY }}
+        initial={false}
+        animate={{
+          opacity: isShown ? (hovering ? 1 : 0.92) : 0,
+          scale: isShown ? (hovering ? 1.04 : 1) : 0.9,
+          y: isShown ? 0 : 4,
+        }}
+        transition={{ type: "spring", stiffness: 280, damping: 26, mass: 0.5 }}
+      >
+        <span
+          className={cn(
+            "inline-block rounded-md border px-2.5 py-0.5 text-[11px] font-medium italic tracking-wide shadow-md backdrop-blur-sm transition-colors duration-200",
+            hovering
+              ? "border-icvf-accent/50 bg-icvf-navy text-white"
+              : "border-icvf-accent/30 bg-icvf-navy/90 text-white",
+          )}
         >
-          <span className="inline-block rounded-md border border-icvf-accent/30 bg-icvf-navy/90 px-2.5 py-0.5 text-[11px] font-medium italic tracking-wide text-white shadow-md backdrop-blur-sm">
-            {label}
-          </span>
-        </motion.div>
-      ) : null}
+          {label}
+        </span>
+      </motion.div>
     </>
   );
 }
