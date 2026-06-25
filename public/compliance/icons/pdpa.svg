@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="PDPA">
+  <path d="M32 6L52 16V32C52 44.2 43.4 55.2 32 58C20.6 55.2 12 44.2 12 32V16L32 6Z" fill="#1c2547" stroke="#0f172a" stroke-width="1.5"/>
+  <path d="M32 12L46 19.5V31.5C46 40.8 39.6 49.1 32 51.2C24.4 49.1 18 40.8 18 31.5V19.5L32 12Z" fill="#273461"/>
+  <circle cx="32" cy="28" r="7" fill="#f5a623"/>
+  <path d="M32 24v8M28 28h8" stroke="#1c2547" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M24 38h16" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/>
+  <text x="32" y="46" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="7" font-weight="700">PDPA</text>
+</svg>

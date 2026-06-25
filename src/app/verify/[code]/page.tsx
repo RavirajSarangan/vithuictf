@@ -1,0 +1,62 @@
+import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
+import { CanvasSection, LightPremiumCard } from "@/components/canvas";
+import { BRAND } from "@/lib/constants";
+import Link from "next/link";
+
+export default async function VerifyCertificatePage({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}) {
+  const { code } = await params;
+
+  let cert: {
+    student_name: string;
+    course_name: string;
+    issued_at: string;
+  } | null = null;
+
+  if (isAdminClientConfigured()) {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("certificates")
+      .select("student_name, course_name, issued_at")
+      .eq("verify_code", code)
+      .maybeSingle();
+    cert = data;
+  }
+
+  return (
+    <div className="min-h-screen bg-icvf-surface px-4 py-24">
+      <CanvasSection tone="light" className="py-12">
+        <div className="mx-auto max-w-lg text-center">
+          <h1 className="text-2xl font-semibold text-icvf-navy">Certificate Verification</h1>
+          <p className="mt-2 text-sm text-icvf-text-light">{BRAND.legalName}</p>
+
+          {cert ? (
+            <LightPremiumCard className="mt-8 p-8 text-left">
+              <p className="text-sm font-medium text-icvf-success">Valid certificate</p>
+              <p className="mt-4 text-lg font-semibold text-icvf-navy">{cert.student_name}</p>
+              <p className="text-icvf-text-light">{cert.course_name}</p>
+              <p className="mt-2 text-sm text-icvf-text-light">
+                Issued {new Date(cert.issued_at).toLocaleDateString()}
+              </p>
+              <p className="mt-4 font-mono text-xs text-icvf-text-light">Code: {code}</p>
+            </LightPremiumCard>
+          ) : (
+            <LightPremiumCard className="mt-8 p-8">
+              <p className="font-medium text-icvf-danger">Certificate not found</p>
+              <p className="mt-2 text-sm text-icvf-text-light">
+                This verification code is invalid or has been revoked.
+              </p>
+            </LightPremiumCard>
+          )}
+
+          <Link href="/" className="mt-8 inline-block text-sm font-medium text-icvf-accent hover:underline">
+            Back to homepage
+          </Link>
+        </div>
+      </CanvasSection>
+    </div>
+  );
+}
