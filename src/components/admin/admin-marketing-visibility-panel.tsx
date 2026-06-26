@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { updateMarketingComingSoon, updateSitePublicMode } from "@/lib/actions/admin";
+import { syncClientCachesAfterAdminSave } from "@/lib/client-cache-sync";
 import { usePlatformSettings } from "@/hooks/use-data";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +45,7 @@ function siteModeBadgeLabel(mode: SitePublicMode): string {
 }
 
 export function AdminMarketingVisibilityPanel() {
+  const router = useRouter();
   const { settings, loading, refresh } = usePlatformSettings();
   const [saving, setSaving] = useState(false);
   const [siteMode, setSiteMode] = useState<SitePublicMode>(settings.sitePublicMode);
@@ -82,6 +85,8 @@ export function AdminMarketingVisibilityPanel() {
         await updateMarketingComingSoon(homepageBlur);
       }
       refresh();
+      syncClientCachesAfterAdminSave();
+      router.refresh();
       toast.success("Site visibility updated");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save");
@@ -96,6 +101,8 @@ export function AdminMarketingVisibilityPanel() {
       await updateSitePublicMode("live");
       setSiteMode("live");
       refresh();
+      syncClientCachesAfterAdminSave();
+      router.refresh();
       toast.success("Maintenance ended — site is live");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to end maintenance");

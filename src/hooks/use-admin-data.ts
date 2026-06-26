@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useCachedList } from "@/hooks/use-cached-list";
 import { createClient } from "@/lib/supabase/client";
 import {
   mapCertificate,
@@ -35,20 +34,41 @@ import type {
   Student,
   Teacher,
 } from "@/types";
-import { useAuth } from "@/providers/auth-provider";
+
+// Lightweight in-memory TTL cache for the admin dashboard aggregates. These hooks
+// run several count/scan queries on mount; caching the result avoids refetch storms
+// when admins navigate back and forth between dashboard views within the window.
+const ADMIN_AGG_TTL_MS = 60_000;
+const adminAggCache = new Map<string, { value: unknown; at: number }>();
+
+function readAdminAggCache<T>(key: string): T | null {
+  const hit = adminAggCache.get(key);
+  if (hit && Date.now() - hit.at < ADMIN_AGG_TTL_MS) {
+    return hit.value as T;
+  }
+  return null;
+}
+
+function writeAdminAggCache(key: string, value: unknown) {
+  adminAggCache.set(key, { value, at: Date.now() });
+}
+
+type AdminStats = {
+  totalStudents: number;
+  totalTeachers: number;
+  totalRevenue: number;
+  totalResources: number;
+  totalCertificates: number;
+  totalCourses: number;
+};
 
 export function useAdminStats() {
-  const [stats, setStats] = useState<{
-    totalStudents: number;
-    totalTeachers: number;
-    totalRevenue: number;
-    totalResources: number;
-    totalCertificates: number;
-    totalCourses: number;
-  } | null>(null);
+  const [stats, setStats] = useState<AdminStats | null>(() => readAdminAggCache<AdminStats>("stats"));
 
   useEffect(() => {
+    if (readAdminAggCache<AdminStats>("stats")) return;
 
+    let cancelled = false;
     const supabase = createClient();
     Promise.all([
       supabase.from("students").select("id", { count: "exact", head: true }),
@@ -58,42 +78,61 @@ export function useAdminStats() {
       supabase.from("certificates").select("id", { count: "exact", head: true }),
       supabase.from("courses").select("id", { count: "exact", head: true }),
     ]).then(([students, teachers, payments, resources, certificates, courses]) => {
+      if (cancelled) return;
       const revenue = (payments.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
-      setStats({
+      const next: AdminStats = {
         totalStudents: students.count ?? 0,
         totalTeachers: teachers.count ?? 0,
         totalRevenue: revenue,
         totalResources: resources.count ?? 0,
         totalCertificates: certificates.count ?? 0,
         totalCourses: courses.count ?? 0,
-      });
+      };
+      writeAdminAggCache("stats", next);
+      setStats(next);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return stats;
 }
 
+type RevenuePoint = { date: string; revenue: number };
+
 export function useAdminRevenueTrend() {
-  const [data, setData] = useState<{ date: string; revenue: number }[] | null>(null);
+  const [data, setData] = useState<RevenuePoint[] | null>(() =>
+    readAdminAggCache<RevenuePoint[]>("revenueTrend")
+  );
 
   useEffect(() => {
+    if (readAdminAggCache<RevenuePoint[]>("revenueTrend")) return;
+
+    let cancelled = false;
     const supabase = createClient();
     supabase
       .from("payments")
       .select("amount, payment_date")
       .eq("status", "paid")
       .then(({ data: rows }) => {
+        if (cancelled) return;
         const byDate = new Map<string, number>();
         for (const payment of rows ?? []) {
           const date = new Date(payment.payment_date).toISOString().slice(0, 10);
           byDate.set(date, (byDate.get(date) ?? 0) + Number(payment.amount));
         }
-        setData(
-          Array.from(byDate.entries())
-            .map(([date, revenue]) => ({ date, revenue }))
-            .sort((a, b) => a.date.localeCompare(b.date))
-        );
+        const next = Array.from(byDate.entries())
+          .map(([date, revenue]) => ({ date, revenue }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        writeAdminAggCache("revenueTrend", next);
+        setData(next);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return data;

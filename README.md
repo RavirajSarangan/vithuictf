@@ -70,10 +70,9 @@ Displayed on login, marketing footer, and portal layouts via `SecurityCompliance
 
 | Badge | Asset | Where shown |
 |-------|-------|-------------|
-| **PDPA Compliance** | `public/compliance/icons/pdpa.svg` | Login strip, marketing |
-| **ISO 27001 Certified** | `public/compliance/icons/iso-27001.svg` | Login strip, marketing |
-| **PCI DSS Certified** | `public/compliance/icons/pci-dss.svg` | Login strip, marketing |
-| Portal seal variants | `public/compliance/*-badge.svg` | Student/parent/admin footers |
+| **PDPA Compliance** | `public/papa.png` | Login strip, marketing |
+| **ISO 27001 Certified** | `public/iso.png` | Login strip, marketing |
+| **PCI DSS Certified** | `public/pci.png` | Login strip, marketing |
 
 Optional secure-connection line: *"Secure 256-bit SSL encryption"* with lock icon.
 
@@ -298,7 +297,7 @@ src/
 └── hooks/               # Domain data hooks
 supabase/migrations/     # Ordered SQL migrations
 public/
-├── compliance/          # PDPA, ISO, PCI badge assets
+├── papa.png, iso.png, pci.png  # Compliance badge assets (root)
 └── landing/             # Hero, map, brand imagery
 ```
 

@@ -11,7 +11,7 @@ import { useHomeAbout } from "@/hooks/use-data";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { cn } from "@/lib/utils";
 
-const FOUNDER_FALLBACK_IMAGE = "/landing/vithoo.svg";
+const FOUNDER_FALLBACK_IMAGE = "/landing/hero-founder.webp";
 
 function splitCredentialPills(credentials: string): string[] {
   return credentials

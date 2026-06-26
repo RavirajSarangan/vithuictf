@@ -74,7 +74,7 @@ export function HeroMobileProofStrip() {
           />
         ) : null}
         <ProofStatCard value={abTotal} label={t("hero.abGrades")} />
-        <ProofStatCard value={98} suffix="%" label={t("hero.passRate")} />
+        <ProofStatCard value={100} suffix="%" label={t("hero.passRate")} />
       </MotionStaggerItem>
     </MotionStagger>
   );
@@ -88,11 +88,11 @@ function LearningChip({
   label: string;
 }) {
   return (
-    <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-icvf-accent/35 bg-white/90 px-3.5 py-2 text-xs font-semibold text-icvf-navy shadow-sm">
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-icvf-accent/15 text-icvf-accent">
-        <Icon className="size-3.5" aria-hidden />
+    <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-icvf-navy/15 bg-white px-3.5 py-2 text-xs font-semibold text-[#1c2547] shadow-sm sm:px-4 sm:py-2.5 sm:text-sm">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#fff4dc] text-icvf-accent sm:size-8">
+        <Icon className="size-3.5 sm:size-4" aria-hidden />
       </span>
-      <span className="line-clamp-1 whitespace-nowrap">{label}</span>
+      <span className="whitespace-nowrap text-[#1c2547]">{label}</span>
     </span>
   );
 }
@@ -104,23 +104,24 @@ export function HeroMobileLearningChips() {
     label: t(titleKey),
     key: titleKey,
   }));
-  const loop = [...chipItems, ...chipItems];
-  const marqueeTrack = [...loop, ...loop];
+
+  const loop = Array.from({ length: 4 }, () => chipItems).flat();
+  const track = [...loop, ...loop];
 
   return (
     <MotionStagger className="mt-3 min-w-0 max-w-full" stagger={0.06}>
-      <MotionStaggerItem className="min-w-0 max-w-full">
-        <div className="hero-learning-chips-track relative w-full max-w-full overflow-hidden pb-1">
+      <MotionStaggerItem className="marketing-full-bleed min-w-0">
+        <div className="marketing-marquee-track py-0.5">
           <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#fffdf8] to-transparent"
+            className="marketing-marquee-fade-left bg-gradient-to-r from-[#fffdf8] via-[#fffdf8]/90 to-transparent"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#fffdf8] to-transparent"
+            className="marketing-marquee-fade-right bg-gradient-to-l from-[#f8fafc] via-[#f8fafc]/90 to-transparent"
             aria-hidden
           />
-          <div className="hero-learning-chips-marquee flex w-max gap-2 motion-reduce:animate-none">
-            {marqueeTrack.map(({ icon, label, key }, index) => (
+          <div className="hero-learning-chips-marquee flex w-max items-center gap-2.5 motion-reduce:animate-none sm:gap-3">
+            {track.map(({ icon, label, key }, index) => (
               <LearningChip key={`${key}-${index}`} icon={icon} label={label} />
             ))}
           </div>

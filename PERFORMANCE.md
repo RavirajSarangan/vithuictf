@@ -12,7 +12,7 @@ Full performance, device support, and cleanup pass completed across six phases. 
 | Metric | Before (audit) | After |
 |--------|----------------|-------|
 | `public/` total size | ~6.2 MB | **2.1 MB** (~66% reduction) |
-| Hero LCP asset | `/vithoo.svg` (1.7 MB) | `/landing/hero-founder.png` (68 KB) |
+| Hero LCP asset | `/vithoo.svg` (1.7 MB) | `/landing/hero-founder.webp` (63 KB) |
 | Dead public assets | `Jaffna .svg` (3.7 MB), unused brand folder | Removed |
 | Middleware auth on marketing `/` | Always (Supabase session + profile) | Skipped when no auth cookie |
 | Site gate DB fetch | Every request, `cache: no-store` | 60s in-memory cache + env override |

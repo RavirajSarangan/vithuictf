@@ -3,15 +3,15 @@ import Link from "next/link";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { MarketingContainer, MarketingSection } from "@/components/landing/marketing-layout";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import { LOCATION_SLUGS, formatDistrictName } from "@/lib/seo/keywords";
+import { LOCATION_SLUGS, formatDistrictName, PAPER_CENTERS_SEO } from "@/lib/seo/keywords";
 import { getMarketingHomeData } from "@/lib/marketing-data";
 import { ButtonLink } from "@/components/shared/button-link";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "ICT Paper Centers Sri Lanka | ICTF Islandwide Network",
-  description:
-    "Find ICTF paper centers across Sri Lanka for O/L and A/L ICT past paper practice. Islandwide network from Jaffna to Colombo with online Zoom classes.",
-  path: "/network/paper-centers",
+  title: PAPER_CENTERS_SEO.title.en,
+  description: PAPER_CENTERS_SEO.description.en,
+  path: PAPER_CENTERS_SEO.path,
+  keywords: PAPER_CENTERS_SEO.keywords.en,
 });
 
 export default async function PaperCentersPage() {

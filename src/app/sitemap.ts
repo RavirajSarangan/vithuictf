@@ -13,8 +13,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticPaths = [
     "/",
     "/rankings",
-    "/register",
-    "/login",
     "/network/paper-centers",
     "/about/founder",
     ...PROGRAM_PAGES.map((p) => p.path),

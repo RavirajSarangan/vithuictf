@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateBrandLogoSettings } from "@/lib/actions/admin";
+import { syncClientCachesAfterAdminSave } from "@/lib/client-cache-sync";
 import {
   brandLogoSettingsToCssProperties,
   DEFAULT_BRAND_LOGO_SETTINGS,
@@ -81,6 +83,7 @@ function settingsKey(settings: BrandLogoSettings): string {
 }
 
 export function AdminBrandLogoPanel() {
+  const router = useRouter();
   const { settings, loading, refresh } = usePlatformSettings();
   const [draft, setDraft] = useState<BrandLogoSettings>(settings.brandLogo);
   const [saving, setSaving] = useState(false);
@@ -107,6 +110,8 @@ export function AdminBrandLogoPanel() {
     try {
       await updateBrandLogoSettings(draft);
       refresh();
+      syncClientCachesAfterAdminSave();
+      router.refresh();
       toast.success("Brand logo sizes updated");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save");
@@ -182,7 +187,7 @@ export function AdminBrandLogoPanel() {
               label="Width (mobile)"
               value={draft.footer.widthRem}
               min={9}
-              max={14}
+              max={22}
               step={0.25}
               unit="rem"
               onChange={(value) => updateFooter({ widthRem: value })}
@@ -192,7 +197,7 @@ export function AdminBrandLogoPanel() {
               label="Height (mobile)"
               value={draft.footer.heightRem}
               min={2.75}
-              max={4}
+              max={7}
               step={0.25}
               unit="rem"
               onChange={(value) => updateFooter({ heightRem: value })}
@@ -202,7 +207,7 @@ export function AdminBrandLogoPanel() {
               label="Width (desktop)"
               value={draft.footer.widthRemSm}
               min={9}
-              max={15}
+              max={24}
               step={0.25}
               unit="rem"
               onChange={(value) => updateFooter({ widthRemSm: value })}
@@ -212,7 +217,7 @@ export function AdminBrandLogoPanel() {
               label="Height (desktop)"
               value={draft.footer.heightRemSm}
               min={2.75}
-              max={4.5}
+              max={7.5}
               step={0.25}
               unit="rem"
               onChange={(value) => updateFooter({ heightRemSm: value })}

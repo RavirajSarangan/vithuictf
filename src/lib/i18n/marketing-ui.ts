@@ -14,6 +14,7 @@ export type MarketingUiKey =
   | "nav.institute"
   | "btn.login"
   | "btn.dashboard"
+  | "btn.signOut"
   | "btn.apply"
   | "btn.register"
   | "btn.registerNav"
@@ -78,8 +79,6 @@ export type MarketingUiKey =
   | "marketing.comingSoon.chipResults"
   | "marketing.comingSoon.chipCenters"
   | "marketing.comingSoon.chipFaq"
-  | "marketing.comingSoon.chipRegister"
-  | "marketing.comingSoon.chipStatus"
   | "marketing.comingSoon.statusBadge"
   | "marketing.comingSoon.sectionStatus"
   | "marketing.comingSoon.focusLabel"
@@ -157,6 +156,7 @@ export type MarketingUiKey =
   | "footer.description"
   | "footer.marquee.lms"
   | "footer.marquee.results"
+  | "footer.builtBy"
   | "contact.badge"
   | "contact.title"
   | "contact.accent"
@@ -349,6 +349,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "nav.institute": { en: "Institute", ta: "நிறுவனம்" },
   "btn.login": { en: "Login", ta: "உள்நுழை" },
   "btn.dashboard": { en: "Dashboard", ta: "டாஷ்போர்டு" },
+  "btn.signOut": { en: "Sign out", ta: "வெளியேறு" },
   "btn.apply": { en: "Register Now", ta: "இப்போது பதிவு செய்" },
   "btn.register": { en: "Register Now", ta: "இப்போது பதிவு செய்" },
   "btn.registerNav": { en: "Register", ta: "பதிவு" },
@@ -390,7 +391,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "hero.topicWebDev": { en: "Web Development", ta: "வலை மேம்பாடு" },
   "hero.expertFacultyLabel": { en: "Expert Faculty", ta: "நிபுணர் ஆசிரியர்கள்" },
   "hero.community": { en: "Join Our Community", ta: "எங்கள் சமூகத்தில் சேருங்கள்" },
-  "hero.passRate": { en: "A/B Pass Rate", ta: "A/B வெற்றி விகிதம்" },
+  "hero.passRate": { en: "Pass Rate", ta: "வெற்றி விகிதம்" },
   "hero.mobileProofTitle": { en: "Proven results", ta: "நிரூபிக்கப்பட்ட முடிவுகள்" },
   "hero.abGrades": { en: "A/B Grades", ta: "A/B தரங்கள்" },
   "hero.scrollHint": { en: "Scroll to explore", ta: "ஆராய உருட்டவும்" },
@@ -440,8 +441,6 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "marketing.comingSoon.chipResults": { en: "Results & Rankings", ta: "முடிவுகள் & தரவரிசை" },
   "marketing.comingSoon.chipCenters": { en: "Islandwide Centers", ta: "தீவு முழுவதும் மையங்கள்" },
   "marketing.comingSoon.chipFaq": { en: "FAQ & Help", ta: "கேள்விகள் & உதவி" },
-  "marketing.comingSoon.chipRegister": { en: "Student Registration", ta: "மாணவர் பதிவு" },
-  "marketing.comingSoon.chipStatus": { en: "Ongoing", ta: "நடப்பில்" },
   "marketing.comingSoon.statusBadge": {
     en: "Site expansion in progress",
     ta: "தள விரிவாக்கம் நடப்பில் உள்ளது",
@@ -591,6 +590,10 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   },
   "footer.marquee.lms": { en: "LMS Portal", ta: "LMS போர்டல்" },
   "footer.marquee.results": { en: "Student Results", ta: "மாணவர் முடிவுகள்" },
+  "footer.builtBy": {
+    en: "Built by ICTF Solution",
+    ta: "ICTF Solution மூலம் உருவாக்கப்பட்டது",
+  },
   "contact.badge": { en: "Contact", ta: "தொடர்பு" },
   "contact.title": { en: "Contact ICTF", ta: "ICTF-ஐ தொடர்பு கொள்ளுங்கள்" },
   "contact.accent": { en: "for registration help", ta: "பதிவு உதவிக்கு" },
@@ -639,7 +642,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     ta: "ஒவ்வொரு மாணவருக்கும் கட்டமைக்கப்பட்ட வினாத்தாள்கள், நேர வரம்பு மற்றும் தீவு முழுவதும் அடைவு.",
   },
   "centers.districts": { en: "Districts Covered", ta: "மாவட்டங்கள்" },
-  "centers.passRate": { en: "A/B Pass Rate", ta: "A/B வெற்றி விகிதம்" },
+  "centers.passRate": { en: "Pass Rate", ta: "வெற்றி விகிதம்" },
   "centers.papersWritten": { en: "Papers Written", ta: "எழுதப்பட்ட வினாத்தாள்கள்" },
   "rank.island": { en: "Island Rank", ta: "தீவு தரவரிசை" },
   "rank.district": { en: "District Rank", ta: "மாவட்ட தரவரிசை" },
@@ -803,10 +806,10 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.registerHere": { en: "Register here", ta: "இங்கே பதிவு செய்" },
   "auth.welcomeBack": { en: "Welcome back", ta: "மீண்டும் வரவேற்கிறோம்" },
   "auth.loginWithEmail": { en: "Email", ta: "மின்னஞ்சல்" },
-  "auth.staffAdminLogin": { en: "Staff", ta: "ஊழியர்" },
+  "auth.staffAdminLogin": { en: "ICTF", ta: "ICTF" },
   "auth.signInSubStaff": {
-    en: "Staff email sign-in is for admin accounts only.",
-    ta: "ஊழியர் மின்னஞ்சல் உள்நுழைவு நிர்வாகக் கணக்குகளுக்கு மட்டுமே.",
+    en: "Admin email sign-in for institute administrators.",
+    ta: "நிறுவன நிர்வாகிகளுக்கான நிர்வாக மின்னஞ்சல் உள்நுழைவு.",
   },
   "auth.studentIdMissingHelp": {
     en: "Don't have a Student ID yet? Contact admin for help.",
@@ -829,8 +832,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     ta: "இந்த மின்னஞ்சல் நிர்வாகக் கணக்கு அல்ல. மாணவர் உள்நுழைவுக்கு மாணவர் அடையாளம் தாவலைப் பயன்படுத்துங்கள்.",
   },
   "auth.studentIdOnly": {
-    en: "Students must sign in with Student ID. Use the Staff tab for admin email login.",
-    ta: "மாணவர்கள் மாணவர் அடையாளத்துடன் மட்டும் உள்நுழைய வேண்டும். நிர்வாக மின்னஞ்சலுக்கு ஊழியர் தாவலைப் பயன்படுத்துங்கள்.",
+    en: "Students must sign in with Student ID. Use the Admin tab for administrator email login.",
+    ta: "மாணவர்கள் மாணவர் அடையாளத்துடன் மட்டும் உள்நுழைய வேண்டும். நிர்வாக மின்னஞ்சலுக்கு நிர்வாகி தாவலைப் பயன்படுத்துங்கள்.",
   },
   "auth.studentId": { en: "Student ID", ta: "மாணவர் அடையாளம்" },
   "auth.studentIdPlaceholder": { en: "Enter your Student ID", ta: "உங்கள் மாணவர் அடையாளத்தை உள்ளிடவும்" },

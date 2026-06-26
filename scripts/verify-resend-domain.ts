@@ -37,7 +37,6 @@ const DOMAIN = "ictf.lk";
 const args = process.argv.slice(2);
 const shouldVerify = args.includes("--verify");
 const showFull = args.includes("--full");
-const shouldWait = args.includes("--wait");
 const testEmail = args.find((a) => a.includes("@") && !a.startsWith("-"));
 
 type ResendRecord = {

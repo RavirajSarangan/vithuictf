@@ -4,7 +4,7 @@ import type { BrandLogoSettings } from "@/types";
 
 export const DEFAULT_BRAND_LOGO_SETTINGS: BrandLogoSettings = {
   nav: { widthRem: 10.5, scale: 1.45, scaleSm: 1.52 },
-  footer: { widthRem: 11.5, heightRem: 3.25, widthRemSm: 12.5, heightRemSm: 3.5 },
+  footer: { widthRem: 14, heightRem: 4, widthRemSm: 15, heightRemSm: 4.5 },
 };
 
 const brandLogoSettingsSchema = z.object({
@@ -14,10 +14,10 @@ const brandLogoSettingsSchema = z.object({
     scaleSm: z.number().min(1).max(1.6),
   }),
   footer: z.object({
-    widthRem: z.number().min(9).max(14),
-    heightRem: z.number().min(2.75).max(4),
-    widthRemSm: z.number().min(9).max(15),
-    heightRemSm: z.number().min(2.75).max(4.5),
+    widthRem: z.number().min(9).max(22),
+    heightRem: z.number().min(2.75).max(7),
+    widthRemSm: z.number().min(9).max(24),
+    heightRemSm: z.number().min(2.75).max(7.5),
   }),
 });
 
@@ -58,10 +58,10 @@ export function clampBrandLogoSettings(settings: BrandLogoSettings): BrandLogoSe
       scaleSm: clampNumber(settings.nav.scaleSm, 1, 1.6),
     },
     footer: {
-      widthRem: clampNumber(settings.footer.widthRem, 9, 14),
-      heightRem: clampNumber(settings.footer.heightRem, 2.75, 4),
-      widthRemSm: clampNumber(settings.footer.widthRemSm, 9, 15),
-      heightRemSm: clampNumber(settings.footer.heightRemSm, 2.75, 4.5),
+      widthRem: clampNumber(settings.footer.widthRem, 9, 22),
+      heightRem: clampNumber(settings.footer.heightRem, 2.75, 7),
+      widthRemSm: clampNumber(settings.footer.widthRemSm, 9, 24),
+      heightRemSm: clampNumber(settings.footer.heightRemSm, 2.75, 7.5),
     },
   };
 }
@@ -84,10 +84,10 @@ export function applyBrandLogoVisibilityFloor(settings: BrandLogoSettings): Bran
       scaleSm: Math.max(s.nav.scaleSm, d.nav.scaleSm),
     },
     footer: {
-      widthRem: clampNumber(s.footer.widthRem, 9, 14),
-      heightRem: clampNumber(s.footer.heightRem, 2.75, 4),
-      widthRemSm: clampNumber(s.footer.widthRemSm, 9, 15),
-      heightRemSm: clampNumber(s.footer.heightRemSm, 2.75, 4.5),
+      widthRem: clampNumber(s.footer.widthRem, 9, 22),
+      heightRem: clampNumber(s.footer.heightRem, 2.75, 7),
+      widthRemSm: clampNumber(s.footer.widthRemSm, 9, 24),
+      heightRemSm: clampNumber(s.footer.heightRemSm, 2.75, 7.5),
     },
   };
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import { BRAND } from "@/lib/constants";
-import { DEFAULT_OG_IMAGE, SEO_LOCALES, SITE_URL, absoluteUrl } from "@/lib/seo/site";
+import { DEFAULT_OG_IMAGE, SEO_LOCALES, SITE_URL, absoluteUrl, FOUNDER } from "@/lib/seo/site";
 
 export type PageLocale = MarketingLocale;
 
@@ -11,19 +11,22 @@ function localeToHreflang(locale: PageLocale): string {
   return "en-LK";
 }
 
-function localizedPath(path: string, locale: PageLocale): string {
+export function localizedPath(path: string, locale: PageLocale): string {
   if (locale === "en") return path;
   return `/${locale}${path === "/" ? "" : path}`;
 }
 
-export function buildLanguageAlternates(path: string): Metadata["alternates"] {
+export function buildLanguageAlternates(
+  path: string,
+  locale: PageLocale = "en"
+): Metadata["alternates"] {
   const languages: Record<string, string> = {};
-  for (const locale of ["en", "ta", "si"] as const) {
-    languages[localeToHreflang(locale)] = absoluteUrl(localizedPath(path, locale));
+  for (const loc of ["en", "ta", "si"] as const) {
+    languages[localeToHreflang(loc)] = absoluteUrl(localizedPath(path, loc));
   }
   languages["x-default"] = absoluteUrl(path);
   return {
-    canonical: absoluteUrl(path),
+    canonical: absoluteUrl(localizedPath(path, locale)),
     languages,
   };
 }
@@ -33,6 +36,7 @@ export interface BuildPageMetadataInput {
   description: string;
   path: string;
   locale?: PageLocale;
+  keywords?: string[];
   ogImage?: string;
   ogType?: "website" | "article" | "profile";
   noIndex?: boolean;
@@ -43,6 +47,7 @@ export function buildPageMetadata({
   description,
   path,
   locale = "en",
+  keywords,
   ogImage = DEFAULT_OG_IMAGE,
   ogType = "website",
   noIndex = false,
@@ -54,8 +59,19 @@ export function buildPageMetadata({
   return {
     title,
     description,
+    ...(keywords?.length ? { keywords } : {}),
     metadataBase: new URL(SITE_URL),
-    alternates: buildLanguageAlternates(path),
+    applicationName: BRAND.name,
+    category: "education",
+    creator: BRAND.fullName,
+    publisher: BRAND.fullName,
+    authors: [{ name: FOUNDER.name, url: absoluteUrl("/about/founder") }],
+    formatDetection: {
+      telephone: true,
+      email: true,
+      address: true,
+    },
+    alternates: buildLanguageAlternates(path, locale),
     robots: noIndex
       ? { index: false, follow: false }
       : { index: true, follow: true, googleBot: { index: true, follow: true } },

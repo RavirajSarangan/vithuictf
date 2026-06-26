@@ -1,8 +1,14 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
+import {
+  LOCALE_COOKIE,
+  localizedMarketingPath,
+  stripLocalePrefix,
+} from "@/lib/seo/locale";
 
 export function LanguageToggle({
   className,
@@ -12,11 +18,21 @@ export function LanguageToggle({
   monochrome?: boolean;
 }) {
   const { locale, setLocale, t } = useMarketingText();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const navigateLocale = (code: MarketingLocale) => {
+    const { pathname: basePath } = stripLocalePrefix(pathname);
+    const nextPath = localizedMarketingPath(basePath, code);
+    setLocale(code);
+    document.cookie = `${LOCALE_COOKIE}=${code};path=/;max-age=31536000;SameSite=Lax`;
+    router.push(nextPath);
+  };
 
   const btn = (code: MarketingLocale, label: string) => (
     <button
       type="button"
-      onClick={() => setLocale(code)}
+      onClick={() => navigateLocale(code)}
       className={cn(
         "rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
         locale === code

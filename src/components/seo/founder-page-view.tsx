@@ -56,13 +56,14 @@ export async function FounderPageView({ locale }: { locale: MarketingLocale }) {
 
   return (
     <>
-      <PersonJsonLd />
+      <PersonJsonLd locale={locale} />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", path: "/" },
           { name: "About", path: "/#about" },
           { name: FOUNDER.name, path: FOUNDER_SEO.path },
         ]}
+        locale={locale}
       />
       <SeoContentPage
         locale={locale}

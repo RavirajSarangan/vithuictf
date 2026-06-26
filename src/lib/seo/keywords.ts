@@ -169,3 +169,41 @@ export const FOUNDER_SEO = {
     si: "ICT Foundation (ICTF) නිර්මාතෘ Vithoosan Sivanathan හඳුනාගන්න. දිවයින ශ්‍රේණිගත විභාග ප්‍රතිඵල සහිත ශ්‍රී ලංකාවේ ප්‍රමුඛ O/L & A/L ICT අධ්‍යාපනිකයා.",
   },
 };
+
+export const RANKINGS_SEO = {
+  path: "/rankings",
+  title: {
+    en: "O/L & A/L ICT Exam Results | ICTF Rankings — Sri Lanka",
+    ta: "O/L & A/L ICT தேர்வு முடிவுகள் | ICTF தரவரிசை — இலங்கை",
+    si: "O/L & A/L ICT විභාග ප්‍රතිඵල | ICTF ශ්‍රේණි — ශ්‍රී ලංකාව",
+  },
+  description: {
+    en: "View ICTF student examination achievements — island ranks, district top tens, and A/B grades from O/L and A/L ICT exams across Sri Lanka.",
+    ta: "ICTF மாணவர் தேர்வு சாதனைகளைப் பாருங்கள் — தீவு தரவரிசை, மாவட்ட முதல் பத்து மற்றும் O/L மற்றும் A/L ICT தேர்வுகளில் A/B தரங்கள்.",
+    si: "ICTF ශිෂ්‍ය විභාග ජයග්‍රහණ බලන්න — දිවයින ශ්‍රේණි, දිස්ත්‍රික්ක ප්‍රමුඛ දහය සහ ශ්‍රී ලංකාව පුරා O/L සහ A/L ICT විභාගවල A/B ශ්‍රේණි.",
+  },
+  keywords: {
+    en: ["ICT exam results", "O/L ICT rankings", "A/L ICT results Sri Lanka", "ICTF rankings"],
+    ta: ["ICT தேர்வு முடிவுகள்", "O/L ICT தரவரிசை", "A/L ICT முடிவுகள்"],
+    si: ["ICT විභාග ප්‍රතිඵල", "O/L ICT ශ්‍රේණි", "A/L ICT ප්‍රතිඵල"],
+  },
+};
+
+export const PAPER_CENTERS_SEO = {
+  path: "/network/paper-centers",
+  title: {
+    en: "ICT Paper Centers Sri Lanka | ICTF Islandwide Network",
+    ta: "ICT பேப்பர் மையங்கள் இலங்கை | ICTF தீவு முழுவதும் வலையமைப்பு",
+    si: "ICT ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන ශ්‍රී ලංකාව | ICTF දිවයින පුරා ජාලය",
+  },
+  description: {
+    en: "Find ICTF paper centers across Sri Lanka for O/L and A/L ICT past paper practice. Islandwide network from Jaffna to Colombo with online Zoom classes.",
+    ta: "O/L மற்றும் A/L ICT பேப்பர் பயிற்சிக்காக இலங்கை முழுவதும் ICTF பேப்பர் மையங்களைக் கண்டறியுங்கள். யாழ்ப்பாணம் முதல் கொழும்பு வரை தீவு முழுவதும் வலையமைப்பு.",
+    si: "O/L සහ A/L ICT ප්‍රශ්න පත්‍ර පුහුණුව සඳහා ශ්‍රී ලංකාව පුරා ICTF මධ්‍යස්ථාන සොයා ගන්න. යාපනයේ සිට කොළඹ දක්වා දිවයින පුරා ජාලය.",
+  },
+  keywords: {
+    en: ["ICT paper centers", "past paper centers Sri Lanka", "ICTF network", "O/L A/L ICT practice"],
+    ta: ["ICT பேப்பர் மையங்கள்", "பேப்பர் மையங்கள் இலங்கை"],
+    si: ["ICT ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන", "ශ්‍රී ලංකා ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන"],
+  },
+};

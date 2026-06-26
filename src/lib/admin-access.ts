@@ -21,6 +21,13 @@ export function filterAdminNavForRole(navItems: NavItem[], role: UserRole | unde
   return navItems.filter((item) => !adminOnlyHrefs.has(item.href));
 }
 
+export function getAdminPortalTitle(role: UserRole | undefined): string {
+  if (role === "admin") return "Admin Portal";
+  if (role === "teacher") return "Teacher Portal";
+  return "Staff Portal";
+}
+
+/** @deprecated Use getAdminPortalTitle */
 export function getStaffPortalTitle(role: UserRole | undefined): string {
-  return role === "admin" ? "Admin Portal" : "Staff Portal";
+  return getAdminPortalTitle(role);
 }

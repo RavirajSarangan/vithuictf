@@ -9,12 +9,25 @@ export function parseMarketingLocale(value?: string | null): MarketingLocale {
   return "en";
 }
 
+export function getMarketingLocaleFromPath(pathname: string): MarketingLocale {
+  const match = pathname.match(/^\/(ta|si)(\/|$)/);
+  if (match?.[1] === "ta" || match?.[1] === "si") {
+    return match[1];
+  }
+  return "en";
+}
+
 export function stripLocalePrefix(pathname: string): { locale: MarketingLocale; pathname: string } {
   const match = pathname.match(/^\/(ta|si)(\/.*)?$/);
   if (!match) return { locale: "en", pathname };
   const locale = parseMarketingLocale(match[1]);
   const rest = match[2] ?? "/";
   return { locale, pathname: rest };
+}
+
+export function localizedMarketingPath(path: string, locale: MarketingLocale): string {
+  if (locale === "en") return path;
+  return `/${locale}${path === "/" ? "" : path}`;
 }
 
 export const LOCALE_COOKIE = "icvf-marketing-locale";

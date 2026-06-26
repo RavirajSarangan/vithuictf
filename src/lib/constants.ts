@@ -40,10 +40,10 @@ export const BRAND = {
     mapEmbed:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.2!2d80.0074!3d9.6615!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zOcKwMzknNDEuNCJOIDgwwrAwMCcyNi42IkU!5e0!3m2!1sen!2slk!4v1",
     social: {
-      facebook: "https://facebook.com/ictf.lk",
+      facebook: "https://www.facebook.com/profile.php?id=100069520722645",
       instagram: "https://instagram.com/ictf.lk",
-      youtube: "https://youtube.com/@ictf",
-      linkedin: "https://linkedin.com/company/ictf-institute",
+      youtube: "https://www.youtube.com/@ictfinstitute",
+      linkedin: "https://www.linkedin.com/company/ictfofficial",
       telegram: "https://t.me/ictf_institute",
       whatsappChannel: "https://wa.me/94774591161",
     },

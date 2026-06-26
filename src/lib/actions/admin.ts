@@ -7,6 +7,12 @@ import { requireStaff, requireAdmin, signUpWithRole } from "@/lib/actions/auth";
 import { logAdminAction } from "@/lib/audit";
 import { sendStudentWelcomeEmail } from "@/lib/actions/email";
 import { BRAND } from "@/lib/constants";
+import {
+  revalidateMarketingPaths,
+  revalidateSitePublicPaths,
+  revalidateStudentPortalPaths,
+} from "@/lib/revalidation-paths";
+import { clearSitePublicModeCache } from "@/lib/site-access";
 import type { CourseLevel, MarketingAnnouncementContentType, MarketingAnnouncementDisplayStyle, SitePublicMode, BrandLogoSettings } from "@/types";
 import { validateBrandLogoSettings } from "@/lib/brand-logo-settings";
 
@@ -24,6 +30,7 @@ export async function deleteStudent(id: string) {
   const { error } = await supabase.from("students").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/students");
+  revalidateStudentPortalPaths();
 }
 
 function isValidEmail(email: string): boolean {
@@ -84,6 +91,7 @@ export async function addStudent(data: {
   });
 
   revalidatePath("/admin/students");
+  revalidateStudentPortalPaths();
   return {
     id: updated.id,
     studentId,
@@ -136,6 +144,7 @@ export async function deleteCourse(id: string) {
   const { error } = await supabase.from("courses").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/courses");
+  revalidateStudentPortalPaths();
 }
 
 export async function addCourse(data: {
@@ -168,6 +177,7 @@ export async function addCourse(data: {
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/courses");
+  revalidateStudentPortalPaths();
 }
 
 export async function updateCourse(
@@ -196,6 +206,7 @@ export async function updateCourse(
     .eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/courses");
+  revalidateStudentPortalPaths();
 }
 
 export async function getCourse(id: string) {
@@ -230,6 +241,7 @@ export async function addResource(data: {
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/resources");
+  revalidateStudentPortalPaths();
 }
 
 export async function deleteResource(id: string) {
@@ -238,6 +250,7 @@ export async function deleteResource(id: string) {
   const { error } = await supabase.from("resources").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/resources");
+  revalidateStudentPortalPaths();
 }
 
 export async function addPayment(data: {
@@ -259,6 +272,7 @@ export async function addPayment(data: {
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/payments");
+  revalidateStudentPortalPaths();
 }
 
 export async function issueCertificate(data: { studentId: string; studentName: string; courseId: string; courseName: string }) {
@@ -280,6 +294,7 @@ export async function issueCertificate(data: { studentId: string; studentName: s
   if (error) throw new Error(error.message);
   await logAdminAction("certificate.issue", "certificate", inserted.id, { verifyCode });
   revalidatePath("/admin/certificates");
+  revalidateStudentPortalPaths();
 }
 
 export async function addResult(data: {
@@ -309,6 +324,7 @@ export async function addResult(data: {
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/results");
+  revalidateStudentPortalPaths();
 }
 
 export async function deleteResult(id: string) {
@@ -317,6 +333,7 @@ export async function deleteResult(id: string) {
   const { error } = await supabase.from("results").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/results");
+  revalidateStudentPortalPaths();
 }
 
 export async function addTeacher(data: {
@@ -401,21 +418,8 @@ export async function updateSiteStats(data: {
     success_rate: data.successRate,
   }).eq("id", 1);
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidateMarketingPaths();
   revalidatePath("/admin/home");
-}
-
-function revalidateSitePublicPaths() {
-  revalidatePath("/");
-  revalidatePath("/rankings");
-  revalidatePath("/coming-soon");
-  revalidatePath("/maintenance");
-  revalidatePath("/login");
-  revalidatePath("/register");
-  revalidatePath("/admin/home");
-  revalidatePath("/dashboard");
-  revalidatePath("/parent");
-  revalidatePath("/verify");
 }
 
 export async function updateSitePublicMode(mode: SitePublicMode) {
@@ -435,6 +439,7 @@ export async function updateSitePublicMode(mode: SitePublicMode) {
     sitePublicMode: mode,
   });
 
+  clearSitePublicModeCache();
   revalidateSitePublicPaths();
 }
 
@@ -455,6 +460,7 @@ export async function updateMarketingComingSoon(enabled: boolean) {
     marketingComingSoonEnabled: enabled,
   });
 
+  clearSitePublicModeCache();
   revalidateSitePublicPaths();
 }
 
@@ -500,7 +506,7 @@ export async function updateNetworkStats(data: {
     cta_url: data.ctaUrl,
   }).eq("id", 1);
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidateMarketingPaths();
   revalidatePath("/admin/home");
 }
 
@@ -524,7 +530,7 @@ export async function updateHomeAbout(data: {
     cta_url: data.ctaUrl,
   }).eq("id", 1);
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidateMarketingPaths();
   revalidatePath("/admin/home");
 }
 
@@ -538,7 +544,7 @@ async function crudRow(table: string, action: "insert" | "delete", payload?: Rec
     const { error } = await supabase.from(table).delete().eq("id", id!);
     if (error) throw new Error(error.message);
   }
-  revalidatePath("/");
+  revalidateMarketingPaths();
   revalidatePath("/admin/home");
 }
 
@@ -567,7 +573,7 @@ export async function addFaq(question: string, answer: string, sortOrder = 0) {
   const supabase = await createClient();
   const { error } = await supabase.from("faqs").insert({ question, answer, sort_order: sortOrder });
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidateMarketingPaths();
   revalidatePath("/admin/home");
 }
 export async function deleteFaq(id: string) { await crudRow("faqs", "delete", undefined, id); }
@@ -577,7 +583,7 @@ export async function addSuccessStory(data: { name: string; course: string; achi
   const supabase = await createClient();
   const { error } = await supabase.from("success_stories").insert({ ...data, photo: data.photo ?? "" });
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidateMarketingPaths();
   revalidatePath("/admin/home");
 }
 export async function deleteSuccessStory(id: string) { await crudRow("success_stories", "delete", undefined, id); }
@@ -694,8 +700,7 @@ function marketingAnnouncementPayload(data: MarketingAnnouncementInput) {
 }
 
 function revalidateMarketingAnnouncementPaths() {
-  revalidatePath("/");
-  revalidatePath("/ta");
+  revalidateMarketingPaths();
   revalidatePath("/admin/home");
 }
 

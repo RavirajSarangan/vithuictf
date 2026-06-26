@@ -2,14 +2,15 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ArrowRight, Globe, Monitor, Radio, Video } from "lucide-react";
-import { ButtonLink } from "@/components/shared/button-link";
+import { Globe, Monitor, Radio, Video } from "lucide-react";
 import { HeroDecor } from "@/components/landing/hero-decor";
+import { MarketingSessionActionsWithAuth } from "@/components/landing/marketing-session-actions-auth";
 import { HeroIctFeatureCards, HeroIctTopicPills } from "@/components/landing/hero-ict-features";
 import {
   HeroMobileLearningChips,
   HeroMobileProofStrip,
 } from "@/components/landing/hero-mobile-highlights";
+import { HeroFounderIslandMap } from "@/components/landing/hero-founder-island-map";
 import { MarketingContainer } from "@/components/landing/marketing-layout";
 import { scrollToMarketingSection } from "@/lib/marketing-scroll";
 import { resultsHighlights } from "@/lib/data/results-content";
@@ -19,30 +20,8 @@ import { useMarketingText } from "@/hooks/use-marketing-text";
 import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-const HERO_FOUNDER_IMAGE = "/landing/vithoo.svg";
+const HERO_FOUNDER_IMAGE = "/landing/hero-founder.webp";
 const heroTrustIcons = [Video, Globe, Monitor, Radio] as const;
-
-const heroCtaClass =
-  "hero-cta-btn inline-flex min-h-[3.25rem] w-full items-center justify-center gap-1.5 overflow-visible rounded-full px-3 py-3 text-xs font-semibold leading-normal sm:min-h-14 sm:gap-2 sm:px-5 sm:py-0 sm:text-sm active:translate-y-0 lg:w-auto lg:min-w-[11.25rem]";
-
-function HeroCtaButtons({ className }: { className?: string }) {
-  const { t } = useMarketingText();
-
-  return (
-    <div className={cn("hero-cta-section", className)}>
-      <div className="hero-cta-row">
-        <ButtonLink href="/register" variant="icvf" className={heroCtaClass}>
-          <span className="sm:hidden">{t("btn.registerNav")}</span>
-          <span className="hidden sm:inline">{t("btn.register")}</span>
-          <ArrowRight className="hidden size-4 shrink-0 lg:block" aria-hidden />
-        </ButtonLink>
-        <ButtonLink href="/login" variant="icvf-outline-navy" className={heroCtaClass}>
-          {t("btn.login")}
-        </ButtonLink>
-      </div>
-    </div>
-  );
-}
 
 type ResultHighlight = (typeof resultsHighlights)[number];
 
@@ -59,20 +38,20 @@ function HeroTrustBar() {
 
   return (
     <div className="hero-trust-bar w-full bg-[#0a1628] py-3.5 sm:py-4">
-      <div className="relative overflow-hidden">
+      <div className="marketing-marquee-track">
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-3 bg-gradient-to-r from-[#0a1628] to-transparent sm:w-6 md:w-10 lg:w-14"
+          className="marketing-marquee-fade-left bg-gradient-to-r from-[#0a1628] to-transparent"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-3 bg-gradient-to-l from-[#0a1628] to-transparent sm:w-6 md:w-10 lg:w-14"
+          className="marketing-marquee-fade-right bg-gradient-to-l from-[#0a1628] to-transparent"
           aria-hidden
         />
-        <div className="hero-trust-marquee flex w-max gap-8 whitespace-nowrap px-4 sm:gap-14 sm:px-10 motion-reduce:animate-none">
+        <div className="hero-trust-marquee flex w-max items-center gap-5 whitespace-nowrap sm:gap-14 motion-reduce:animate-none">
           {track.map(({ icon: Icon, label }, i) => (
-            <div key={`${label}-${i}`} className="flex shrink-0 items-center gap-2.5">
-              <Icon className="size-4 text-white/55" aria-hidden />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 sm:text-xs">
+            <div key={`${label}-${i}`} className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+              <Icon className="size-4 shrink-0 text-icvf-accent/80 sm:text-icvf-accent/75" aria-hidden />
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/70 sm:text-xs sm:tracking-[0.18em] sm:text-white/55">
                 {label}
               </span>
             </div>
@@ -167,13 +146,13 @@ export function HeroSection() {
   return (
     <section
       id="home"
-      className="hero-section relative -mt-[var(--marketing-header-offset)] flex min-h-0 flex-col overflow-hidden px-4 pt-[calc(var(--marketing-header-offset)+0.5rem)] md:px-8 max-lg:max-h-none lg:max-h-none lg:overflow-x-clip"
+      className="hero-section relative flex min-h-0 flex-col overflow-x-clip pt-4 sm:-mt-[var(--marketing-header-offset)] sm:pt-[calc(var(--marketing-header-offset)+0.5rem)] max-lg:max-h-none lg:max-h-none"
     >
       <HeroDecor />
 
-      <MarketingContainer className="hero-section-main relative z-10 flex w-full min-w-0 flex-1 flex-col min-h-0 overflow-x-clip pt-2 pb-0 sm:pt-6 lg:overflow-visible lg:pt-10 lg:pb-6">
-        <div className="hero-section-grid flex w-full min-w-0 max-w-full flex-col gap-3 overflow-x-clip sm:gap-4 lg:grid lg:grid-cols-[1.02fr_0.98fr] lg:items-end lg:gap-14">
-          <div className="hero-content-col relative order-1 min-w-0 w-full max-w-full shrink-0 overflow-x-clip lg:order-2">
+      <MarketingContainer className="hero-section-main relative z-10 flex w-full min-w-0 flex-1 flex-col min-h-0 overflow-x-visible pt-2 pb-0 sm:pt-6 lg:overflow-visible lg:pt-10 lg:pb-6">
+        <div className="hero-section-grid flex w-full min-w-0 max-w-full flex-col gap-3 overflow-x-visible sm:gap-4 lg:grid lg:grid-cols-[1.02fr_0.98fr] lg:items-end lg:gap-14 lg:overflow-x-visible">
+          <div className="hero-content-col relative order-1 min-w-0 w-full max-w-full shrink-0 overflow-x-visible lg:order-2 lg:overflow-x-clip">
             <p className="hero-enter hero-enter-1 hero-badge-pulse mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-icvf-navy/70 sm:mb-4 sm:text-xs sm:tracking-[0.2em]">
               <span
                 className="size-1.5 shrink-0 rounded-full bg-icvf-accent motion-reduce:animate-none"
@@ -192,12 +171,12 @@ export function HeroSection() {
               <span className="hidden lg:inline">{t("hero.subtitle")}</span>
             </p>
 
-            <div className="lg:hidden">
+            <div className="lg:hidden overflow-x-visible">
               <HeroMobileProofStrip />
               <HeroMobileLearningChips />
             </div>
 
-            <HeroCtaButtons className="mt-5 lg:hidden" />
+            <MarketingSessionActionsWithAuth variant="hero" className="mt-5 lg:hidden" />
 
             <div className="hidden lg:block">
               <HeroIctTopicPills />
@@ -207,18 +186,21 @@ export function HeroSection() {
                 <HeroFounderRankBanner highlight={topHighlight} locale={locale} />
               ) : null}
 
-              <HeroCtaButtons />
+              <MarketingSessionActionsWithAuth variant="hero" />
               <HeroScrollIndicator pathname={pathname} />
             </div>
           </div>
 
           <div className="hero-founder-slot order-2 mt-2 w-full min-w-0 shrink-0 sm:mt-3 lg:order-1 lg:mt-0 lg:self-end">
-            <HeroFounderPhoto src={founderImage} />
+            <div className="hero-founder-stage">
+              <HeroFounderIslandMap />
+              <HeroFounderPhoto src={founderImage} />
+            </div>
           </div>
         </div>
       </MarketingContainer>
 
-      <div className="hero-trust-bar-wrap relative z-20 shrink-0 -mx-4 w-[calc(100%+2rem)] md:-mx-8 md:w-[calc(100%+4rem)] lg:mt-5">
+      <div className="hero-trust-bar-wrap relative z-20 w-full shrink-0 lg:mt-5">
         <HeroTrustBar />
       </div>
     </section>

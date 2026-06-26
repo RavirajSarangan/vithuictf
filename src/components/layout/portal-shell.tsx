@@ -8,7 +8,7 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 import { BRAND } from "@/lib/constants";
 import { useAuth } from "@/providers/auth-provider";
 import { NotificationCenter } from "@/components/layout/notification-center";
-import { CommandPalette } from "@/components/layout/command-palette";
+import { LazyCommandPalette } from "@/components/layout/lazy-command-palette";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -129,7 +129,7 @@ function PortalSidebar({
         <Button
           variant="outline"
           className="h-11 w-full justify-start rounded-xl border-white/20 bg-transparent text-white/85 hover:bg-white/10 hover:text-white"
-          onClick={() => signOut()}
+          onClick={() => void signOut("/")}
         >
           <LogOut className="size-4" />
           Sign out
@@ -215,7 +215,7 @@ export function PortalShell({ children, navItems, variant = "student", title }: 
               <h1 className="text-lg font-semibold text-icvf-navy">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-2">
-              <CommandPalette variant={variant} />
+              <LazyCommandPalette variant={variant} />
               <NotificationCenter />
               <ThemeToggle />
             </div>

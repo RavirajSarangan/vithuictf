@@ -15,6 +15,7 @@ export function createProgramMetadata(slug: string, locale: MarketingLocale): Me
     description: program.description[locale],
     path: program.path,
     locale,
+    keywords: program.keywords[locale],
   });
 }
 
@@ -36,12 +37,14 @@ export function ProgramPageView({ slug, locale }: { slug: string; locale: Market
           { name: "Programs", path: "/#programs" },
           { name: program.h1[locale], path: program.path },
         ]}
+        locale={locale}
       />
       <CourseJsonLd
         name={program.h1[locale]}
         description={program.description[locale]}
         path={program.path}
         educationalLevel={educationalLevel}
+        locale={locale}
       />
       <SeoContentPage
         locale={locale}

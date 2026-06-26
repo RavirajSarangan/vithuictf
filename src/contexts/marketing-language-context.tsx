@@ -1,16 +1,35 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
-import { LOCALE_COOKIE } from "@/lib/seo/locale";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
+import { usePathname } from "next/navigation";
+import {
+  LOCALE_COOKIE,
+  getMarketingLocaleFromPath,
+  parseMarketingLocale,
+} from "@/lib/seo/locale";
 
 export type MarketingLocale = "en" | "ta" | "si";
 
 const STORAGE_KEY = "icvf-marketing-locale";
 const LOCALE_CHANGE_EVENT = "icvf-locale-change";
 
+function readCookieLocale(): MarketingLocale | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
+  return match?.[1] ? parseMarketingLocale(match[1]) : null;
+}
+
 function getLocaleSnapshot(): MarketingLocale {
   const stored = localStorage.getItem(STORAGE_KEY);
-  return stored === "en" || stored === "ta" || stored === "si" ? stored : "en";
+  if (stored === "en" || stored === "ta" || stored === "si") return stored;
+  return readCookieLocale() ?? "en";
 }
 
 function subscribeLocale(onStoreChange: () => void) {
@@ -40,8 +59,15 @@ export function MarketingLanguageProvider({
   children: React.ReactNode;
   initialLocale?: MarketingLocale;
 }) {
+  const pathname = usePathname();
+  const pathLocale = getMarketingLocaleFromPath(pathname);
   const storedLocale = useSyncExternalStore(subscribeLocale, getLocaleSnapshot, () => initialLocale);
-  const locale = storedLocale || initialLocale;
+  const locale = pathLocale !== "en" ? pathLocale : storedLocale || initialLocale;
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, locale);
+    document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=31536000;SameSite=Lax`;
+  }, [locale]);
 
   const setLocale = useCallback((next: MarketingLocale) => {
     localStorage.setItem(STORAGE_KEY, next);

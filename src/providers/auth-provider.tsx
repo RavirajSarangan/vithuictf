@@ -23,16 +23,35 @@ interface AuthContextValue {
   signInAsStaff: (email: string, password: string) => Promise<User>;
   signInWithStudentId: (studentId: string, password: string) => Promise<User>;
   signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: (redirectTo?: string) => Promise<void>;
   signUp: (input: RegisterStudentInput) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+/**
+ * Guards against open-redirect: only allow navigation to a same-origin target.
+ * Returns a safe absolute URL string, or null if the target is off-origin/invalid.
+ */
+function resolveSameOriginTarget(target: string): string | null {
+  try {
+    const url = new URL(target, window.location.origin);
+    return url.origin === window.location.origin ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function AuthProvider({
+  children,
+  deferred = false,
+}: {
+  children: React.ReactNode;
+  deferred?: boolean;
+}) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!deferred);
 
   const loadProfile = useCallback(async () => {
     const supabase = createClient();
@@ -51,16 +70,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    const supabase = createClient();
 
-    void (async () => {
-      await loadProfile();
-      if (!cancelled) setLoading(false);
-    })();
+    const init = () => {
+      void (async () => {
+        await loadProfile();
+        if (!cancelled) setLoading(false);
+      })();
+    };
+
+    let idleId: number | undefined;
+    let timerId: number | undefined;
+
+    if (deferred) {
+      if (typeof window.requestIdleCallback === "function") {
+        idleId = window.requestIdleCallback(init, { timeout: 2500 });
+      } else {
+        timerId = window.setTimeout(init, 1500);
+      }
+    } else {
+      init();
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void loadProfile();
+    });
 
     return () => {
       cancelled = true;
+      if (idleId !== undefined) window.cancelIdleCallback(idleId);
+      if (timerId !== undefined) window.clearTimeout(timerId);
+      subscription.unsubscribe();
     };
-  }, [loadProfile]);
+  }, [deferred, loadProfile]);
 
   const signIn = useCallback(
     async (email: string, password: string): Promise<User> => {
@@ -106,17 +150,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(LOGIN_ERROR.INVALID_EMAIL);
       }
 
-      const user = await signIn(normalized, password);
-      if (user.role !== "admin") {
-        const supabase = createClient();
+      const supabase = createClient();
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: normalized,
+        password,
+      });
+      if (error) throw new Error(error.message);
+      if (!authData.user) throw new Error("Sign in failed");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (!profile) throw new Error("Profile not found");
+
+      const mapped = mapProfile(profile);
+      if (mapped.role !== "admin") {
         await supabase.auth.signOut();
         setUser(null);
         throw new Error(LOGIN_ERROR.STAFF_EMAIL_ONLY);
       }
 
-      return user;
+      setUser(mapped);
+      return mapped;
     },
-    [signIn]
+    []
   );
 
   const signInWithStudentId = useCallback(
@@ -175,10 +235,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     throw lastError ?? new Error("Sign in failed after registration");
   }, []);
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async (redirectTo?: string) => {
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
+    if (redirectTo) {
+      const safeTarget = resolveSameOriginTarget(redirectTo);
+      window.location.assign(safeTarget ?? "/");
+    }
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -207,6 +271,10 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
+}
+
+export function useOptionalAuth() {
+  return useContext(AuthContext);
 }
 
 export function getRoleRedirect(role: UserRole): string {

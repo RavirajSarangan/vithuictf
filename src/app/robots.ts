@@ -1,23 +1,54 @@
 import type { MetadataRoute } from "next";
-import { LOCATION_SLUGS, PROGRAM_PAGES } from "@/lib/seo/keywords";
 import { SITE_URL } from "@/lib/seo/site";
+
+const PUBLIC_ALLOW = [
+  "/",
+  "/programs/",
+  "/locations/",
+  "/network/",
+  "/about/",
+  "/rankings",
+  "/card/",
+  "/verify/",
+  "/ta/",
+  "/si/",
+  "/llms.txt",
+] as const;
+
+const PRIVATE_DISALLOW = [
+  "/admin",
+  "/dashboard",
+  "/parent",
+  "/onboarding",
+  "/settings",
+  "/api/",
+  "/coming-soon",
+  "/maintenance",
+] as const;
+
+const AI_CRAWLERS = [
+  "GPTBot",
+  "ChatGPT-User",
+  "Google-Extended",
+  "anthropic-ai",
+  "ClaudeBot",
+  "PerplexityBot",
+  "Applebot-Extended",
+  "cohere-ai",
+] as const;
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/programs/", "/locations/", "/network/", "/about/", "/rankings", "/card/", "/verify/"],
-        disallow: [
-          "/admin",
-          "/dashboard",
-          "/parent",
-          "/onboarding",
-          "/settings",
-          "/api/",
-          "/coming-soon",
-          "/maintenance",
-        ],
+        allow: [...PUBLIC_ALLOW],
+        disallow: [...PRIVATE_DISALLOW],
+      },
+      {
+        userAgent: [...AI_CRAWLERS],
+        allow: [...PUBLIC_ALLOW],
+        disallow: [...PRIVATE_DISALLOW],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

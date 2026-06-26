@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useCachedList } from "@/hooks/use-cached-list";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   mapClassProgram,

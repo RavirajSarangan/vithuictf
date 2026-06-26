@@ -43,13 +43,8 @@ interface AdminDashboardRevenueChartProps {
 
 export function AdminDashboardRevenueChart({ data }: AdminDashboardRevenueChartProps) {
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = React.useState("90d");
-
-  React.useEffect(() => {
-    if (isMobile) {
-      setTimeRange("7d");
-    }
-  }, [isMobile]);
+  const [userTimeRange, setUserTimeRange] = React.useState<string | null>(null);
+  const timeRange = userTimeRange ?? (isMobile ? "7d" : "90d");
 
   if (!data) {
     return <Skeleton className="h-[340px] rounded-xl" />;
@@ -88,7 +83,7 @@ export function AdminDashboardRevenueChart({ data }: AdminDashboardRevenueChartP
             multiple={false}
             value={timeRange ? [timeRange] : []}
             onValueChange={(value) => {
-              setTimeRange(value[0] ?? "90d");
+              setUserTimeRange(value[0] ?? "90d");
             }}
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
@@ -101,7 +96,7 @@ export function AdminDashboardRevenueChart({ data }: AdminDashboardRevenueChartP
             value={timeRange}
             onValueChange={(value) => {
               if (value !== null) {
-                setTimeRange(value);
+                setUserTimeRange(value);
               }
             }}
           >

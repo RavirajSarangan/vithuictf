@@ -1,17 +1,20 @@
 import { HeroSection } from "@/components/landing/hero-section";
 import { MarketingHomeSections } from "@/components/landing/marketing-home-sections";
 import { HomePageJsonLd } from "@/components/seo/json-ld";
+import { MarketingDataProvider } from "@/contexts/marketing-data-context";
+import type { MarketingLocale } from "@/contexts/marketing-language-context";
+import { localizedFaq } from "@/lib/seo/faq";
 import { getMarketingHomeData } from "@/lib/marketing-data";
 
-export default async function HomePage() {
+export default async function HomePage({ locale = "en" }: { locale?: MarketingLocale }) {
   const data = await getMarketingHomeData();
-  const faqsForSchema = data.faqs.map((f) => ({ question: f.question, answer: f.answer }));
+  const faqsForSchema = data.faqs.map((f) => localizedFaq(f, locale));
 
   return (
-    <>
-      <HomePageJsonLd faqs={faqsForSchema} />
+    <MarketingDataProvider data={data}>
+      <HomePageJsonLd faqs={faqsForSchema} locale={locale} />
       <HeroSection />
       <MarketingHomeSections />
-    </>
+    </MarketingDataProvider>
   );
 }

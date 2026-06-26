@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   addMarketingAnnouncement,
   deleteMarketingAnnouncement,
   updateMarketingAnnouncement,
   type MarketingAnnouncementInput,
 } from "@/lib/actions/admin";
+import { syncClientCachesAfterAdminSave } from "@/lib/client-cache-sync";
 import { useAdminMarketingAnnouncements } from "@/hooks/use-data";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { AdminTable } from "@/components/admin/admin-table";
@@ -159,6 +161,7 @@ function getAnnouncementStatus(announcement: MarketingAnnouncement): {
 }
 
 export function AdminAnnouncementsPanel() {
+  const router = useRouter();
   const { data, refresh } = useAdminMarketingAnnouncements();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -192,6 +195,8 @@ export function AdminAnnouncementsPanel() {
       }
       resetForm();
       refresh();
+      syncClientCachesAfterAdminSave();
+      router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save");
     } finally {
@@ -204,6 +209,8 @@ export function AdminAnnouncementsPanel() {
       await deleteMarketingAnnouncement(id);
       if (editingId === id) resetForm();
       refresh();
+      syncClientCachesAfterAdminSave();
+      router.refresh();
       toast.success("Announcement deleted");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to delete");

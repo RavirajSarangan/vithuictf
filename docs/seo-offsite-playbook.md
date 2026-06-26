@@ -24,10 +24,10 @@ Jaffna, Sri Lanka | ictf.lk | WhatsApp +94 77 459 1161
 
 | Platform | URL | Action |
 |----------|-----|--------|
-| Facebook | https://facebook.com/ictf.lk | Bio, category Education, link ictf.lk |
+| Facebook | https://www.facebook.com/profile.php?id=100069520722645 | Bio, category Education, link ictf.lk |
 | Instagram | https://instagram.com/ictf.lk | Bio, link in bio to /register |
-| YouTube | https://youtube.com/@ictf | Channel keywords: O/L ICT, A/L ICT, Sri Lanka |
-| LinkedIn | https://linkedin.com/company/ictf-institute | Company page + founder profile |
+| YouTube | https://www.youtube.com/@ictfinstitute | Channel keywords: O/L ICT, A/L ICT, Sri Lanka |
+| LinkedIn | https://www.linkedin.com/company/ictfofficial | Company page + founder profile |
 | Telegram | https://t.me/ictf_institute | Channel description with keywords |
 | WhatsApp | +94774591161 | Business profile with NAP |
 

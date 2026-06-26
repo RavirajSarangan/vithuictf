@@ -1,20 +1,50 @@
 import { generateText } from "ai";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { BRAND } from "@/lib/constants";
 import { getMockStudyAssistantResponse } from "@/lib/ai/mock-responses";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
-  const body = (await request.json()) as {
-    query?: string;
-    studentContext?: { displayName: string; courseName: string; grade: string };
-  };
+const chatBodySchema = z.object({
+  query: z.string().trim().min(1, "Query is required").max(2000, "Query is too long"),
+});
 
-  const query = body.query?.trim();
-  if (!query) {
-    return Response.json({ error: "Query is required" }, { status: 400 });
+// Best-effort per-user throttle. NOTE: in-memory state is per-instance only and
+// resets on cold start; durable rate limiting requires Upstash/Vercel KV.
+const RATE_LIMIT = { windowMs: 60_000, max: 20 };
+const recentRequests = new Map<string, number[]>();
+
+function isRateLimited(userId: string): boolean {
+  const now = Date.now();
+  const hits = (recentRequests.get(userId) ?? []).filter((t) => now - t < RATE_LIMIT.windowMs);
+  hits.push(now);
+  recentRequests.set(userId, hits);
+  return hits.length > RATE_LIMIT.max;
+}
+
+// Clip free-text fields before interpolating into the system prompt to limit the
+// blast radius of any unexpected content.
+function clip(value: string | null | undefined, max: number): string {
+  return (value ?? "").replace(/[\r\n]+/g, " ").slice(0, max).trim();
+}
+
+export async function POST(request: Request) {
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
+
+  const parsed = chatBodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid request" },
+      { status: 400 }
+    );
+  }
+  const { query } = parsed.data;
 
   const supabase = await createClient();
   const {
@@ -24,9 +54,24 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const ctx = body.studentContext;
+  if (isRateLimited(user.id)) {
+    return Response.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  // Derive student context server-side from the authenticated user instead of
+  // trusting client-supplied values (prevents prompt injection via the request body).
+  const { data: student } = await supabase
+    .from("students")
+    .select("display_name, course_name, grade")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const displayName = clip(student?.display_name, 100) || "Student";
+  const courseName = clip(student?.course_name, 100) || "ICT";
+  const grade = clip(student?.grade, 20) || "—";
+
   const system = `You are the ${BRAND.name} AI study assistant for ICT students in Sri Lanka.
-Be concise, encouraging, and syllabus-focused. Student: ${ctx?.displayName ?? "Student"}, course: ${ctx?.courseName ?? "ICT"}, grade: ${ctx?.grade ?? "—"}.`;
+Be concise, encouraging, and syllabus-focused. Student: ${displayName}, course: ${courseName}, grade: ${grade}.`;
 
   try {
     const { text } = await generateText({
@@ -38,9 +83,9 @@ Be concise, encouraging, and syllabus-focused. Student: ${ctx?.displayName ?? "S
   } catch {
     const fallback = getMockStudyAssistantResponse(query, {
       id: user.id,
-      displayName: ctx?.displayName ?? "Student",
-      courseName: ctx?.courseName ?? "ICT",
-      grade: ctx?.grade ?? "B",
+      displayName,
+      courseName,
+      grade,
       email: "",
       userId: user.id,
       studentId: "",

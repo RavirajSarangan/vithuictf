@@ -4,12 +4,12 @@ import { useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { PortalShell } from "@/components/layout/portal-shell";
 import { adminNav } from "@/lib/navigation";
-import { filterAdminNavForRole, getStaffPortalTitle, isAdminOnlyRoute } from "@/lib/admin-access";
+import { filterAdminNavForRole, getAdminPortalTitle, isAdminOnlyRoute } from "@/lib/admin-access";
 import { useAuth } from "@/providers/auth-provider";
 import { AuthLayoutProvider } from "@/providers/auth-layout-provider";
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -17,6 +17,10 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     () => filterAdminNavForRole(adminNav, user?.role),
     [user?.role]
   );
+
+  useEffect(() => {
+    void refreshUser();
+  }, [refreshUser]);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -30,7 +34,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <PortalShell navItems={navItems} variant="admin" title={getStaffPortalTitle(user?.role)}>
+    <PortalShell navItems={navItems} variant="admin" title={getAdminPortalTitle(user?.role)}>
       {children}
     </PortalShell>
   );

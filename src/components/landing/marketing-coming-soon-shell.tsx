@@ -5,7 +5,6 @@ import {
   CircleHelp,
   MapPin,
   Trophy,
-  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -18,8 +17,7 @@ type SectionKey =
   | "programs"
   | "results"
   | "centers"
-  | "faq"
-  | "register";
+  | "faq";
 
 const SECTION_CONFIG: ReadonlyArray<{
   key: SectionKey;
@@ -27,15 +25,13 @@ const SECTION_CONFIG: ReadonlyArray<{
     | "marketing.comingSoon.chipPrograms"
     | "marketing.comingSoon.chipResults"
     | "marketing.comingSoon.chipCenters"
-    | "marketing.comingSoon.chipFaq"
-    | "marketing.comingSoon.chipRegister";
+    | "marketing.comingSoon.chipFaq";
   icon: LucideIcon;
 }> = [
   { key: "programs", labelKey: "marketing.comingSoon.chipPrograms", icon: BookOpen },
   { key: "results", labelKey: "marketing.comingSoon.chipResults", icon: Trophy },
   { key: "centers", labelKey: "marketing.comingSoon.chipCenters", icon: MapPin },
   { key: "faq", labelKey: "marketing.comingSoon.chipFaq", icon: CircleHelp },
-  { key: "register", labelKey: "marketing.comingSoon.chipRegister", icon: UserPlus },
 ];
 
 function LiveStatusBadge() {

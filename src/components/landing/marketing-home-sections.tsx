@@ -2,10 +2,25 @@
 
 import dynamic from "next/dynamic";
 import { MarketingComingSoonShell } from "@/components/landing/marketing-coming-soon-shell";
+import { LazyWhenVisible } from "@/components/shared/lazy-when-visible";
 import { useMarketingData } from "@/contexts/marketing-data-context";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const sectionLoading = () => <Skeleton className="mx-auto mb-16 h-64 max-w-6xl rounded-2xl" />;
+
+function LazySection({
+  children,
+  minHeight = "16rem",
+}: {
+  children: React.ReactNode;
+  minHeight?: string;
+}) {
+  return (
+    <LazyWhenVisible fallback={sectionLoading()} minHeight={minHeight}>
+      {children}
+    </LazyWhenVisible>
+  );
+}
 
 const ResultsShowcaseSection = dynamic(
   () => import("@/components/landing/results-showcase-section").then((m) => m.ResultsShowcaseSection),
@@ -62,17 +77,39 @@ export function MarketingHomeSections() {
 
   return (
     <>
-      <ResultsShowcaseSection />
-      <IslandwidePresenceSection />
-      <ProgramsShowcaseSection />
-      <AboutInstituteSection />
-      <AboutFounderSection />
-      <LmsPlatformSection />
-      <PaperCenterNetworkSection />
-      <SuccessStories />
-      <FaqSection />
-      <StudentRegisterSection />
-      <ContactSection />
+      <LazySection>
+        <ResultsShowcaseSection />
+      </LazySection>
+      <LazySection>
+        <IslandwidePresenceSection />
+      </LazySection>
+      <LazySection>
+        <ProgramsShowcaseSection />
+      </LazySection>
+      <LazySection>
+        <AboutInstituteSection />
+      </LazySection>
+      <LazySection>
+        <AboutFounderSection />
+      </LazySection>
+      <LazySection>
+        <LmsPlatformSection />
+      </LazySection>
+      <LazySection>
+        <PaperCenterNetworkSection />
+      </LazySection>
+      <LazySection>
+        <SuccessStories />
+      </LazySection>
+      <LazySection>
+        <FaqSection />
+      </LazySection>
+      <LazySection minHeight="12rem">
+        <StudentRegisterSection />
+      </LazySection>
+      <LazySection minHeight="12rem">
+        <ContactSection />
+      </LazySection>
     </>
   );
 }

@@ -10,4 +10,6 @@ export const metadata: Metadata = buildPageMetadata({
   locale: "si",
 });
 
-export default HomePage;
+export default function SiHomePage() {
+  return <HomePage locale="si" />;
+}

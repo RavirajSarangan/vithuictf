@@ -14,7 +14,7 @@ export const MARKETING_LOCALE_PREFIX: Record<string, SeoLocale> = {
 export const FOUNDER = {
   name: "Vithoosan Sivanathan",
   jobTitle: "Founder & Lead ICT Educator",
-  imagePath: "/landing/vithoo.svg",
+  imagePath: "/landing/hero-founder.webp",
 } as const;
 
 export const ORG_GEO = {

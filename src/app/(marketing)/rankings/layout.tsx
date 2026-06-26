@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { RANKINGS_SEO } from "@/lib/seo/keywords";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "O/L & A/L ICT Exam Results | ICTF Rankings — Sri Lanka",
-  description:
-    "View ICTF student examination achievements — island ranks, district top tens, and A/B grades from O/L and A/L ICT exams across Sri Lanka.",
-  path: "/rankings",
+  title: RANKINGS_SEO.title.en,
+  description: RANKINGS_SEO.description.en,
+  path: RANKINGS_SEO.path,
+  keywords: RANKINGS_SEO.keywords.en,
 });
 
 export default function RankingsLayout({ children }: { children: React.ReactNode }) {

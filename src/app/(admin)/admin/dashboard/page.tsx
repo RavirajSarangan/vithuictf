@@ -2,11 +2,19 @@
 
 import dynamic from "next/dynamic";
 import { useAdminRevenueTrend, useAdminStats } from "@/hooks/use-data";
-import { AdminDashboardDataTable } from "@/components/admin/dashboard/data-table";
 import { AdminDashboardSectionCards } from "@/components/admin/dashboard/section-cards";
 import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import dashboardData from "@/components/admin/dashboard/data.json";
+
+const AdminDashboardDataTable = dynamic(
+  () =>
+    import("@/components/admin/dashboard/data-table").then((mod) => mod.AdminDashboardDataTable),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[420px] rounded-xl" />,
+  }
+);
 
 const AdminDashboardRevenueChart = dynamic(
   () =>

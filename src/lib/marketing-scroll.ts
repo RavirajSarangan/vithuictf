@@ -12,8 +12,20 @@ export function getMarketingHeaderOffset(): number {
   const header = document.querySelector<HTMLElement>("[data-marketing-header]");
   if (!header) return MARKETING_HEADER_OFFSET_FALLBACK;
 
+  // Full-screen mobile overlay must not inflate scroll padding (causes layout jank).
+  if (header.dataset.mobileOpen === "true") {
+    const stored = header.dataset.collapsedOffset;
+    if (stored) {
+      const parsed = Number.parseInt(stored, 10);
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+    return MARKETING_HEADER_OFFSET_FALLBACK;
+  }
+
   const rect = header.getBoundingClientRect();
-  return Math.ceil(rect.bottom) + MARKETING_HEADER_GAP_PX;
+  const offset = Math.ceil(rect.bottom) + MARKETING_HEADER_GAP_PX;
+  header.dataset.collapsedOffset = String(offset);
+  return offset;
 }
 
 export function applyMarketingScrollPadding() {

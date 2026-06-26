@@ -5,8 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ThemeColorMeta } from "@/components/layout/theme-color-meta";
 import { IcvfSiteCursorLazy } from "@/components/shared/icvf-site-cursor-lazy";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { DeferredAnalytics } from "@/components/shared/deferred-analytics";
 import { LegacyPwaDispose } from "@/components/shared/legacy-pwa-dispose";
 import { BRAND } from "@/lib/constants";
 import { rootMetadata } from "@/lib/seo/metadata";
@@ -16,13 +15,19 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+  preload: true,
+  adjustFontFallback: true,
 });
+
+const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+  : null;
 
 export const metadata: Metadata = {
   ...rootMetadata,
   title: {
     default: `${BRAND.name} — O/L & A/L ICT Institute Sri Lanka`,
-    template: `%s | ${BRAND.name}`,
+    template: "%s",
   },
   icons: {
     icon: [
@@ -50,14 +55,27 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} h-full`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `!function(){try{var e=localStorage.getItem("icvf-theme")||"light",t=document.documentElement,n=e;"system"===e&&(n=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"),"dark"===n?t.classList.add("dark"):t.classList.remove("dark")}catch(e){}}();`,
+          }}
+        />
+        {supabaseOrigin ? (
+          <>
+            <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={supabaseOrigin} />
+          </>
+        ) : null}
+        <link rel="dns-prefetch" href="https://vitals.vercel-insights.com" />
+      </head>
       <body className="min-h-dvh font-sans antialiased">
         <ThemeProvider>
           <ThemeColorMeta />
           <IcvfSiteCursorLazy />
           <TooltipProvider>
             {children}
-            <Analytics />
-            <SpeedInsights />
+            <DeferredAnalytics />
             <LegacyPwaDispose />
             <Toaster richColors position="top-right" />
           </TooltipProvider>

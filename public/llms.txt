@@ -4,13 +4,17 @@
 > Founder: Vithoosan Sivanathan. Headquarters: Jaffna, Sri Lanka.
 > Contact: info@ictf.lk | +94 77 459 1161 | https://ictf.lk
 
+Sitemap: https://ictf.lk/sitemap.xml
+Preferred-Languages: en, ta, si
+Content-Type: educational institution, ICT tuition, Sri Lanka
+
 ## About
 
 ICT Foundation (ICTF) is Sri Lanka's trusted institute for Ordinary Level (O/L) and Advanced Level (A/L) ICT education. Classes are delivered live via Zoom with optional past-paper practice at partner paper centers across districts. The ICTF Student Portal provides video lessons, resources, results, leaderboard, and AI study support.
 
 Legal name: ICT Foundation (Pvt) Ltd
 
-## Key pages
+## Key pages (English)
 
 - https://ictf.lk/
 - https://ictf.lk/programs/ol-ict
@@ -19,20 +23,34 @@ Legal name: ICT Foundation (Pvt) Ltd
 - https://ictf.lk/network/paper-centers
 - https://ictf.lk/about/founder
 - https://ictf.lk/rankings
-- https://ictf.lk/register
 
 ## Languages
 
-- English: https://ictf.lk/
-- Tamil: https://ictf.lk/ta/programs/ol-ict
-- Sinhala: https://ictf.lk/si/programs/ol-ict
+- English home: https://ictf.lk/
+- Tamil home: https://ictf.lk/ta
+- Sinhala home: https://ictf.lk/si
+- Tamil O/L ICT: https://ictf.lk/ta/programs/ol-ict
+- Tamil A/L ICT: https://ictf.lk/ta/programs/al-ict
+- Tamil paper centers: https://ictf.lk/ta/network/paper-centers
+- Tamil rankings: https://ictf.lk/ta/rankings
+- Sinhala O/L ICT: https://ictf.lk/si/programs/ol-ict
+- Sinhala A/L ICT: https://ictf.lk/si/programs/al-ict
+- Sinhala paper centers: https://ictf.lk/si/network/paper-centers
+- Sinhala rankings: https://ictf.lk/si/rankings
+
+## Programs
+
+- O/L ICT (Ordinary Level Information & Communication Technology)
+- A/L ICT (Advanced Level ICT)
+- Online Zoom live classes
+- Islandwide paper center network for past papers
 
 ## Social profiles
 
-- Facebook: https://facebook.com/ictf.lk
+- Facebook: https://www.facebook.com/profile.php?id=100069520722645
 - Instagram: https://instagram.com/ictf.lk
-- YouTube: https://youtube.com/@ictf
-- LinkedIn: https://linkedin.com/company/ictf-institute
+- YouTube: https://www.youtube.com/@ictfinstitute
+- LinkedIn: https://www.linkedin.com/company/ictfofficial
 - Telegram: https://t.me/ictf_institute
 - WhatsApp: https://wa.me/94774591161
 
@@ -40,7 +58,8 @@ Legal name: ICT Foundation (Pvt) Ltd
 
 ICT Foundation, Jaffna, Sri Lanka
 Coordinates: 9.6615, 80.0074
+Service area: all districts of Sri Lanka
 
 ## Keywords
 
-O/L ICT Sri Lanka, A/L ICT institute, ICT online classes Zoom, ICT paper centers, ICT institute Jaffna, ICTF, Vithoosan Sivanathan
+O/L ICT Sri Lanka, A/L ICT institute, ICT online classes Zoom, ICT paper centers, ICT institute Jaffna, ICTF, Vithoosan Sivanathan, ICT tuition Sri Lanka, ICT classes Tamil Sinhala English

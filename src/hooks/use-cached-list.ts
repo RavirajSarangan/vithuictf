@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const CACHE_TTL_MS = 60_000;
+const CACHE_TTL_MS = 30_000;
 
 type CacheEntry<T> = {
   data: T[];
@@ -79,4 +79,17 @@ export function useCachedList<T>(
 
 export function invalidateCachedList(cacheKey: string) {
   listCache.delete(cacheKey);
+}
+
+/** Drop every cached list whose key starts with `prefix` (e.g. `resources:`). */
+export function invalidateCachedListPrefix(prefix: string) {
+  for (const key of listCache.keys()) {
+    if (key.startsWith(prefix)) {
+      listCache.delete(key);
+    }
+  }
+}
+
+export function invalidateAllCachedLists() {
+  listCache.clear();
 }

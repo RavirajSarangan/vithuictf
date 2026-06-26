@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import {
   mapClassProgram,
@@ -101,7 +102,7 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
   };
 }
 
-export async function getMarketingHomeData(): Promise<MarketingHomeData> {
+async function getMarketingHomeDataUncached(): Promise<MarketingHomeData> {
   try {
     const result = await Promise.race([
       fetchMarketingHomeData(),
@@ -116,7 +117,14 @@ export async function getMarketingHomeData(): Promise<MarketingHomeData> {
   }
 }
 
+/** Dedupes parallel layout + page fetches within the same request. */
+export const getMarketingHomeData = cache(getMarketingHomeDataUncached);
+
 export async function getActiveMarketingAnnouncement(): Promise<MarketingAnnouncement | null> {
+  return getActiveMarketingAnnouncementCached();
+}
+
+const getActiveMarketingAnnouncementCached = cache(async (): Promise<MarketingAnnouncement | null> => {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -137,4 +145,4 @@ export async function getActiveMarketingAnnouncement(): Promise<MarketingAnnounc
     console.error("getActiveMarketingAnnouncement failed:", error);
     return null;
   }
-}
+});

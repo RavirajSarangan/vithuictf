@@ -1,19 +1,32 @@
 import { BRAND } from "@/lib/constants";
+import type { MarketingLocale } from "@/contexts/marketing-language-context";
+import { localizedPath } from "@/lib/seo/metadata";
 import { FOUNDER, ORG_GEO, SITE_URL, absoluteUrl, socialSameAs } from "@/lib/seo/site";
 
 type JsonLd = Record<string, unknown>;
 
+// JSON.stringify does not escape `</script>` or other HTML-significant characters,
+// so CMS-driven content (e.g. FAQ answers) could otherwise break out of the inline
+// script tag. Escaping `<`, `>` and `&` neutralizes that XSS vector while remaining
+// valid JSON-LD.
+function escapeJsonLd(json: string): string {
+  return json.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
+}
+
 function JsonLdScript({ data }: { data: JsonLd | JsonLd[] }) {
   const payload = Array.isArray(data) ? data : [data];
+  const json = JSON.stringify(payload.length === 1 ? payload[0] : payload);
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(payload.length === 1 ? payload[0] : payload) }}
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: escapeJsonLd(json) }}
     />
   );
 }
 
-export function OrganizationJsonLd() {
+export function OrganizationJsonLd({ locale = "en" }: { locale?: MarketingLocale }) {
+  const homeUrl = absoluteUrl(localizedPath("/", locale));
   const data: JsonLd = {
     "@context": "https://schema.org",
     "@type": ["EducationalOrganization", "Organization"],
@@ -21,7 +34,7 @@ export function OrganizationJsonLd() {
     name: BRAND.fullName,
     alternateName: BRAND.name,
     legalName: BRAND.legalName,
-    url: SITE_URL,
+    url: homeUrl,
     logo: absoluteUrl(BRAND.logo),
     description:
       "ICT Foundation (ICTF) delivers O/L and A/L ICT institute programs across Sri Lanka through Zoom online classes and an islandwide paper center network.",
@@ -35,7 +48,7 @@ export function OrganizationJsonLd() {
       addressCountry: "LK",
     },
     areaServed: { "@type": "Country", name: "Sri Lanka" },
-    founder: { "@id": `${SITE_URL}/about/founder#person` },
+    founder: { "@id": absoluteUrl(`${localizedPath("/about/founder", locale)}#person`) },
   };
   return <JsonLdScript data={data} />;
 }
@@ -44,20 +57,25 @@ export function LocalBusinessJsonLd({
   district,
   latitude,
   longitude,
+  locale = "en",
 }: {
   district?: string;
   latitude?: number;
   longitude?: number;
+  locale?: MarketingLocale;
 }) {
   const lat = latitude ?? ORG_GEO.latitude;
   const lon = longitude ?? ORG_GEO.longitude;
+  const locationPath = district ? localizedPath(`/locations/${district}`, locale) : localizedPath("/", locale);
   const data: JsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    "@id": district ? `${SITE_URL}/locations/${district}#localbusiness` : `${SITE_URL}/#localbusiness`,
+    "@id": district
+      ? `${absoluteUrl(locationPath)}#localbusiness`
+      : `${SITE_URL}/#localbusiness`,
     name: district ? `ICTF — ICT Institute ${district}` : `${BRAND.fullName} — Jaffna`,
     image: absoluteUrl(BRAND.logo),
-    url: district ? absoluteUrl(`/locations/${district}`) : SITE_URL,
+    url: absoluteUrl(locationPath),
     telephone: BRAND.contact.phone,
     email: BRAND.contact.email,
     address: {
@@ -72,28 +90,34 @@ export function LocalBusinessJsonLd({
   return <JsonLdScript data={data} />;
 }
 
-export function WebSiteJsonLd() {
+export function WebSiteJsonLd({ locale = "en" }: { locale?: MarketingLocale }) {
   const data: JsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": `${SITE_URL}/#website`,
-    url: SITE_URL,
+    url: absoluteUrl(localizedPath("/", locale)),
     name: BRAND.fullName,
+    alternateName: BRAND.name,
+    description:
+      "O/L and A/L ICT institute in Sri Lanka — live Zoom classes, paper centers islandwide, and student portal.",
     publisher: { "@id": `${SITE_URL}/#organization` },
     inLanguage: ["en-LK", "ta-LK", "si-LK"],
+    isAccessibleForFree: true,
+    about: { "@id": `${SITE_URL}/#organization` },
   };
   return <JsonLdScript data={data} />;
 }
 
-export function PersonJsonLd() {
+export function PersonJsonLd({ locale = "en" }: { locale?: MarketingLocale }) {
+  const founderPath = localizedPath("/about/founder", locale);
   const data: JsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",
-    "@id": `${SITE_URL}/about/founder#person`,
+    "@id": `${absoluteUrl(founderPath)}#person`,
     name: FOUNDER.name,
     jobTitle: FOUNDER.jobTitle,
     image: absoluteUrl(FOUNDER.imagePath),
-    url: absoluteUrl("/about/founder"),
+    url: absoluteUrl(founderPath),
     worksFor: { "@id": `${SITE_URL}/#organization` },
     knowsAbout: ["Information and Communication Technology", "O/L ICT", "A/L ICT", "Sri Lankan education"],
     nationality: { "@type": "Country", name: "Sri Lanka" },
@@ -120,18 +144,21 @@ export function CourseJsonLd({
   description,
   path,
   educationalLevel,
+  locale = "en",
 }: {
   name: string;
   description: string;
   path: string;
   educationalLevel: string;
+  locale?: MarketingLocale;
 }) {
+  const localizedCoursePath = localizedPath(path, locale);
   const data: JsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
     name,
     description,
-    url: absoluteUrl(path),
+    url: absoluteUrl(localizedCoursePath),
     provider: { "@id": `${SITE_URL}/#organization` },
     educationalLevel,
     inLanguage: ["en", "ta", "si"],
@@ -146,7 +173,13 @@ export function CourseJsonLd({
   return <JsonLdScript data={data} />;
 }
 
-export function BreadcrumbJsonLd({ items }: { items: { name: string; path: string }[] }) {
+export function BreadcrumbJsonLd({
+  items,
+  locale = "en",
+}: {
+  items: { name: string; path: string }[];
+  locale?: MarketingLocale;
+}) {
   const data: JsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -154,19 +187,25 @@ export function BreadcrumbJsonLd({ items }: { items: { name: string; path: strin
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: absoluteUrl(item.path),
+      item: absoluteUrl(localizedPath(item.path, locale)),
     })),
   };
   return <JsonLdScript data={data} />;
 }
 
-export function HomePageJsonLd({ faqs }: { faqs: { question: string; answer: string }[] }) {
+export function HomePageJsonLd({
+  faqs,
+  locale = "en",
+}: {
+  faqs: { question: string; answer: string }[];
+  locale?: MarketingLocale;
+}) {
   return (
     <>
-      <OrganizationJsonLd />
-      <LocalBusinessJsonLd />
-      <WebSiteJsonLd />
-      <PersonJsonLd />
+      <OrganizationJsonLd locale={locale} />
+      <LocalBusinessJsonLd locale={locale} />
+      <WebSiteJsonLd locale={locale} />
+      <PersonJsonLd locale={locale} />
       <FaqPageJsonLd faqs={faqs} />
     </>
   );

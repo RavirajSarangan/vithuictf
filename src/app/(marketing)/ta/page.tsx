@@ -10,4 +10,6 @@ export const metadata: Metadata = buildPageMetadata({
   locale: "ta",
 });
 
-export default HomePage;
+export default function TaHomePage() {
+  return <HomePage locale="ta" />;
+}

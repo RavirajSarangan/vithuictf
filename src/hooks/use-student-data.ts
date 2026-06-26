@@ -102,12 +102,12 @@ export function useAchievements(studentId?: string) {
 }
 
 
-export function useNotifications() {
+export function useNotifications({ enabled = true }: { enabled?: boolean } = {}) {
   const { user } = useAuth();
   const [data, setData] = useState<Notification[]>([]);
 
   const refresh = useCallback(() => {
-    if (!user) return;
+    if (!user || !enabled) return;
 
     const supabase = createClient();
     supabase
@@ -116,7 +116,7 @@ export function useNotifications() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data: rows }) => setData((rows ?? []).map(mapNotification)));
-  }, [user]);
+  }, [enabled, user]);
 
   useEffect(() => {
     refresh();

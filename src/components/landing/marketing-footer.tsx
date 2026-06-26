@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -9,14 +10,22 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 import { LanguageToggle } from "@/components/landing/language-toggle";
 import { SecurityComplianceBadges } from "@/components/shared/security-compliance-badges";
 import { MarketingFooterJaffnaStrip } from "@/components/landing/marketing-footer-jaffna-strip";
-import { FooterIctMarquee } from "@/components/landing/marketing-footer-ict-marquee";
-import { FooterTechDecor } from "@/components/landing/marketing-footer-tech-decor";
 import { socialIcons } from "@/components/shared/social-icons";
 import { resolveMarketingHref } from "@/lib/marketing-nav";
 import { handleMarketingSectionClick } from "@/lib/marketing-scroll";
 import { PORTAL_ACCESS } from "@/lib/portal-access";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { cn } from "@/lib/utils";
+
+const FooterTechDecor = dynamic(
+  () => import("@/components/landing/marketing-footer-tech-decor").then((m) => m.FooterTechDecor),
+  { ssr: false }
+);
+
+const FooterIctMarquee = dynamic(
+  () => import("@/components/landing/marketing-footer-ict-marquee").then((m) => m.FooterIctMarquee),
+  { ssr: false, loading: () => null }
+);
 
 const FOOTER_PORTAL_COMING_SOON = {
   "Parent Portal": {
@@ -75,7 +84,7 @@ function FooterColumnTitle({ children }: { children: React.ReactNode }) {
       </h4>
       <motion.span
         className="mt-2.5 block h-0.5 rounded-full bg-gradient-to-r from-icvf-accent to-icvf-accent/20"
-        initial={reduceMotion ? false : { width: 0, opacity: 0 }}
+        initial={false}
         whileInView={{ width: 36, opacity: 1 }}
         viewport={{ once: true, amount: 0.5 }}
         transition={{ duration: 0.5, ease: EASE }}
@@ -180,8 +189,8 @@ export function MarketingFooter() {
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:py-20">
         <motion.div
           className="grid gap-10 md:grid-cols-2 lg:grid-cols-4"
-          initial={reduceMotion ? false : "hidden"}
-          whileInView="visible"
+          initial={false}
+          whileInView={reduceMotion ? undefined : "visible"}
           viewport={{ once: true, amount: 0.08 }}
           variants={stagger}
         >
@@ -191,8 +200,8 @@ export function MarketingFooter() {
           >
             <motion.div
               className="self-start"
-              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={false}
+              whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, ease: EASE }}
             >
@@ -216,8 +225,8 @@ export function MarketingFooter() {
             <motion.div
               className="mt-5 w-full space-y-2.5"
               variants={stagger}
-              initial={reduceMotion ? false : "hidden"}
-              whileInView="visible"
+              initial={false}
+              whileInView={reduceMotion ? undefined : "visible"}
               viewport={{ once: true, amount: 0.2 }}
             >
               <motion.div variants={fadeUp}>
@@ -248,8 +257,8 @@ export function MarketingFooter() {
             <motion.div
               className="mt-5 flex flex-wrap items-center gap-2"
               variants={stagger}
-              initial={reduceMotion ? false : "hidden"}
-              whileInView="visible"
+              initial={false}
+              whileInView={reduceMotion ? undefined : "visible"}
               viewport={{ once: true, amount: 0.3 }}
             >
               {SOCIAL_LINKS.map(([name, url]) => {
@@ -283,8 +292,8 @@ export function MarketingFooter() {
               <motion.ul
                 className="mt-4 space-y-2.5"
                 variants={stagger}
-                initial={reduceMotion ? false : "hidden"}
-                whileInView="visible"
+                initial={false}
+                whileInView={reduceMotion ? undefined : "visible"}
                 viewport={{ once: true, amount: 0.15 }}
               >
                 {column.links.map((link) => (
@@ -301,8 +310,8 @@ export function MarketingFooter() {
             <motion.ul
               className="mt-4 space-y-2.5"
               variants={stagger}
-              initial={reduceMotion ? false : "hidden"}
-              whileInView="visible"
+              initial={false}
+              whileInView={reduceMotion ? undefined : "visible"}
               viewport={{ once: true, amount: 0.15 }}
             >
               {BRAND.footerLinks.portal.map((link) => {
@@ -342,12 +351,10 @@ export function MarketingFooter() {
           </motion.div>
         </motion.div>
 
-        <FooterIctMarquee />
-
         <motion.div
           className="mt-10"
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={false}
+          whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.45, ease: EASE }}
         >
@@ -355,20 +362,25 @@ export function MarketingFooter() {
         </motion.div>
 
         <motion.div
-          className="mt-10 flex flex-col items-center gap-3 border-t border-white/10 pt-8 md:flex-row md:justify-between"
-          initial={reduceMotion ? false : { opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          className="mt-10 grid grid-cols-1 gap-3 border-t border-white/10 pt-8 md:grid-cols-3 md:items-center"
+          initial={false}
+          whileInView={reduceMotion ? undefined : { opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4, delay: 0.08 }}
         >
           <p className="text-center text-sm text-white/40 md:text-left">
             &copy; {new Date().getFullYear()} {BRAND.legalName}. All rights reserved.
           </p>
-          <div className="flex items-center gap-4">
+          <p className="text-center text-xs tracking-wide text-white/35">
+            {t("footer.builtBy")}
+          </p>
+          <div className="flex items-center justify-center gap-4 md:justify-end">
             <LanguageToggle />
           </div>
         </motion.div>
       </div>
+
+      <FooterIctMarquee />
 
       <MarketingFooterJaffnaStrip />
     </footer>

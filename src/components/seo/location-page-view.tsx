@@ -91,8 +91,14 @@ export async function LocationPageView({
           { name: "Locations", path: "/network/paper-centers" },
           { name: formatDistrictName(slug), path: seo.path },
         ]}
+        locale={locale}
       />
-      <LocalBusinessJsonLd district={slug} latitude={coords?.lat} longitude={coords?.lon} />
+      <LocalBusinessJsonLd
+        district={slug}
+        latitude={coords?.lat}
+        longitude={coords?.lon}
+        locale={locale}
+      />
       <SeoContentPage
         locale={locale}
         h1={seo.h1[locale]}
