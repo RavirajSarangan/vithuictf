@@ -32,34 +32,34 @@ export function AdminAnalyticsCharts({
 }: AdminAnalyticsChartsProps) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <GlassCard className="border-white/10 bg-white/5">
-        <h3 className="mb-4 font-semibold text-white">Enrollment by Course</h3>
+      <GlassCard>
+        <h3 className="mb-4 font-semibold text-icvf-navy">Enrollment by Course</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={enrollmentData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-            <XAxis dataKey="name" tick={{ fill: "#fff", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#fff" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#64748b" }} />
             <Tooltip />
             <Bar dataKey="students" fill="#F5A623" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </GlassCard>
 
-      <GlassCard className="border-white/10 bg-white/5">
-        <h3 className="mb-4 font-semibold text-white">Revenue Trend</h3>
+      <GlassCard>
+        <h3 className="mb-4 font-semibold text-icvf-navy">Revenue Trend</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={revenueData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-            <XAxis dataKey="month" tick={{ fill: "#fff" }} />
-            <YAxis tick={{ fill: "#fff" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="month" tick={{ fill: "#64748b" }} />
+            <YAxis tick={{ fill: "#64748b" }} />
             <Tooltip />
-            <Line type="monotone" dataKey="revenue" stroke="#F5A623" strokeWidth={2} />
+            <Line type="monotone" dataKey="revenue" stroke="#273461" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </GlassCard>
 
-      <GlassCard className="border-white/10 bg-white/5 lg:col-span-2">
-        <h3 className="mb-4 font-semibold text-white">Payment Status Distribution</h3>
+      <GlassCard className="lg:col-span-2">
+        <h3 className="mb-4 font-semibold text-icvf-navy">Payment Status Distribution</h3>
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie

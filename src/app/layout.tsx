@@ -21,12 +21,16 @@ const inter = Inter({
 export const metadata: Metadata = {
   ...rootMetadata,
   title: {
-    default: `${BRAND.name} — O/L & A/L ICT Tuition Sri Lanka`,
+    default: `${BRAND.name} — O/L & A/L ICT Institute Sri Lanka`,
     template: `%s | ${BRAND.name}`,
   },
   icons: {
-    icon: [{ url: BRAND.favicon, type: "image/png" }],
-    apple: BRAND.favicon,
+    icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "512x512" },
+      { url: BRAND.logoMark, type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "512x512" }],
+    shortcut: ["/favicon.png"],
   },
   verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
     ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }

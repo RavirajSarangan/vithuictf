@@ -299,6 +299,35 @@ export interface HomeAbout {
   ctaUrl: string;
 }
 
+export type MarketingAnnouncementContentType =
+  | "image_only"
+  | "text_only"
+  | "text_image"
+  | "text_image_link";
+
+export type MarketingAnnouncementDisplayStyle =
+  | "minimal"
+  | "card"
+  | "image_hero"
+  | "promo";
+
+export interface MarketingAnnouncement {
+  id: string;
+  title: string;
+  body: string;
+  imageUrl: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  contentType: MarketingAnnouncementContentType;
+  displayStyle: MarketingAnnouncementDisplayStyle;
+  startsAt: string | null;
+  endsAt: string | null;
+  priority: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SiteStats {
   students: number;
   courses: number;
@@ -311,11 +340,22 @@ export interface SiteStats {
 
 export type SitePublicMode = "live" | "coming_soon" | "maintenance";
 
+export interface BrandLogoSettings {
+  nav: { widthRem: number; scale: number; scaleSm: number };
+  footer: {
+    widthRem: number;
+    heightRem: number;
+    widthRemSm: number;
+    heightRemSm: number;
+  };
+}
+
 export interface PlatformSettings {
   onlinePaymentsEnabled: boolean;
-  defaultTuitionLkr: number;
+  defaultInstituteFeeLkr: number;
   marketingComingSoonEnabled: boolean;
   sitePublicMode: SitePublicMode;
+  brandLogo: BrandLogoSettings;
   updatedAt: string;
 }
 

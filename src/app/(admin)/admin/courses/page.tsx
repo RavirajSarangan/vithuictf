@@ -142,7 +142,7 @@ export default function AdminCoursesPage() {
         title="Courses"
         description="Manage the official ICT program catalog"
         action={
-          <Button className="bg-icvf-accent hover:bg-icvf-accent-hover" onClick={openCreate}>
+          <Button  onClick={openCreate}>
             <Plus className="mr-2 size-4" /> Add Course
           </Button>
         }
@@ -154,11 +154,11 @@ export default function AdminCoursesPage() {
           title="No courses yet"
           description="Add your first ICT program"
           action={
-            <Button className="bg-icvf-accent" onClick={openCreate}>
+            <Button  onClick={openCreate}>
               <Plus className="mr-2 size-4" /> Add Course
             </Button>
           }
-          className="border-white/10 bg-white/5 text-white"
+          
         />
       ) : (
         <AdminTable
@@ -168,7 +168,7 @@ export default function AdminCoursesPage() {
               key: "category",
               label: "Category",
               render: (row) => (
-                <Badge variant="outline" className="border-white/20 text-white/90">
+                <Badge variant="outline" >
                   {row.category ?? "—"}
                 </Badge>
               ),
@@ -278,7 +278,7 @@ export default function AdminCoursesPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="bg-icvf-accent" disabled={submitting}>
+              <Button type="submit"  disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" /> Saving...

@@ -14,6 +14,7 @@ import {
 } from "@/lib/validation/register-student";
 import type { UserRole } from "@/types";
 import { BRAND } from "@/lib/constants";
+import { LOGIN_ERROR } from "@/lib/auth/login-errors";
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -462,7 +463,7 @@ export async function resolveStudentLoginEmail(studentId: string): Promise<strin
 
   const normalized = normalizeStudentLoginId(studentId);
   if (!normalized || normalized === `${BRAND.studentIdPrefix}-` || normalized === "ICVF-") {
-    throw new Error("Invalid Student ID or password");
+    throw new Error(LOGIN_ERROR.STUDENT_ID_INVALID);
   }
 
   const admin = createAdminClient();
@@ -473,7 +474,7 @@ export async function resolveStudentLoginEmail(studentId: string): Promise<strin
     .maybeSingle();
 
   if (error || !data?.email) {
-    throw new Error("Invalid Student ID or password");
+    throw new Error(LOGIN_ERROR.STUDENT_ID_NOT_FOUND);
   }
 
   return data.email.trim().toLowerCase();

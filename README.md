@@ -238,7 +238,9 @@ NEXT_PUBLIC_SITE_URL=https://ictf.lk
 NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=...
 SITE_PUBLIC_MODE=live                  # skip DB gate fetch in middleware
 
-# Resend — transactional email
+# Resend — transactional email (verify ictf.lk in Resend dashboard first)
+# DNS setup (LankaHost): docs/resend-dns-lankahost.md
+# Check / verify: npm run email:verify-domain
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL="ICT Foundation <noreply@ictf.lk>"
 CONTACT_INBOX_EMAIL=info@ictf.lk

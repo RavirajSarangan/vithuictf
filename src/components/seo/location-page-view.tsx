@@ -36,7 +36,7 @@ function buildLocationContent(slug: LocationSlug, locale: MarketingLocale): Prog
         paragraphs: [centersNote],
         bullets:
           locale === "en"
-            ? ["O/L ICT classes", "A/L ICT tuition", "Online Zoom delivery", "Register at ictf.lk"]
+            ? ["O/L ICT classes", "A/L ICT institute", "Online Zoom delivery", "Register at ictf.lk"]
             : undefined,
       },
       {

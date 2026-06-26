@@ -7,12 +7,12 @@ interface NavBrandProps {
   className?: string;
 }
 
-/** Compact light mark on the dark marketing header. */
+/** Light wordmark on the black marketing header. */
 export function NavBrand({ className }: NavBrandProps) {
   return (
     <Link
       href="/"
-      className={cn("flex shrink-0 items-center", className)}
+      className={cn("marketing-nav-brand flex shrink-0 items-center", className)}
       aria-label={BRAND.name}
     >
       <BrandLogo size="nav" light priority />

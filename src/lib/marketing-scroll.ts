@@ -1,6 +1,7 @@
 /** Shared scroll helpers for the marketing homepage. */
 
 const MARKETING_HEADER_OFFSET_FALLBACK = 72;
+const MARKETING_HEADER_GAP_PX = 8;
 const HASH_SCROLL_MAX_ATTEMPTS = 24;
 const HASH_SCROLL_RETRY_MS = 100;
 
@@ -11,7 +12,8 @@ export function getMarketingHeaderOffset(): number {
   const header = document.querySelector<HTMLElement>("[data-marketing-header]");
   if (!header) return MARKETING_HEADER_OFFSET_FALLBACK;
 
-  return Math.ceil(header.getBoundingClientRect().height) + 12;
+  const rect = header.getBoundingClientRect();
+  return Math.ceil(rect.bottom) + MARKETING_HEADER_GAP_PX;
 }
 
 export function applyMarketingScrollPadding() {

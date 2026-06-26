@@ -15,7 +15,7 @@ export interface ProgramContent {
 const OL_ICT: Record<MarketingLocale, ProgramContent> = {
   en: {
     intro:
-      "ICT Foundation (ICTF) provides comprehensive O/L ICT classes for Grade 10 and Grade 11 students across Sri Lanka. Our program combines live Zoom tuition, structured lesson paths, past paper practice at islandwide paper centers, and 24/7 access to the ICTF Student Portal.",
+      "ICT Foundation (ICTF) provides comprehensive O/L ICT classes for Grade 10 and Grade 11 students across Sri Lanka. Our program combines live Zoom classes, structured lesson paths, past paper practice at islandwide paper centers, and 24/7 access to the ICTF Student Portal.",
     sections: [
       {
         heading: "Why choose ICTF for O/L ICT?",
@@ -42,7 +42,7 @@ const OL_ICT: Record<MarketingLocale, ProgramContent> = {
   },
   ta: {
     intro:
-      "ICT அடித்தளம் (ICTF) இலங்கை முழுவதும் தரம் 10 மற்றும் தரம் 11 மாணவர்களுக்கு விரிவான O/L ICT வகுப்புகளை வழங்குகிறது. நேரடி Zoom பயிற்சி, கட்டமைக்கப்பட்ட பாடங்கள், பேப்பர் மைய பயிற்சி மற்றும் ICTF மாணவர் தளம் ஆகியவை இணைந்துள்ளன.",
+      "ICT அடித்தளம் (ICTF) இலங்கை முழுவதும் தரம் 10 மற்றும் தரம் 11 மாணவர்களுக்கு விரிவான O/L ICT வகுப்புகளை வழங்குகிறது. நேரடி Zoom வகுப்புகள், கட்டமைக்கப்பட்ட பாடங்கள், பேப்பர் மைய பயிற்சி மற்றும் ICTF மாணவர் தளம் ஆகியவை இணைந்துள்ளன.",
     sections: [
       {
         heading: "O/L ICT-க்கு ICTF ஏன்?",
@@ -65,7 +65,7 @@ const OL_ICT: Record<MarketingLocale, ProgramContent> = {
   },
   si: {
     intro:
-      "ICT Foundation (ICTF) ශ්‍රී ලංකාව පුරා 10 සහ 11 ශ්‍රේණි ශිෂ්‍යයින්ට සම්පූර්ණ O/L ICT පන්ති ලබා දෙයි. සජීවී Zoom ටියුෂන්, ව්‍යුහගත පාඩම්, දිවයින පුරා ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන සහ ICTF ශිෂ්‍ය ද්වාරය ඇතුළත් වේ.",
+      "ICT Foundation (ICTF) ශ්‍රී ලංකාව පුරා 10 සහ 11 ශ්‍රේණි ශිෂ්‍යයින්ට සම්පූර්ණ O/L ICT පන්ති ලබා දෙයි. සජීවී Zoom පන්ති, ව්‍යුහගත පාඩම්, දිවයින පුරා ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන සහ ICTF ශිෂ්‍ය ද්වාරය ඇතුළත් වේ.",
     sections: [
       {
         heading: "O/L ICT සඳහා ICTF තෝරන්නේ ඇයි?",
@@ -91,7 +91,7 @@ const OL_ICT: Record<MarketingLocale, ProgramContent> = {
 const AL_ICT: Record<MarketingLocale, ProgramContent> = {
   en: {
     intro:
-      "ICTF delivers advanced A/L ICT tuition for Sri Lankan students preparing for the Advanced Level examination. Our A/L program includes intensive revision, past paper workshops, Zoom masterclasses, and full access to the ICTF Student Portal with AI study support.",
+      "ICTF delivers advanced A/L ICT institute programs for Sri Lankan students preparing for the Advanced Level examination. Our A/L program includes intensive revision, past paper workshops, Zoom masterclasses, and full access to the ICTF Student Portal with AI study support.",
     sections: [
       {
         heading: "A/L ICT program highlights",
@@ -113,11 +113,11 @@ const AL_ICT: Record<MarketingLocale, ProgramContent> = {
         ],
       },
     ],
-    cta: "Register for A/L ICT tuition",
+    cta: "Register for A/L ICT institute programs",
   },
   ta: {
     intro:
-      "ICTF உயர் தர ICT பயிற்சியை வழங்குகிறது — மறுபரிசீலனை, கடந்த கால வினாத்தாள் பயிற்சி, Zoom வகுப்புகள் மற்றும் AI படிப்பு உதவியுடன் KCTF மாணவர் தளம்.",
+      "ICTF உயர் தர ICT நிறுவனத்தை வழங்குகிறது — மறுபரிசீலனை, கடந்த கால வினாத்தாள் பயிற்சி, Zoom வகுப்புகள் மற்றும் AI படிப்பு உதவியுடன் ICTF மாணவர் தளம்.",
     sections: [
       {
         heading: "A/L ICT நிரல் சிறப்புகள்",
@@ -129,11 +129,11 @@ const AL_ICT: Record<MarketingLocale, ProgramContent> = {
         paragraphs: ["ictf.lk/rankings-ல் தேர்வு சாதனைகளைப் பாருங்கள்."],
       },
     ],
-    cta: "A/L ICT பயிற்சிக்குப் பதிவு செய்யுங்கள்",
+    cta: "A/L ICT நிறுவனத்திற்குப் பதிவு செய்யுங்கள்",
   },
   si: {
     intro:
-      "ICTF උසස් පෙළ ICT ටියුෂන් ලබා දෙයි — නැවත පුහුණු, පසුගිය විභාග ප්‍රශ්න පත්‍ර, Zoom පන්ති සහ AI අධ්‍යයන සහාය සහිත ICTF ශිෂ්‍ය ද්වාරය.",
+      "ICTF උසස් පෙළ ICT ආයතන වැඩසටහන් ලබා දෙයි — නැවත පුහුණු, පසුගිය විභාග ප්‍රශ්න පත්‍ර, Zoom පන්ති සහ AI අධ්‍යයන සහාය සහිත ICTF ශිෂ්‍ය ද්වාරය.",
     sections: [
       {
         heading: "A/L ICT වැඩසටහන",
@@ -145,14 +145,14 @@ const AL_ICT: Record<MarketingLocale, ProgramContent> = {
         paragraphs: ["ictf.lk/rankings හි විභාග සාර්ථකත්වය බලන්න."],
       },
     ],
-    cta: "A/L ICT ටියුෂන් සඳහා ලියාපදිංචි වන්න",
+    cta: "A/L ICT ආයතන වැඩසටහන් සඳහා ලියාපදිංචි වන්න",
   },
 };
 
 const ONLINE_ZOOM: Record<MarketingLocale, ProgramContent> = {
   en: {
     intro:
-      "Study O/L and A/L ICT from anywhere in Sri Lanka with ICTF online Zoom classes. Our islandwide tuition connects students in every district to expert faculty, live sessions, class recordings, and digital study materials through the ICTF Student Portal.",
+      "Study O/L and A/L ICT from anywhere in Sri Lanka with ICTF online Zoom classes. Our islandwide institute connects students in every district to expert faculty, live sessions, class recordings, and digital study materials through the ICTF Student Portal.",
     sections: [
       {
         heading: "How online ICT classes work",

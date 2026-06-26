@@ -24,7 +24,7 @@ export function OrganizationJsonLd() {
     url: SITE_URL,
     logo: absoluteUrl(BRAND.logo),
     description:
-      "ICT Foundation (ICTF) delivers O/L and A/L ICT tuition across Sri Lanka through Zoom online classes and an islandwide paper center network.",
+      "ICT Foundation (ICTF) delivers O/L and A/L ICT institute programs across Sri Lanka through Zoom online classes and an islandwide paper center network.",
     email: BRAND.contact.email,
     telephone: BRAND.contact.phone,
     sameAs: socialSameAs(),
@@ -55,7 +55,7 @@ export function LocalBusinessJsonLd({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "@id": district ? `${SITE_URL}/locations/${district}#localbusiness` : `${SITE_URL}/#localbusiness`,
-    name: district ? `ICTF — ICT Tuition ${district}` : `${BRAND.fullName} — Jaffna`,
+    name: district ? `ICTF — ICT Institute ${district}` : `${BRAND.fullName} — Jaffna`,
     image: absoluteUrl(BRAND.logo),
     url: district ? absoluteUrl(`/locations/${district}`) : SITE_URL,
     telephone: BRAND.contact.phone,

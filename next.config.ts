@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
   images: supabaseUrl
     ? {
         formats: ["image/avif", "image/webp"],
+        qualities: [75, 90],
         remotePatterns: [
           {
             protocol: "https",
@@ -30,6 +31,7 @@ const nextConfig: NextConfig = {
       }
     : {
         formats: ["image/avif", "image/webp"],
+        qualities: [75, 90],
       },
   async headers() {
     return [

@@ -83,7 +83,7 @@ export default function AdminResultsPage() {
         title="Results"
         description="Record and manage student exam results"
         action={
-          <Button className="bg-icvf-accent hover:bg-icvf-accent-hover" onClick={() => setOpen(true)}>
+          <Button  onClick={() => setOpen(true)}>
             <Plus className="mr-2 size-4" /> Add Result
           </Button>
         }
@@ -95,11 +95,11 @@ export default function AdminResultsPage() {
           title="No results yet"
           description="Add exam results for your students"
           action={
-            <Button className="bg-icvf-accent" onClick={() => setOpen(true)}>
+            <Button  onClick={() => setOpen(true)}>
               <Plus className="mr-2 size-4" /> Add Result
             </Button>
           }
-          className="border-white/10 bg-white/5 text-white"
+          
         />
       ) : (
         <AdminTable
@@ -244,7 +244,7 @@ export default function AdminResultsPage() {
                   )}
                 />
               </div>
-              <Button type="submit" className="bg-icvf-accent" disabled={submitting}>
+              <Button type="submit"  disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" /> Saving...

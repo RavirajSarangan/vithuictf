@@ -6,6 +6,7 @@ import {
   mapFaq,
   mapFeaturedRanking,
   mapHomeAbout,
+  mapMarketingAnnouncement,
   mapNetworkStats,
   mapPaperCenter,
   mapSiteStats,
@@ -18,6 +19,7 @@ import type {
   FAQ,
   FeaturedRanking,
   HomeAbout,
+  MarketingAnnouncement,
   NetworkStats,
   PaperCenter,
   SiteStats,
@@ -111,5 +113,28 @@ export async function getMarketingHomeData(): Promise<MarketingHomeData> {
   } catch (error) {
     console.error("getMarketingHomeData failed:", error);
     return EMPTY_MARKETING_HOME_DATA;
+  }
+}
+
+export async function getActiveMarketingAnnouncement(): Promise<MarketingAnnouncement | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("marketing_announcements")
+      .select("*")
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("getActiveMarketingAnnouncement failed:", error.message);
+      return null;
+    }
+
+    return data ? mapMarketingAnnouncement(data) : null;
+  } catch (error) {
+    console.error("getActiveMarketingAnnouncement failed:", error);
+    return null;
   }
 }

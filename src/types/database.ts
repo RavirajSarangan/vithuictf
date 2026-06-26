@@ -465,6 +465,57 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_announcements: {
+        Row: {
+          body: string
+          content_type: string
+          created_at: string
+          cta_label: string
+          cta_url: string
+          display_style: string
+          ends_at: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          priority: number
+          starts_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          content_type?: string
+          created_at?: string
+          cta_label?: string
+          cta_url?: string
+          display_style?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          priority?: number
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          content_type?: string
+          created_at?: string
+          cta_label?: string
+          cta_url?: string
+          display_style?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          priority?: number
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       home_about: {
         Row: {
           bio: string

@@ -26,6 +26,8 @@ import {
 import { AdminTable } from "@/components/admin/admin-table";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { AdminMarketingVisibilityPanel } from "@/components/admin/admin-marketing-visibility-panel";
+import { AdminBrandLogoPanel } from "@/components/admin/admin-brand-logo-panel";
+import { AdminAnnouncementsPanel } from "@/components/admin/admin-announcements-panel";
 import { AdminEmailTestPanel } from "@/components/admin/admin-email-test-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +66,8 @@ export default function AdminHomePage() {
     <Tabs defaultValue="visibility" className="flex flex-col gap-4">
       <TabsList className="flex flex-wrap">
         <TabsTrigger value="visibility">Visibility</TabsTrigger>
+        <TabsTrigger value="branding">Branding</TabsTrigger>
+        <TabsTrigger value="announcements">Announcements</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
         <TabsTrigger value="stats">Site Stats</TabsTrigger>
         <TabsTrigger value="network">Network</TabsTrigger>
@@ -75,6 +79,12 @@ export default function AdminHomePage() {
       </TabsList>
       <TabsContent value="visibility">
         <AdminMarketingVisibilityPanel />
+      </TabsContent>
+      <TabsContent value="branding">
+        <AdminBrandLogoPanel />
+      </TabsContent>
+      <TabsContent value="announcements">
+        <AdminAnnouncementsPanel />
       </TabsContent>
       <TabsContent value="email">
         <AdminEmailTestPanel />
@@ -94,7 +104,7 @@ export default function AdminHomePage() {
             )
           )}
         <Button
-          className="w-fit bg-icvf-accent"
+          className="w-fit"
           onClick={async () => {
             if (!stats) return;
             const data = { ...stats, ...siteForm };
@@ -130,7 +140,7 @@ export default function AdminHomePage() {
               )
             )}
             <Button
-              className="w-fit bg-icvf-accent"
+              className="w-fit"
               onClick={async () => {
                 if (!network) return;
                 const data = { ...network, ...networkForm };
@@ -186,7 +196,7 @@ export default function AdminHomePage() {
               </div>
             ))}
             <Button
-              className="w-fit bg-icvf-accent"
+              className="w-fit"
               onClick={async () => {
                 if (!about) return;
                 const data = { ...about, ...aboutForm };
@@ -202,7 +212,7 @@ export default function AdminHomePage() {
       <TabsContent value="companies">
         <div className="mb-4 flex justify-end">
           <Button
-            className="bg-icvf-accent"
+            
             onClick={() =>
               crud(
                 () => addCompany({ name: "New Company", location: "", description: "" }),
@@ -227,7 +237,7 @@ export default function AdminHomePage() {
       <TabsContent value="programs">
         <div className="mb-4 flex justify-end">
           <Button
-            className="bg-icvf-accent"
+            
             onClick={() =>
               crud(
                 () => addClassProgram({ title: "New Program", description: "" }),
@@ -252,7 +262,7 @@ export default function AdminHomePage() {
       <TabsContent value="centers">
         <div className="mb-4 flex justify-end">
           <Button
-            className="bg-icvf-accent"
+            
             onClick={() =>
               crud(
                 () => addPaperCenter({ name: "New Center", district: "", address: "" }),
@@ -277,7 +287,7 @@ export default function AdminHomePage() {
       <TabsContent value="rankings">
         <div className="mb-4 flex justify-end">
           <Button
-            className="bg-icvf-accent"
+            
             onClick={() =>
               crud(
                 () =>

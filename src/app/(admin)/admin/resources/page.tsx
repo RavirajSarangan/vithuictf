@@ -90,7 +90,7 @@ export default function AdminResourcesPage() {
         title="Resources"
         description="Manage study materials for student courses"
         action={
-          <Button className="bg-icvf-accent hover:bg-icvf-accent-hover" onClick={() => setOpen(true)}>
+          <Button  onClick={() => setOpen(true)}>
             <Plus className="mr-2 size-4" /> Add Resource
           </Button>
         }
@@ -102,11 +102,11 @@ export default function AdminResourcesPage() {
           title="No resources yet"
           description="Upload notes, past papers, and study guides"
           action={
-            <Button className="bg-icvf-accent" onClick={() => setOpen(true)}>
+            <Button  onClick={() => setOpen(true)}>
               <Plus className="mr-2 size-4" /> Add Resource
             </Button>
           }
-          className="border-white/10 bg-white/5 text-white"
+          
         />
       ) : (
         <AdminTable
@@ -226,7 +226,7 @@ export default function AdminResourcesPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="bg-icvf-accent" disabled={submitting}>
+              <Button type="submit"  disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" /> Saving...

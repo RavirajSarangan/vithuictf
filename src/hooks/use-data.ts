@@ -41,6 +41,8 @@ export {
   useAdminClassPrograms,
   useAdminPaperCenters,
   useAdminFeaturedRankings,
+  useAdminMarketingAnnouncements,
   useAdminAnalytics,
+  useAdminRevenueTrend,
   useContactInquiries,
 } from "./use-admin-data";

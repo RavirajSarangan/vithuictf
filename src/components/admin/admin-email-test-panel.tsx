@@ -37,25 +37,25 @@ export function AdminEmailTestPanel() {
   };
 
   return (
-    <GlassCard className="max-w-xl border-white/10 bg-white/5 p-6 text-white">
+    <GlassCard className="max-w-xl p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Mail className="size-5 text-icvf-accent" aria-hidden />
             <h3 className="text-lg font-semibold">Resend email test</h3>
           </div>
-          <p className="text-sm text-white/60">
-            Send a branded welcome-style test after verifying <code className="text-white/80">ictf.lk</code> in
+          <p className="text-sm text-muted-foreground">
+            Send a branded welcome-style test after verifying <code className="text-muted-foreground">ictf.lk</code> in
             Resend and setting environment variables.
           </p>
         </div>
-        <Badge variant="outline" className="shrink-0 border-white/20 text-white/80">
+        <Badge variant="outline" className="shrink-0 border-input text-muted-foreground">
           Resend
         </Badge>
       </div>
 
       <div className="mt-6 space-y-2">
-        <Label htmlFor="resend-test-email" className="text-white">
+        <Label htmlFor="resend-test-email">
           Send test to
         </Label>
         <Input
@@ -64,12 +64,12 @@ export function AdminEmailTestPanel() {
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border-white/10 bg-black/20 text-white placeholder:text-white/40"
+          className="border-border bg-background text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
       <Button
-        className="mt-6 bg-icvf-accent text-icvf-navy hover:bg-icvf-accent/90"
+        className="mt-6"
         onClick={onSend}
         disabled={sending}
       >

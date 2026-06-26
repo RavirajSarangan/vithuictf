@@ -42,40 +42,42 @@ export function AdminTable<T extends { id: string }>({
 
   if (data.length === 0) {
     return (
-      <GlassCard className="bg-white/5 border-white/10 p-8 text-center text-white/60">
+      <GlassCard className="p-8 text-center text-muted-foreground">
         {emptyMessage}
       </GlassCard>
     );
   }
 
   return (
-    <GlassCard className="overflow-hidden bg-white/5 border-white/10 p-0">
+    <GlassCard className="overflow-hidden p-0">
       <Table>
         <TableHeader>
-          <TableRow className="border-white/10 hover:bg-white/5">
+          <TableRow>
             {columns.map((c) => (
-              <TableHead key={String(c.key)} className="text-white/70">
+              <TableHead key={String(c.key)} className="text-muted-foreground">
                 {c.label}
               </TableHead>
             ))}
-            {(onDelete || onView || viewHref) && <TableHead className="w-12 text-white/70" />}
+            {(onDelete || onView || viewHref) && (
+              <TableHead className="w-12 text-muted-foreground" />
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((row) => {
             const href = viewHref?.(row);
             return (
-              <TableRow key={row.id} className="group border-white/10 hover:bg-white/5">
+              <TableRow key={row.id} className="group">
                 {columns.map((c) => {
                   const cellLink = c.linkTo?.(row);
                   const content = c.render ? c.render(row) : String(row[c.key] ?? "");
 
                   return (
-                    <TableCell key={String(c.key)} className="text-white">
+                    <TableCell key={String(c.key)}>
                       {cellLink ? (
                         <Link
                           href={cellLink}
-                          className="inline-flex items-center gap-1 font-medium text-icvf-accent hover:underline"
+                          className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
                         >
                           {content}
                           <ChevronRight className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -91,7 +93,7 @@ export function AdminTable<T extends { id: string }>({
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={
-                          <Button variant="ghost" size="icon" className="text-white/70 hover:text-white">
+                          <Button variant="ghost" size="icon" className="text-muted-foreground">
                             <MoreHorizontal className="size-4" />
                           </Button>
                         }

@@ -79,9 +79,9 @@ export function buildPageMetadata({
 }
 
 export const rootMetadata: Metadata = buildPageMetadata({
-  title: `${BRAND.name} — O/L & A/L ICT Tuition Sri Lanka`,
+  title: `${BRAND.name} — O/L & A/L ICT Institute Sri Lanka`,
   description:
-    "ICT Foundation (ICTF) — Sri Lanka's trusted O/L & A/L ICT tuition. Live Zoom classes, islandwide paper centers, student portal. Founded by Vithoosan Sivanathan. Jaffna HQ, serving all districts.",
+    "ICT Foundation (ICTF) — Sri Lanka's trusted O/L & A/L ICT institute. Live Zoom classes, islandwide paper centers, student portal. Founded by Vithoosan Sivanathan. Jaffna HQ, serving all districts.",
   path: "/",
 });
 

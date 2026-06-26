@@ -28,26 +28,26 @@ export default function AdminNotificationsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Notifications" description="Broadcast announcements to all portal users" />
-      <GlassCard className="max-w-lg border-white/10 bg-white/5">
-      <h3 className="mb-4 text-lg font-semibold text-white">Broadcast Notification</h3>
+      <GlassCard className="max-w-lg ">
+      <h3 className="mb-4 text-lg font-semibold text-icvf-navy">Broadcast Notification</h3>
       <div className="flex flex-col gap-4">
         <div>
-          <Label className="text-white/70">Title</Label>
+          <Label>Title</Label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border-white/20 bg-white/10 text-white"
+            
           />
         </div>
         <div>
-          <Label className="text-white/70">Message</Label>
+          <Label>Message</Label>
           <Input
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="border-white/20 bg-white/10 text-white"
+            
           />
         </div>
-        <Button onClick={broadcast} className="bg-icvf-accent hover:bg-icvf-accent-hover">
+        <Button onClick={broadcast} >
           Send to All Users
         </Button>
       </div>

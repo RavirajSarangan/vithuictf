@@ -25,13 +25,13 @@ function founderContent(locale: MarketingLocale, bio: string, credentials: strin
         paragraphs: [credentials],
       },
       {
-        heading: locale === "ta" ? "ICTF பயிற்சி" : locale === "si" ? "ICTF ටියුෂන්" : "ICT Foundation tuition",
+        heading: locale === "ta" ? "ICTF நிறுவனம்" : locale === "si" ? "ICTF ආයතනය" : "ICT Foundation institute",
         paragraphs: [
           locale === "ta"
-            ? "ICT அடித்தளம் (ICTF) இலங்கை முழுவதும் O/L மற்றும் A/L ICT பயிற்சியை வழங்குகிறது — யாழ்ப்பாணம் தலைமையகம், தீவு முழுவதும் Zoom வகுப்புகள்."
+            ? "ICT அடித்தளம் (ICTF) இலங்கை முழுவதும் O/L மற்றும் A/L ICT நிறுவனத்தை வழங்குகிறது — யாழ்ப்பாணம் தலைமையகம், தீவு முழுவதும் Zoom வகுப்புகள்."
             : locale === "si"
-              ? "ICT Foundation (ICTF) ශ්‍රී ලංකාව පුරා O/L සහ A/L ICT ටියුෂන් ලබා දෙයි — යාපනය ප්‍රධාන කාර්යාලය, දිවයින පුරා Zoom පන්ති."
-              : "ICT Foundation (ICTF) delivers islandwide O/L and A/L ICT tuition — headquartered in Jaffna with Zoom classes serving every Sri Lankan district.",
+              ? "ICT Foundation (ICTF) ශ්‍රී ලංකාව පුරා O/L සහ A/L ICT ආයතනය ලබා දෙයි — යාපනය ප්‍රධාන කාර්යාලය, දිවයින පුරා Zoom පන්ති."
+              : "ICT Foundation (ICTF) delivers islandwide O/L and A/L ICT institute programs — headquartered in Jaffna with Zoom classes serving every Sri Lankan district.",
         ],
       },
     ],

@@ -25,7 +25,7 @@ export async function createStripeCheckoutSession(data: {
 
   const { data: settings } = await supabase
     .from("platform_settings")
-    .select("online_payments_enabled, default_tuition_lkr")
+    .select("online_payments_enabled, default_institute_fee_lkr")
     .eq("id", 1)
     .maybeSingle();
 
@@ -34,7 +34,7 @@ export async function createStripeCheckoutSession(data: {
     throw new Error("Online payments are coming soon. Please contact the academy to pay fees.");
   }
 
-  const amount = data.amount ?? Number(settings?.default_tuition_lkr ?? 5000);
+  const amount = data.amount ?? Number(settings?.default_institute_fee_lkr ?? 5000);
 
   const stripe = getStripe();
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";

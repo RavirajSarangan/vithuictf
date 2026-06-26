@@ -1,17 +1,19 @@
 export const BRAND = {
   name: "ICTF",
   fullName: "ICT Foundation",
-  /** Dark mark for light backgrounds (auth cards, about, SEO). */
+  /** Dark horizontal wordmark for light backgrounds (auth cards, about, SEO). */
   logo: "/ICTF PNG 4.png",
-  /** Light wordmark for dark backgrounds (nav, footer, portal, auth panels). */
+  /** Square mark for dark backgrounds (nav, footer). */
+  logoMark: "/ICTF.svg",
+  /** Legacy light wordmark asset. */
   logoLight: "/ICTF-light.svg",
-  navIcon: "/ICTF-light.svg",
-  favicon: "/ICTF PNG 4.png",
+  navIcon: "/ICTF.svg",
+  favicon: "/favicon.png",
   /** Horizontal wordmark intrinsic ratio (ICTF-light.svg). */
   logoWidth: 1880,
   logoHeight: 717,
-  /** Square mark intrinsic ratio (ICTF PNG 4.png). */
-  logoMarkSize: 512,
+  /** Square mark intrinsic ratio (ICTF.svg). */
+  logoMarkSize: 1767,
   legalName: "ICT Foundation (Pvt) Ltd",
   platformName: "ICTF Student Portal",
   studentIdPrefix: "ICTF",

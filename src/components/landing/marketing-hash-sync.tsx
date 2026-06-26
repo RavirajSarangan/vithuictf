@@ -14,11 +14,23 @@ export function MarketingHashSync() {
   useEffect(() => {
     applyMarketingScrollPadding();
 
+    const header = document.querySelector<HTMLElement>("[data-marketing-header]");
     const onResize = () => applyMarketingScrollPadding();
     window.addEventListener("resize", onResize);
 
+    const observer =
+      header && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(onResize)
+        : null;
+    if (header && observer) {
+      observer.observe(header);
+    }
+
+    requestAnimationFrame(() => applyMarketingScrollPadding());
+
     return () => {
       window.removeEventListener("resize", onResize);
+      observer?.disconnect();
       document.documentElement.style.scrollPaddingTop = "";
       document.documentElement.style.removeProperty("--marketing-header-offset");
     };

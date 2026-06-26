@@ -13,12 +13,14 @@ import type { RegisterStudentInput } from "@/lib/validation/register-student";
 import { createClient } from "@/lib/supabase/client";
 import { mapProfile } from "@/lib/supabase/mappers";
 import { signUpWithRole, resolveStudentLoginEmail } from "@/lib/actions/auth";
+import { EMAIL_PATTERN, LOGIN_ERROR } from "@/lib/auth/login-errors";
 import { getComingSoonPath } from "@/lib/portal-access";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<User>;
+  signInAsStaff: (email: string, password: string) => Promise<User>;
   signInWithStudentId: (studentId: string, password: string) => Promise<User>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -97,10 +99,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw new Error(error.message);
   }, []);
 
+  const signInAsStaff = useCallback(
+    async (email: string, password: string): Promise<User> => {
+      const normalized = email.trim().toLowerCase();
+      if (!EMAIL_PATTERN.test(normalized)) {
+        throw new Error(LOGIN_ERROR.INVALID_EMAIL);
+      }
+
+      const user = await signIn(normalized, password);
+      if (user.role !== "admin") {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        setUser(null);
+        throw new Error(LOGIN_ERROR.STAFF_EMAIL_ONLY);
+      }
+
+      return user;
+    },
+    [signIn]
+  );
+
   const signInWithStudentId = useCallback(
     async (studentId: string, password: string): Promise<User> => {
       const email = await resolveStudentLoginEmail(studentId);
-      return signIn(email, password);
+      const user = await signIn(email, password);
+      if (user.role !== "student") {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        setUser(null);
+        throw new Error(LOGIN_ERROR.STUDENT_ID_ONLY);
+      }
+
+      return user;
     },
     [signIn]
   );
@@ -156,8 +186,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadProfile]);
 
   const value = useMemo(
-    () => ({ user, loading, signIn, signInWithStudentId, signInWithGoogle, signOut, signUp, refreshUser }),
-    [user, loading, signIn, signInWithStudentId, signInWithGoogle, signOut, signUp, refreshUser]
+    () => ({
+      user,
+      loading,
+      signIn,
+      signInAsStaff,
+      signInWithStudentId,
+      signInWithGoogle,
+      signOut,
+      signUp,
+      refreshUser,
+    }),
+    [user, loading, signIn, signInAsStaff, signInWithStudentId, signInWithGoogle, signOut, signUp, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

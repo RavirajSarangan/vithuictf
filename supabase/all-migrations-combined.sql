@@ -1240,3 +1240,105 @@ CREATE UNIQUE INDEX IF NOT EXISTS students_nic_number_lower_idx
   WHERE nic_number IS NOT NULL;
 -- >>> END 20240625200000_student_nic_number.sql
 
+-- >>> BEGIN 20240628130000_brand_logo_settings.sql
+ALTER TABLE public.platform_settings
+  ADD COLUMN IF NOT EXISTS brand_logo_settings JSONB NOT NULL DEFAULT '{
+    "nav": { "widthRem": 10.75, "scale": 1.22, "scaleSm": 1.26 },
+    "footer": { "widthRem": 13.5, "heightRem": 4.25, "widthRemSm": 14, "heightRemSm": 4.5 }
+  }'::jsonb;
+-- >>> END 20240628130000_brand_logo_settings.sql
+
+-- >>> BEGIN 20240628130100_brand_logo_size_defaults.sql
+UPDATE public.platform_settings
+SET brand_logo_settings = '{
+  "nav": { "widthRem": 12.5, "scale": 1.34, "scaleSm": 1.4 },
+  "footer": { "widthRem": 20, "heightRem": 6.25, "widthRemSm": 22, "heightRemSm": 6.75 }
+}'::jsonb
+WHERE id = 1;
+-- >>> END 20240628130100_brand_logo_size_defaults.sql
+
+-- >>> BEGIN 20240628130200_brand_logo_size_optimal.sql
+UPDATE public.platform_settings
+SET brand_logo_settings = '{
+  "nav": { "widthRem": 13.75, "scale": 1.38, "scaleSm": 1.44 },
+  "footer": { "widthRem": 19, "heightRem": 7.5, "widthRemSm": 24, "heightRemSm": 8 }
+}'::jsonb
+WHERE id = 1;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'platform_settings'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_settings;
+  END IF;
+END $$;
+-- >>> END 20240628130200_brand_logo_size_optimal.sql
+
+-- >>> BEGIN 20240628130300_footer_logo_compact.sql
+UPDATE public.platform_settings
+SET brand_logo_settings = jsonb_set(
+  jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        COALESCE(brand_logo_settings, '{}'::jsonb),
+        '{footer,widthRem}',
+        '11'::jsonb
+      ),
+      '{footer,heightRem}',
+      '3.5'::jsonb
+    ),
+    '{footer,widthRemSm}',
+    '12.5'::jsonb
+  ),
+  '{footer,heightRemSm}',
+  '4'::jsonb
+)
+WHERE id = 1;
+-- >>> END 20240628130300_footer_logo_compact.sql
+
+-- >>> BEGIN 20240628130400_footer_logo_larger.sql
+UPDATE public.platform_settings
+SET brand_logo_settings = jsonb_set(
+  jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        COALESCE(brand_logo_settings, '{}'::jsonb),
+        '{footer,widthRem}',
+        '15'::jsonb
+      ),
+      '{footer,heightRem}',
+      '5'::jsonb
+    ),
+    '{footer,widthRemSm}',
+    '18'::jsonb
+  ),
+  '{footer,heightRemSm}',
+  '6'::jsonb
+)
+WHERE id = 1;
+-- >>> END 20240628130400_footer_logo_larger.sql
+
+-- >>> BEGIN 20240628130500_footer_logo_small.sql
+UPDATE public.platform_settings
+SET brand_logo_settings = jsonb_set(
+  jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        COALESCE(brand_logo_settings, '{}'::jsonb),
+        '{footer,widthRem}',
+        '11.5'::jsonb
+      ),
+      '{footer,heightRem}',
+      '3.25'::jsonb
+    ),
+    '{footer,widthRemSm}',
+    '12.5'::jsonb
+  ),
+  '{footer,heightRemSm}',
+  '3.5'::jsonb
+)
+WHERE id = 1;
+-- >>> END 20240628130500_footer_logo_small.sql
+

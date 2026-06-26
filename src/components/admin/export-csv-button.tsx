@@ -1,5 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+
 export function ExportCsvButton<T extends object>({
   rows,
   columns,
@@ -31,12 +34,9 @@ export function ExportCsvButton<T extends object>({
   };
 
   return (
-    <button
-      type="button"
-      onClick={exportCsv}
-      className="rounded-lg border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-white/10"
-    >
+    <Button type="button" variant="outline" size="sm" onClick={exportCsv}>
+      <Download data-icon="inline-start" />
       Export CSV
-    </button>
+    </Button>
   );
 }

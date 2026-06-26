@@ -18,7 +18,7 @@ export default async function PaymentsComingSoonPage() {
   return (
     <ComingSoon
       portalName="Online Payments — Coming Soon"
-      description="Pay tuition fees securely from your student portal with card checkout. Until then, contact ICTF or use bank/cash payment."
+      description="Pay institute fees securely from your student portal with card checkout. Until then, contact ICTF or use bank/cash payment."
       helperText="Fee records are still managed by admin. You will be notified when online checkout goes live."
     />
   );

@@ -7,12 +7,12 @@ import { logAdminAction } from "@/lib/audit";
 
 export async function updatePlatformPaymentSettings(data: {
   onlinePaymentsEnabled: boolean;
-  defaultTuitionLkr: number;
+  defaultInstituteFeeLkr: number;
 }) {
   await requireAdmin();
 
-  if (data.defaultTuitionLkr < 1) {
-    throw new Error("Default tuition fee must be at least LKR 1");
+  if (data.defaultInstituteFeeLkr < 1) {
+    throw new Error("Default institute fee must be at least LKR 1");
   }
 
   const supabase = await createClient();
@@ -20,7 +20,7 @@ export async function updatePlatformPaymentSettings(data: {
     .from("platform_settings")
     .update({
       online_payments_enabled: data.onlinePaymentsEnabled,
-      default_tuition_lkr: data.defaultTuitionLkr,
+      default_institute_fee_lkr: data.defaultInstituteFeeLkr,
       updated_at: new Date().toISOString(),
     })
     .eq("id", 1);
@@ -29,7 +29,7 @@ export async function updatePlatformPaymentSettings(data: {
 
   await logAdminAction("payments.settings_update", "platform_settings", "1", {
     onlinePaymentsEnabled: data.onlinePaymentsEnabled,
-    defaultTuitionLkr: data.defaultTuitionLkr,
+    defaultInstituteFeeLkr: data.defaultInstituteFeeLkr,
   });
 
   revalidatePath("/admin/payments");

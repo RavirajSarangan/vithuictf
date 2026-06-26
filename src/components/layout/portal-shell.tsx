@@ -72,19 +72,11 @@ function PortalSidebar({
 }) {
   const pathname = usePathname();
   const { signOut, user } = useAuth();
-  const isAdmin = variant === "admin";
   const brandHref =
     variant === "student" ? "/" : variant === "parent" ? "/parent/dashboard" : "/admin/dashboard";
 
   return (
-    <Sidebar
-      className={cn(
-        "border-r",
-        isAdmin
-          ? "border-white/10 bg-icvf-navy-dark [&_[data-sidebar=sidebar]]:bg-icvf-navy-dark"
-          : "border-white/10 bg-icvf-navy [&_[data-sidebar=sidebar]]:bg-icvf-navy"
-      )}
-    >
+    <Sidebar className="border-r border-white/10 bg-icvf-navy [&_[data-sidebar=sidebar]]:bg-icvf-navy">
       <SidebarHeader className="border-b border-white/10 px-4 py-5">
         <Link href={brandHref} className="inline-flex" aria-label={BRAND.name}>
           <BrandLogo size="md" light />
@@ -150,11 +142,9 @@ function PortalSidebar({
 function MobileBottomNav({
   items,
   pathname,
-  isAdmin,
 }: {
   items: NavItem[];
   pathname: string;
-  isAdmin: boolean;
 }) {
   const activeIndex = useMemo(
     () =>
@@ -170,12 +160,7 @@ function MobileBottomNav({
   const tabWidth = items.length > 0 ? 100 / items.length : 100;
 
   return (
-    <nav
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-50 border-t md:hidden",
-        isAdmin ? "border-white/10 bg-icvf-navy-dark" : "border-icvf-border bg-white"
-      )}
-    >
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-icvf-border bg-white md:hidden">
       <div
         className="absolute top-0 h-0.5 bg-icvf-accent transition-all duration-300 ease-out"
         style={{
@@ -193,15 +178,11 @@ function MobileBottomNav({
               className={cn(
                 "flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-semibold transition-colors duration-200",
                 active
-                  ? isAdmin
-                    ? "bg-white/10 text-icvf-accent"
-                    : "bg-icvf-navy/8 text-icvf-navy"
-                  : isAdmin
-                    ? "text-white/55"
-                    : "text-icvf-text-light"
+                  ? "bg-icvf-navy/8 text-icvf-navy"
+                  : "text-icvf-text-light"
               )}
             >
-              <item.icon className={cn("size-5", active && !isAdmin && "text-icvf-navy")} />
+              <item.icon className={cn("size-5", active && "text-icvf-navy")} />
               <span className="truncate">{item.label}</span>
             </Link>
           );
@@ -213,7 +194,6 @@ function MobileBottomNav({
 
 export function PortalShell({ children, navItems, variant = "student", title }: PortalShellProps) {
   const pathname = usePathname();
-  const isAdmin = variant === "admin";
   const mobileNavItems = getMobileNavItems(variant, navItems);
 
   const pageTitle = useMemo(() => {
@@ -226,29 +206,13 @@ export function PortalShell({ children, navItems, variant = "student", title }: 
 
   return (
     <SidebarProvider>
-      <div className={cn("flex min-h-screen w-full", isAdmin ? "bg-icvf-navy-dark" : "bg-background")}>
+      <div className="flex min-h-screen w-full bg-background">
         <PortalSidebar navItems={navItems} variant={variant} />
-        <SidebarInset className={cn("flex flex-1 flex-col", isAdmin ? "bg-icvf-navy-dark" : "bg-background")}>
-          <header
-            className={cn(
-              "sticky top-0 z-30 flex h-16 items-center justify-between border-b px-4 md:px-6",
-              isAdmin
-                ? "border-white/10 bg-icvf-navy-dark/95 backdrop-blur"
-                : "border-icvf-border bg-white/95 backdrop-blur"
-            )}
-          >
+        <SidebarInset className="flex flex-1 flex-col bg-icvf-surface">
+          <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-icvf-border bg-white/95 px-4 backdrop-blur md:px-6">
             <div className="flex items-center gap-2">
-              <SidebarTrigger
-                className={cn(
-                  "size-10 rounded-xl border shadow-sm transition-colors",
-                  isAdmin
-                    ? "border-white/15 bg-white/5 text-white hover:bg-white/10"
-                    : "border-icvf-border bg-icvf-surface text-icvf-navy hover:bg-icvf-navy/5"
-                )}
-              />
-              <h1 className={cn("text-lg font-semibold", isAdmin ? "text-white" : "text-icvf-navy")}>
-                {pageTitle}
-              </h1>
+              <SidebarTrigger className="size-10 rounded-xl border border-icvf-border bg-white text-icvf-navy shadow-sm transition-colors hover:bg-icvf-navy/5" />
+              <h1 className="text-lg font-semibold text-icvf-navy">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-2">
               <CommandPalette variant={variant} />
@@ -256,12 +220,7 @@ export function PortalShell({ children, navItems, variant = "student", title }: 
               <ThemeToggle />
             </div>
           </header>
-          <main
-            className={cn(
-              "min-w-0 flex-1 overflow-x-hidden p-4 pb-28 md:p-6 md:pb-6",
-              isAdmin ? "text-white" : ""
-            )}
-          >
+          <main className="min-w-0 flex-1 overflow-x-hidden p-4 pb-28 text-foreground md:p-6 md:pb-6">
             {children}
             {variant === "student" ? (
               <SecurityComplianceBadges variant="portal" className="mt-10" />
@@ -270,7 +229,7 @@ export function PortalShell({ children, navItems, variant = "student", title }: 
         </SidebarInset>
       </div>
 
-      <MobileBottomNav items={mobileNavItems} pathname={pathname} isAdmin={isAdmin} />
+      <MobileBottomNav items={mobileNavItems} pathname={pathname} />
     </SidebarProvider>
   );
 }

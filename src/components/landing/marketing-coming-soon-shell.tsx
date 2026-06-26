@@ -1,86 +1,53 @@
 "use client";
 
-import { Clock } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
+import {
+  BookOpen,
+  CircleHelp,
+  MapPin,
+  Trophy,
+  UserPlus,
+  type LucideIcon,
+} from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { MarketingContainer } from "@/components/landing/marketing-layout";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { cn } from "@/lib/utils";
 
-const ORBIT_DOTS = [
-  { angle: 0, size: 4 },
-  { angle: 72, size: 3.5 },
-  { angle: 144, size: 4 },
-  { angle: 216, size: 3.5 },
-  { angle: 288, size: 4 },
-] as const;
+type SectionKey =
+  | "programs"
+  | "results"
+  | "centers"
+  | "faq"
+  | "register";
 
-function OrbitClock() {
-  const reduceMotion = useReducedMotion();
+const SECTION_CONFIG: ReadonlyArray<{
+  key: SectionKey;
+  labelKey:
+    | "marketing.comingSoon.chipPrograms"
+    | "marketing.comingSoon.chipResults"
+    | "marketing.comingSoon.chipCenters"
+    | "marketing.comingSoon.chipFaq"
+    | "marketing.comingSoon.chipRegister";
+  icon: LucideIcon;
+}> = [
+  { key: "programs", labelKey: "marketing.comingSoon.chipPrograms", icon: BookOpen },
+  { key: "results", labelKey: "marketing.comingSoon.chipResults", icon: Trophy },
+  { key: "centers", labelKey: "marketing.comingSoon.chipCenters", icon: MapPin },
+  { key: "faq", labelKey: "marketing.comingSoon.chipFaq", icon: CircleHelp },
+  { key: "register", labelKey: "marketing.comingSoon.chipRegister", icon: UserPlus },
+];
+
+function LiveStatusBadge() {
+  const { t } = useMarketingText();
 
   return (
-    <div className="relative flex size-[6.75rem] items-center justify-center sm:size-[7.75rem]">
+    <div className="inline-flex items-center gap-1.5 rounded-full border border-icvf-border bg-white/90 px-2.5 py-1 text-[0.6875rem] font-semibold tracking-wide text-icvf-navy shadow-sm sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[0.8125rem]">
       <span
-        className="coming-soon-pulse-ring pointer-events-none absolute inset-0 rounded-full border border-icvf-accent/25 motion-reduce:hidden"
+        className="coming-soon-live-dot size-2 shrink-0 rounded-full bg-icvf-accent motion-reduce:opacity-90"
         aria-hidden
       />
-      <span
-        className="coming-soon-pulse-ring coming-soon-pulse-ring-delay pointer-events-none absolute inset-3 rounded-full border border-icvf-navy/10 motion-reduce:hidden"
-        aria-hidden
-      />
-
-      <svg viewBox="0 0 120 120" className="absolute inset-0 size-full" aria-hidden>
-        <circle
-          cx="60"
-          cy="60"
-          r="54"
-          fill="none"
-          stroke="rgba(39, 52, 97, 0.14)"
-          strokeWidth="1.5"
-          strokeDasharray="5 7"
-          className="coming-soon-orbit-dash motion-reduce:animate-none"
-        />
-        <circle
-          cx="60"
-          cy="60"
-          r="44"
-          fill="none"
-          stroke="rgba(245, 166, 35, 0.2)"
-          strokeWidth="1"
-          strokeDasharray="2 8"
-          className={cn(
-            "motion-reduce:animate-none",
-            !reduceMotion && "coming-soon-orbit-spin-reverse"
-          )}
-        />
-        <g className={cn(!reduceMotion && "coming-soon-orbit-spin")}>
-          {ORBIT_DOTS.map((dot) => (
-            <circle
-              key={dot.angle}
-              cx={60 + 54 * Math.cos((dot.angle * Math.PI) / 180)}
-              cy={60 + 54 * Math.sin((dot.angle * Math.PI) / 180)}
-              r={dot.size}
-              fill="rgba(245, 166, 35, 0.85)"
-              className="coming-soon-orbit-dot motion-reduce:opacity-80"
-            />
-          ))}
-        </g>
-      </svg>
-
-      <motion.div
-        className="relative z-10 flex size-14 items-center justify-center rounded-2xl border border-icvf-border bg-white shadow-md sm:size-[3.75rem]"
-        animate={reduceMotion ? undefined : { y: [0, -6, 0], scale: [1, 1.03, 1] }}
-        transition={
-          reduceMotion
-            ? undefined
-            : { duration: 2.8, repeat: Infinity, ease: "easeInOut" }
-        }
-      >
-        <span
-          className="coming-soon-icon-ring pointer-events-none absolute -inset-2 rounded-2xl border-2 border-icvf-accent/25 motion-reduce:animate-none"
-          aria-hidden
-        />
-        <Clock className="size-7 text-icvf-navy/80 sm:size-8" strokeWidth={1.75} aria-hidden />
-      </motion.div>
+      {t("marketing.comingSoon.statusBadge")}
     </div>
   );
 }
@@ -94,7 +61,7 @@ function AnimatedTitle({ id }: { id: string }) {
 
   if (reduceMotion) {
     return (
-      <h2 id={id} className="relative z-10 text-2xl font-bold tracking-tight text-icvf-navy sm:text-3xl">
+      <h2 id={id} className="text-xl font-bold tracking-tight text-icvf-navy sm:text-[2rem]">
         {lead} <span className="text-icvf-accent">{accent}</span>
       </h2>
     );
@@ -103,24 +70,24 @@ function AnimatedTitle({ id }: { id: string }) {
   return (
     <motion.h2
       id={id}
-      className="relative z-10 flex flex-wrap items-center justify-center gap-x-2.5 text-2xl font-bold tracking-tight sm:text-[2rem] md:text-[2.15rem]"
+      className="flex flex-wrap items-center justify-center gap-x-2 text-xl font-bold tracking-tight sm:gap-x-2.5 sm:text-[2rem]"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.8 }}
       variants={{
         hidden: {},
-        visible: { transition: { staggerChildren: 0.14, delayChildren: 0.04 } },
+        visible: { transition: { staggerChildren: 0.12, delayChildren: 0.04 } },
       }}
     >
       <motion.span
         className="text-icvf-navy"
         variants={{
-          hidden: { opacity: 0, y: 14, filter: "blur(6px)" },
+          hidden: { opacity: 0, y: 12, filter: "blur(5px)" },
           visible: {
             opacity: 1,
             y: 0,
             filter: "blur(0px)",
-            transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+            transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
           },
         }}
       >
@@ -129,12 +96,12 @@ function AnimatedTitle({ id }: { id: string }) {
       <motion.span
         className="coming-soon-accent-text text-icvf-accent"
         variants={{
-          hidden: { opacity: 0, y: 14, scale: 0.88 },
+          hidden: { opacity: 0, y: 12, scale: 0.9 },
           visible: {
             opacity: 1,
             y: 0,
             scale: 1,
-            transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+            transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
           },
         }}
       >
@@ -144,55 +111,219 @@ function AnimatedTitle({ id }: { id: string }) {
   );
 }
 
-function LoadingDots() {
+function BuildProgressTrack({ activeIndex }: { activeIndex: number }) {
+  return (
+    <div
+      className="flex w-full gap-1.5 sm:gap-2"
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={SECTION_CONFIG.length}
+      aria-valuenow={activeIndex + 1}
+      aria-label="Site section build progress"
+    >
+      {SECTION_CONFIG.map((section, index) => {
+        const isActive = index === activeIndex;
+        const isComplete = index < activeIndex;
+
+        return (
+          <div
+            key={section.key}
+            className="h-1.5 flex-1 overflow-hidden rounded-full bg-icvf-navy/8 sm:h-2"
+          >
+            <motion.div
+              className={cn(
+                "h-full rounded-full",
+                isActive
+                  ? "coming-soon-segment-shimmer bg-icvf-accent motion-reduce:bg-icvf-accent"
+                  : isComplete
+                    ? "bg-icvf-accent/70"
+                    : "bg-transparent"
+              )}
+              initial={false}
+              animate={{
+                width: isActive || isComplete ? "100%" : "0%",
+                opacity: isActive ? 1 : isComplete ? 0.75 : 0,
+              }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function OngoingSectionCard({
+  label,
+  icon: Icon,
+  active,
+  delay,
+}: {
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+  delay: number;
+}) {
+  const { t } = useMarketingText();
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="relative z-10 flex items-center gap-2" aria-hidden>
-      {[0, 1, 2].map((index) => (
-        <motion.span
-          key={index}
-          className="size-2.5 rounded-full bg-icvf-accent shadow-[0_0_12px_rgba(245,166,35,0.45)] sm:size-3"
-          animate={
-            reduceMotion
-              ? undefined
-              : { y: [0, -7, 0], opacity: [0.4, 1, 0.4], scale: [0.92, 1.08, 0.92] }
-          }
-          transition={
-            reduceMotion
-              ? undefined
-              : { duration: 1.15, repeat: Infinity, ease: "easeInOut", delay: index * 0.16 }
-          }
+    <motion.div
+      className={cn(
+        "flex min-w-0 flex-1 items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors sm:min-w-[10.5rem] sm:gap-2.5 sm:rounded-2xl sm:px-3.5 sm:py-2.5",
+        active
+          ? "border-icvf-accent/35 bg-gradient-to-br from-white to-icvf-accent/8 shadow-sm"
+          : "border-icvf-border/80 bg-white/80"
+      )}
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.5 }}
+      transition={{ duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <span
+        className={cn(
+          "flex size-7 shrink-0 items-center justify-center rounded-lg border sm:size-8 sm:rounded-xl",
+          active
+            ? "border-icvf-accent/25 bg-icvf-accent/12 text-icvf-navy"
+            : "border-icvf-border bg-icvf-navy/5 text-icvf-navy/70"
+        )}
+      >
+        <Icon className="size-3.5 sm:size-4" strokeWidth={1.75} aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[0.6875rem] font-semibold leading-tight text-icvf-navy sm:text-[0.8125rem]">
+          {label}
+        </span>
+        <span className="mt-0.5 inline-flex items-center gap-1 text-[0.625rem] font-medium text-icvf-text-light sm:text-[0.6875rem]">
+          <span
+            className={cn(
+              "size-1.5 rounded-full",
+              active ? "coming-soon-live-dot bg-icvf-accent" : "bg-icvf-navy/25"
+            )}
+            aria-hidden
+          />
+          {t("marketing.comingSoon.sectionStatus")}
+        </span>
+      </span>
+    </motion.div>
+  );
+}
+
+function OngoingSectionsGrid({ activeIndex }: { activeIndex: number }) {
+  const { t } = useMarketingText();
+
+  return (
+    <div className="grid w-full grid-cols-2 gap-1.5 sm:grid-cols-2 sm:gap-2 lg:grid-cols-3">
+      {SECTION_CONFIG.map((section, index) => (
+        <OngoingSectionCard
+          key={section.key}
+          label={t(section.labelKey)}
+          icon={section.icon}
+          active={index === activeIndex}
+          delay={index * 0.05}
         />
       ))}
     </div>
   );
 }
 
+function FocusCaption({ activeIndex }: { activeIndex: number }) {
+  const { t } = useMarketingText();
+  const reduceMotion = useReducedMotion();
+  const section = SECTION_CONFIG[activeIndex];
+  const label = section ? t(section.labelKey) : "";
+
+  return (
+    <p className="flex flex-wrap items-center justify-center gap-x-1 text-xs leading-5 text-icvf-text-light sm:gap-x-1.5 sm:text-[0.9375rem] sm:leading-6">
+      <span className="shrink-0">{t("marketing.comingSoon.focusLabel")}</span>
+      <span
+        className="relative inline-block h-5 min-w-[8.5rem] overflow-hidden align-bottom sm:min-w-[12.5rem] sm:h-6"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {reduceMotion ? (
+          <span className="block whitespace-nowrap font-semibold leading-5 text-icvf-navy sm:leading-6">
+            {label}
+          </span>
+        ) : (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={label}
+              className="block h-5 whitespace-nowrap font-semibold leading-5 text-icvf-navy sm:h-6 sm:leading-6"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {label}
+            </motion.span>
+          </AnimatePresence>
+        )}
+      </span>
+    </p>
+  );
+}
+
 export function MarketingComingSoonShell() {
   const { t } = useMarketingText();
+  const reduceMotion = useReducedMotion();
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const sectionCount = SECTION_CONFIG.length;
+
+  useEffect(() => {
+    if (reduceMotion || sectionCount <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % sectionCount);
+    }, 2800);
+    return () => window.clearInterval(timer);
+  }, [reduceMotion, sectionCount]);
+
+  const ariaSection = SECTION_CONFIG[activeIndex];
+  const ariaLabel = ariaSection
+    ? `${t("marketing.comingSoon.titleLead")} ${t("marketing.comingSoon.titleAccent")}. ${t("marketing.comingSoon.statusBadge")}. ${t("marketing.comingSoon.focusLabel")} ${t(ariaSection.labelKey)}`
+    : `${t("marketing.comingSoon.titleLead")} ${t("marketing.comingSoon.titleAccent")}`;
 
   return (
     <section
-      className="relative scroll-mt-20 py-8 sm:py-10"
+      className="relative scroll-mt-20 py-4 sm:py-8 lg:py-10"
       aria-labelledby="marketing-coming-soon-title"
     >
-      <MarketingContainer className="flex flex-col items-center">
+      <MarketingContainer>
         <motion.div
-          className="coming-soon-hub relative flex flex-col items-center gap-3 sm:gap-4"
-          role="status"
-          aria-live="polite"
-          aria-label={`${t("marketing.comingSoon.titleLead")} ${t("marketing.comingSoon.titleAccent")}`}
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.45 }}
+          className="relative mx-auto w-full max-w-3xl"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.25 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="coming-soon-glow pointer-events-none absolute rounded-full motion-reduce:hidden" aria-hidden />
+          <div
+            className="coming-soon-hub relative overflow-hidden rounded-2xl border border-icvf-border bg-white/95 px-3.5 py-4 shadow-sm sm:rounded-3xl sm:px-8 sm:py-8"
+            role="status"
+            aria-live="polite"
+            aria-label={ariaLabel}
+          >
+            <div
+              className="coming-soon-panel-glow pointer-events-none absolute inset-x-0 top-0 h-20 motion-reduce:hidden sm:h-36"
+              aria-hidden
+            />
 
-          <AnimatedTitle id="marketing-coming-soon-title" />
-          <OrbitClock />
-          <LoadingDots />
+            <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-5">
+              <LiveStatusBadge />
+              <AnimatedTitle id="marketing-coming-soon-title" />
+
+              <p className="max-w-lg text-center text-xs leading-snug text-icvf-text-light sm:text-[0.9375rem] sm:leading-relaxed">
+                {t("marketing.comingSoon.subtitle")}
+              </p>
+
+              <div className="w-full space-y-2 sm:space-y-3.5">
+                <BuildProgressTrack activeIndex={activeIndex} />
+                <OngoingSectionsGrid activeIndex={activeIndex} />
+              </div>
+
+              <FocusCaption activeIndex={activeIndex} />
+            </div>
+          </div>
         </motion.div>
       </MarketingContainer>
     </section>

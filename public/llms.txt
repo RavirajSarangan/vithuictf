@@ -1,12 +1,12 @@
 # ICTF — ICT Foundation, Sri Lanka
 
-> O/L & A/L ICT tuition, online Zoom classes, and an islandwide paper center network.
+> O/L & A/L ICT institute, online Zoom classes, and an islandwide paper center network.
 > Founder: Vithoosan Sivanathan. Headquarters: Jaffna, Sri Lanka.
 > Contact: info@ictf.lk | +94 77 459 1161 | https://ictf.lk
 
 ## About
 
-ICT Foundation (ICTF) is Sri Lanka's trusted tuition provider for Ordinary Level (O/L) and Advanced Level (A/L) ICT education. Classes are delivered live via Zoom with optional past-paper practice at partner paper centers across districts. The ICTF Student Portal provides video lessons, resources, results, leaderboard, and AI study support.
+ICT Foundation (ICTF) is Sri Lanka's trusted institute for Ordinary Level (O/L) and Advanced Level (A/L) ICT education. Classes are delivered live via Zoom with optional past-paper practice at partner paper centers across districts. The ICTF Student Portal provides video lessons, resources, results, leaderboard, and AI study support.
 
 Legal name: ICT Foundation (Pvt) Ltd
 
@@ -43,4 +43,4 @@ Coordinates: 9.6615, 80.0074
 
 ## Keywords
 
-O/L ICT Sri Lanka, A/L ICT tuition, ICT online classes Zoom, ICT paper centers, ICT tuition Jaffna, ICTF, Vithoosan Sivanathan
+O/L ICT Sri Lanka, A/L ICT institute, ICT online classes Zoom, ICT paper centers, ICT institute Jaffna, ICTF, Vithoosan Sivanathan

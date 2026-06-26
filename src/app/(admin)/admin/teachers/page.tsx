@@ -76,7 +76,7 @@ export default function AdminTeachersPage() {
         title="Teachers"
         description="Manage teaching staff and portal access"
         action={
-          <Button className="bg-icvf-accent hover:bg-icvf-accent-hover" onClick={() => setOpen(true)}>
+          <Button  onClick={() => setOpen(true)}>
             <Plus className="mr-2 size-4" /> Add Teacher
           </Button>
         }
@@ -88,11 +88,11 @@ export default function AdminTeachersPage() {
           title="No teachers yet"
           description="Create teacher accounts to grant staff portal access"
           action={
-            <Button className="bg-icvf-accent" onClick={() => setOpen(true)}>
+            <Button  onClick={() => setOpen(true)}>
               <Plus className="mr-2 size-4" /> Add Teacher
             </Button>
           }
-          className="border-white/10 bg-white/5 text-white"
+          
         />
       ) : (
         <AdminTable
@@ -108,7 +108,7 @@ export default function AdminTeachersPage() {
               key: "certified",
               label: "Certified",
               render: (row) => (
-                <Badge variant={row.certified ? "default" : "outline"} className={row.certified ? "bg-icvf-accent" : "border-white/20 text-white/70"}>
+                <Badge variant={row.certified ? "default" : "outline"} className={row.certified ? "bg-icvf-accent" : "border-input text-muted-foreground"}>
                   {row.certified ? "Yes" : "No"}
                 </Badge>
               ),
@@ -165,7 +165,7 @@ export default function AdminTeachersPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="bg-icvf-accent" disabled={submitting}>
+              <Button type="submit"  disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" /> Creating...

@@ -66,8 +66,8 @@ export function AdminMarketingVisibilityPanel() {
 
   if (loading) {
     return (
-      <GlassCard className="border-white/10 bg-white/5 p-6 text-white">
-        <p className="text-sm text-white/60">Loading visibility settings…</p>
+      <GlassCard className="p-6">
+        <p className="text-sm text-muted-foreground">Loading visibility settings…</p>
       </GlassCard>
     );
   }
@@ -106,16 +106,16 @@ export function AdminMarketingVisibilityPanel() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <GlassCard className="border-white/10 bg-white/5 p-6 text-white">
+      <GlassCard className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">Site status</h3>
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-muted-foreground">
               Control whether the full website is public. Only admins can access the site while
               Coming Soon or Maintenance is active.
             </p>
           </div>
-          <Badge variant="outline" className="shrink-0 border-white/20 text-white/80">
+          <Badge variant="outline" className="shrink-0 border-input text-muted-foreground">
             {siteModeBadgeLabel(settings.sitePublicMode)}
           </Badge>
         </div>
@@ -130,16 +130,16 @@ export function AdminMarketingVisibilityPanel() {
             <label
               key={option.value}
               htmlFor={`site-mode-${option.value}`}
-              className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-4 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-icvf-accent/50"
+              className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-black/20 px-4 py-4 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-icvf-accent/50"
             >
               <RadioGroupItem
                 id={`site-mode-${option.value}`}
                 value={option.value}
-                className="mt-0.5 border-white/30 text-icvf-accent"
+                className="mt-0.5 border-input text-icvf-accent"
               />
               <div className="space-y-0.5">
-                <span className="font-medium text-white">{option.label}</span>
-                <p className="text-xs text-white/50">{option.description}</p>
+                <span className="font-medium text-foreground">{option.label}</span>
+                <p className="text-xs text-muted-foreground">{option.description}</p>
               </div>
             </label>
           ))}
@@ -159,7 +159,7 @@ export function AdminMarketingVisibilityPanel() {
           )}
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-4 border-t border-white/10 pt-4 text-sm">
+        <div className="mt-6 flex flex-wrap gap-4 border-t border-border pt-4 text-sm">
           <Link
             href="/coming-soon"
             target="_blank"
@@ -179,7 +179,7 @@ export function AdminMarketingVisibilityPanel() {
         </div>
       </GlassCard>
 
-      <GlassCard className="border-white/10 bg-white/5 p-6 text-white">
+      <GlassCard className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -190,22 +190,22 @@ export function AdminMarketingVisibilityPanel() {
               )}
               <h3 className="text-lg font-semibold">Homepage visibility</h3>
             </div>
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-muted-foreground">
               When the site is live, blur sections below the hero with a Coming Soon panel. Hero and
               footer stay visible.
             </p>
           </div>
-          <Badge variant="outline" className="shrink-0 border-white/20 text-white/80">
+          <Badge variant="outline" className="shrink-0 border-input text-muted-foreground">
             {homepageBlur ? "Sections hidden" : "Full homepage"}
           </Badge>
         </div>
 
-        <div className="mt-6 flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/20 px-4 py-4">
+        <div className="mt-6 flex items-center justify-between gap-4 rounded-xl border border-border bg-black/20 px-4 py-4">
           <div className="space-y-0.5">
-            <Label htmlFor="marketing-coming-soon" className="text-white">
+            <Label htmlFor="marketing-coming-soon">
               Blur sections &amp; show Coming Soon
             </Label>
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-muted-foreground">
               {draftSiteIsLive
                 ? "Turn off when ready to publish all homepage content."
                 : "Available only while the site is Live."}
@@ -220,7 +220,7 @@ export function AdminMarketingVisibilityPanel() {
         </div>
 
         {!siteIsLive && (
-          <p className="mt-4 text-xs text-white/45">
+          <p className="mt-4 text-xs text-muted-foreground">
             Homepage blur is inactive while the site is in {siteModeBadgeLabel(settings.sitePublicMode)}{" "}
             mode.
           </p>
@@ -229,7 +229,7 @@ export function AdminMarketingVisibilityPanel() {
 
       {dirty && (
         <Button
-          className="w-fit bg-icvf-accent text-icvf-navy hover:bg-icvf-accent/90"
+          className="w-fit"
           onClick={onSave}
           disabled={saving}
         >

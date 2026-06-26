@@ -59,7 +59,7 @@ export function AddParentDialog({ onCreated }: { onCreated: () => void }) {
 
   return (
     <>
-      <Button className="bg-icvf-accent hover:bg-icvf-accent-hover" onClick={() => setOpen(true)}>
+      <Button  onClick={() => setOpen(true)}>
         <Plus className="mr-2 size-4" /> Add Parent
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -143,7 +143,7 @@ export function AddParentDialog({ onCreated }: { onCreated: () => void }) {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={submitting} className="w-full bg-icvf-accent hover:bg-icvf-accent-hover">
+              <Button type="submit" disabled={submitting} className="w-full">
                 {submitting ? <Loader2 className="size-4 animate-spin" /> : "Create parent"}
               </Button>
             </form>

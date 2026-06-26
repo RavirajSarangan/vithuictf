@@ -76,7 +76,7 @@ export default function SettingsPage() {
       const { url } = await createStripeCheckoutSession({
         studentId: student.id,
         studentName: student.displayName,
-        description: `${BRAND.name} monthly tuition fee`,
+        description: `${BRAND.name} monthly institute fee`,
       });
       if (url) window.location.href = url;
       else toast.error("Payment could not be started");
@@ -148,7 +148,7 @@ export default function SettingsPage() {
 
       <GlassCard>
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <h3 className="font-semibold text-icvf-navy">Tuition fee payment</h3>
+          <h3 className="font-semibold text-icvf-navy">Institute fee payment</h3>
           <Badge
             variant="outline"
             className={
@@ -165,8 +165,8 @@ export default function SettingsPage() {
         ) : onlinePaymentsLive ? (
           <>
             <p className="mb-4 text-sm text-muted-foreground">
-              Pay monthly tuition fees securely online via Stripe (LKR{" "}
-              {platformSettings.defaultTuitionLkr.toLocaleString()} default).
+              Pay monthly institute fees securely online via Stripe (LKR{" "}
+              {platformSettings.defaultInstituteFeeLkr.toLocaleString()} default).
             </p>
             <Button variant="icvf" onClick={() => void handlePayFees()} disabled={paying || !student}>
               {paying ? "Redirecting…" : "Pay with Stripe"}

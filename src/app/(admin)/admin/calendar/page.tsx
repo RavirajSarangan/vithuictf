@@ -76,40 +76,40 @@ export default function AdminCalendarPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Calendar" description="Schedule recurring and one-off class sessions" />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <GlassCard className="bg-white/5 border-white/10 p-4">
-          <p className="text-sm text-white/70">Total weekly minutes</p>
-          <p className="text-2xl font-bold text-white">{formatMinutes(summary.total)}</p>
+        <GlassCard className="p-4">
+          <p className="text-sm text-muted-foreground">Total weekly minutes</p>
+          <p className="text-2xl font-bold text-icvf-navy">{formatMinutes(summary.total)}</p>
         </GlassCard>
         {summary.byCategory.map((row) => (
-          <GlassCard key={row.categoryId} className="bg-white/5 border-white/10 p-4">
-            <p className="text-sm text-white/70">{row.categoryName}</p>
-            <p className="text-xl font-bold text-white">{formatMinutes(row.minutes)}</p>
+          <GlassCard key={row.categoryId} className="p-4">
+            <p className="text-sm text-muted-foreground">{row.categoryName}</p>
+            <p className="text-xl font-bold text-icvf-navy">{formatMinutes(row.minutes)}</p>
           </GlassCard>
         ))}
       </div>
 
-      <GlassCard className="bg-white/5 border-white/10 p-4">
-        <h3 className="mb-4 font-semibold text-white">Add class session</h3>
+      <GlassCard className="p-4">
+        <h3 className="mb-4 font-semibold text-icvf-navy">Add class session</h3>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          <div><Label className="text-white/70">Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="bg-white/10 border-white/20 text-white" /></div>
+          <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}  /></div>
           <div>
-            <Label className="text-white/70">Category</Label>
+            <Label>Category</Label>
             <Select value={form.categoryId} onValueChange={(v) => v && setForm({ ...form, categoryId: v })}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Category" /></SelectTrigger>
+              <SelectTrigger ><SelectValue placeholder="Category" /></SelectTrigger>
               <SelectContent>{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-white/70">Course</Label>
+            <Label>Course</Label>
             <Select value={form.courseId} onValueChange={(v) => setForm({ ...form, courseId: v ?? "" })}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="All courses" /></SelectTrigger>
+              <SelectTrigger ><SelectValue placeholder="All courses" /></SelectTrigger>
               <SelectContent>{courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-white/70">Type</Label>
+            <Label>Type</Label>
             <Select value={form.sessionType} onValueChange={(v) => v && setForm({ ...form, sessionType: v as "recurring" | "one_off" })}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger>
+              <SelectTrigger ><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="recurring">Recurring weekly</SelectItem>
                 <SelectItem value="one_off">One-off date</SelectItem>
@@ -117,18 +117,18 @@ export default function AdminCalendarPage() {
             </Select>
           </div>
           {form.sessionType === "recurring" ? (
-            <div><Label className="text-white/70">Day (0=Sun)</Label><Input type="number" min={0} max={6} value={form.dayOfWeek} onChange={(e) => setForm({ ...form, dayOfWeek: e.target.value })} className="bg-white/10 border-white/20 text-white" /></div>
+            <div><Label>Day (0=Sun)</Label><Input type="number" min={0} max={6} value={form.dayOfWeek} onChange={(e) => setForm({ ...form, dayOfWeek: e.target.value })}  /></div>
           ) : (
-            <div><Label className="text-white/70">Date</Label><Input type="date" value={form.sessionDate} onChange={(e) => setForm({ ...form, sessionDate: e.target.value })} className="bg-white/10 border-white/20 text-white" /></div>
+            <div><Label>Date</Label><Input type="date" value={form.sessionDate} onChange={(e) => setForm({ ...form, sessionDate: e.target.value })}  /></div>
           )}
-          <div><Label className="text-white/70">Start</Label><Input type="time" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} className="bg-white/10 border-white/20 text-white" /></div>
-          <div><Label className="text-white/70">End</Label><Input type="time" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} className="bg-white/10 border-white/20 text-white" /></div>
-          <div className="flex items-end"><p className="text-sm text-white/70">Auto duration: <strong className="text-white">{formatMinutes(previewMinutes)}</strong></p></div>
+          <div><Label>Start</Label><Input type="time" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })}  /></div>
+          <div><Label>End</Label><Input type="time" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })}  /></div>
+          <div className="flex items-end"><p className="text-sm text-muted-foreground">Auto duration: <strong className="text-icvf-navy">{formatMinutes(previewMinutes)}</strong></p></div>
         </div>
-        <Button onClick={handleAdd} className="mt-4 bg-icvf-accent"><Plus className="mr-2 size-4" />Add Session</Button>
+        <Button onClick={handleAdd} className="mt-4"><Plus className="mr-2 size-4" />Add Session</Button>
       </GlassCard>
 
-      <CalendarBoard sessions={sessions} categories={categories} categoryFilter={categoryFilter} onCategoryFilter={setCategoryFilter} variant="dark" />
+      <CalendarBoard sessions={sessions} categories={categories} categoryFilter={categoryFilter} onCategoryFilter={setCategoryFilter} variant="light" />
 
       <AdminTable
         columns={[

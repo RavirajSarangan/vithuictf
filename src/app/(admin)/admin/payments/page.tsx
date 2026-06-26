@@ -75,7 +75,7 @@ export default function AdminPaymentsPage() {
 
       <PageHeader
         title="Payment records"
-        description="Track tuition fees and payments recorded manually or via Stripe"
+        description="Track institute fees and payments recorded manually or via Stripe"
         action={
           <div className="flex flex-wrap items-center gap-2">
             <ExportCsvButton
@@ -89,7 +89,7 @@ export default function AdminPaymentsPage() {
                 { key: "date", label: "Date" },
               ]}
             />
-            <Button className="bg-icvf-accent hover:bg-icvf-accent-hover" onClick={() => setOpen(true)}>
+            <Button  onClick={() => setOpen(true)}>
               <Plus className="mr-2 size-4" /> Record Payment
             </Button>
           </div>
@@ -102,11 +102,11 @@ export default function AdminPaymentsPage() {
           title="No payments yet"
           description="Record student fee payments here"
           action={
-            <Button className="bg-icvf-accent" onClick={() => setOpen(true)}>
+            <Button  onClick={() => setOpen(true)}>
               <Plus className="mr-2 size-4" /> Record Payment
             </Button>
           }
-          className="border-white/10 bg-white/5 text-white"
+          
         />
       ) : (
         <AdminTable
@@ -222,7 +222,7 @@ export default function AdminPaymentsPage() {
                   )}
                 />
               </div>
-              <Button type="submit" className="bg-icvf-accent" disabled={submitting}>
+              <Button type="submit"  disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" /> Saving...

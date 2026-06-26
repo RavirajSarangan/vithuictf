@@ -21,6 +21,7 @@ import type {
   User,
 } from "@/types";
 import type { Database } from "@/types/database";
+import { parseBrandLogoSettings } from "@/lib/brand-logo-settings";
 
 type StudentRow = Database["public"]["Tables"]["students"]["Row"];
 type ResultRow = Database["public"]["Tables"]["results"]["Row"];
@@ -383,6 +384,36 @@ export function mapHomeAbout(row: Database["public"]["Tables"]["home_about"]["Ro
   };
 }
 
+export function mapMarketingAnnouncement(
+  row: Database["public"]["Tables"]["marketing_announcements"]["Row"]
+) {
+  const contentType = row.content_type;
+  const displayStyle = row.display_style;
+  const validContentTypes = ["image_only", "text_only", "text_image", "text_image_link"] as const;
+  const validDisplayStyles = ["minimal", "card", "image_hero", "promo"] as const;
+
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    imageUrl: row.image_url,
+    ctaLabel: row.cta_label,
+    ctaUrl: row.cta_url,
+    contentType: validContentTypes.includes(contentType as (typeof validContentTypes)[number])
+      ? (contentType as (typeof validContentTypes)[number])
+      : "text_only",
+    displayStyle: validDisplayStyles.includes(displayStyle as (typeof validDisplayStyles)[number])
+      ? (displayStyle as (typeof validDisplayStyles)[number])
+      : "card",
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    priority: row.priority,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export function mapSiteStats(row: Database["public"]["Tables"]["site_stats"]["Row"]): SiteStats {
   return {
     students: row.students,
@@ -397,9 +428,10 @@ export function mapSiteStats(row: Database["public"]["Tables"]["site_stats"]["Ro
 
 export function mapPlatformSettings(row: {
   online_payments_enabled: boolean;
-  default_tuition_lkr: number;
+  default_institute_fee_lkr: number;
   marketing_coming_soon_enabled?: boolean;
   site_public_mode?: string;
+  brand_logo_settings?: unknown;
   updated_at: string;
 }): PlatformSettings {
   const sitePublicMode = row.site_public_mode;
@@ -410,9 +442,10 @@ export function mapPlatformSettings(row: {
 
   return {
     onlinePaymentsEnabled: row.online_payments_enabled,
-    defaultTuitionLkr: Number(row.default_tuition_lkr),
+    defaultInstituteFeeLkr: Number(row.default_institute_fee_lkr),
     marketingComingSoonEnabled: row.marketing_coming_soon_enabled ?? true,
     sitePublicMode: validMode,
+    brandLogo: parseBrandLogoSettings(row.brand_logo_settings),
     updatedAt: row.updated_at,
   };
 }

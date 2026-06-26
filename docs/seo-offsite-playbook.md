@@ -45,7 +45,7 @@ Submit same NAP and categories as Google.
 
 ## Sri Lanka directories
 
-- Education.lk and local tuition listings
+- Education.lk and local institute listings
 - Jaffna business directories
 - Facebook groups: Sri Lanka ICT students, A/L ICT 2026
 
@@ -73,4 +73,4 @@ https://ictf.lk/programs/al-ict?utm_source=youtube&utm_campaign=al-ict
 
 ## Hashtags for student cards
 
-`#ICTF` `#ICTFSriLanka` `#OLICT` `#ALICT` `#ICTTuition`
+`#ICTF` `#ICTFSriLanka` `#OLICT` `#ALICT` `#ICTInstitute`

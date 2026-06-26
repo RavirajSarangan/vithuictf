@@ -42,7 +42,7 @@ export default function AdminParentsPage() {
           icon={Users}
           title="No parents yet"
           description="Add a parent account and link their children"
-          className="border-white/10 bg-white/5 text-white"
+          
         />
       ) : (
         <AdminTable
@@ -54,7 +54,7 @@ export default function AdminParentsPage() {
               label: "Linked Students",
               render: (row) => {
                 if (row.linkedStudentIds.length === 0) {
-                  return <span className="text-white/50">None linked</span>;
+                  return <span className="text-muted-foreground">None linked</span>;
                 }
                 return (
                   <div className="flex flex-wrap gap-1.5">
@@ -62,7 +62,7 @@ export default function AdminParentsPage() {
                       <Badge
                         key={studentId}
                         variant="secondary"
-                        className="border-white/10 bg-white/10 text-white"
+                        className="border-border bg-muted text-foreground"
                       >
                         {studentNameById.get(studentId) ?? "Unknown student"}
                       </Badge>

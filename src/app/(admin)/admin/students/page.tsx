@@ -112,7 +112,7 @@ export default function AdminStudentsPage() {
                 { key: "courseName", label: "Course" },
               ]}
             />
-            <Button className="bg-icvf-accent hover:bg-icvf-accent-hover" onClick={() => setOpen(true)}>
+            <Button  onClick={() => setOpen(true)}>
               <Plus className="mr-2 size-4" /> Register Student
             </Button>
           </div>
@@ -125,11 +125,11 @@ export default function AdminStudentsPage() {
           title="No students yet"
           description="Register your first student to get started"
           action={
-            <Button className="bg-icvf-accent" onClick={() => setOpen(true)}>
+            <Button  onClick={() => setOpen(true)}>
               <Plus className="mr-2 size-4" /> Register Student
             </Button>
           }
-          className="border-white/10 bg-white/5 text-white"
+          
         />
       ) : (
         <AdminTable
@@ -145,7 +145,7 @@ export default function AdminStudentsPage() {
               key: "courseName",
               label: "Course",
               render: (row) => (
-                <Badge variant="outline" className="border-white/20 text-white/90">
+                <Badge variant="outline" >
                   {row.courseName}
                 </Badge>
               ),
@@ -217,7 +217,7 @@ export default function AdminStudentsPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="bg-icvf-accent" disabled={submitting}>
+              <Button type="submit"  disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" /> Creating account...

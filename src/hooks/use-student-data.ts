@@ -256,12 +256,16 @@ export function usePlatformSettings() {
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
-    createClient()
+    let cancelled = false;
+    const supabase = createClient();
+
+    supabase
       .from("platform_settings")
       .select("*")
       .eq("id", 1)
       .maybeSingle()
       .then(({ data, error }) => {
+        if (cancelled) return;
         if (error) {
           console.error("platform_settings fetch failed:", error.message);
           setSettings(DEFAULT_PLATFORM_SETTINGS);
@@ -272,6 +276,28 @@ export function usePlatformSettings() {
         }
         setLoading(false);
       });
+
+    const channel = supabase
+      .channel("platform_settings:hook")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "platform_settings",
+          filter: "id=eq.1",
+        },
+        (payload) => {
+          if (cancelled) return;
+          setSettings(mapPlatformSettings(payload.new as Parameters<typeof mapPlatformSettings>[0]));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
   }, [version]);
 
   return { settings, loading, refresh };

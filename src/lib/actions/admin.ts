@@ -7,7 +7,8 @@ import { requireStaff, requireAdmin, signUpWithRole } from "@/lib/actions/auth";
 import { logAdminAction } from "@/lib/audit";
 import { sendStudentWelcomeEmail } from "@/lib/actions/email";
 import { BRAND } from "@/lib/constants";
-import type { CourseLevel, SitePublicMode } from "@/types";
+import type { CourseLevel, MarketingAnnouncementContentType, MarketingAnnouncementDisplayStyle, SitePublicMode, BrandLogoSettings } from "@/types";
+import { validateBrandLogoSettings } from "@/lib/brand-logo-settings";
 
 export async function getStudent(id: string) {
   await requireStaff();
@@ -457,6 +458,27 @@ export async function updateMarketingComingSoon(enabled: boolean) {
   revalidateSitePublicPaths();
 }
 
+export async function updateBrandLogoSettings(settings: BrandLogoSettings) {
+  await requireAdmin();
+  const validated = validateBrandLogoSettings(settings);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("platform_settings")
+    .update({
+      brand_logo_settings: validated,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) throw new Error(error.message);
+
+  await logAdminAction("brand.logo_settings_update", "platform_settings", "1", {
+    ...validated,
+  });
+
+  revalidateSitePublicPaths();
+}
+
 export async function updateNetworkStats(data: {
   paperCentersCount: number; districtsCovered: number; passRate: number; papersWritten: number;
   headline: string; headlineTa?: string; subheadline: string; subheadlineTa?: string;
@@ -585,5 +607,129 @@ export async function uploadAdminAsset(formData: FormData): Promise<string> {
 
   const { data } = admin.storage.from("admin").getPublicUrl(path);
   return data.publicUrl;
+}
+
+const MARKETING_ANNOUNCEMENT_CONTENT_TYPES: MarketingAnnouncementContentType[] = [
+  "image_only",
+  "text_only",
+  "text_image",
+  "text_image_link",
+];
+
+const MARKETING_ANNOUNCEMENT_DISPLAY_STYLES: MarketingAnnouncementDisplayStyle[] = [
+  "minimal",
+  "card",
+  "image_hero",
+  "promo",
+];
+
+export type MarketingAnnouncementInput = {
+  title?: string;
+  body?: string;
+  imageUrl?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  contentType: MarketingAnnouncementContentType;
+  displayStyle: MarketingAnnouncementDisplayStyle;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  priority?: number;
+  isActive?: boolean;
+};
+
+function validateMarketingAnnouncementInput(data: MarketingAnnouncementInput): void {
+  if (!MARKETING_ANNOUNCEMENT_CONTENT_TYPES.includes(data.contentType)) {
+    throw new Error("Invalid content type");
+  }
+  if (!MARKETING_ANNOUNCEMENT_DISPLAY_STYLES.includes(data.displayStyle)) {
+    throw new Error("Invalid display style");
+  }
+
+  const title = data.title?.trim() ?? "";
+  const body = data.body?.trim() ?? "";
+  const imageUrl = data.imageUrl?.trim() ?? "";
+  const ctaLabel = data.ctaLabel?.trim() ?? "";
+  const ctaUrl = data.ctaUrl?.trim() ?? "";
+
+  if (data.contentType === "image_only" && !imageUrl) {
+    throw new Error("Image is required for image-only announcements");
+  }
+  if (data.contentType === "text_only" && !title && !body) {
+    throw new Error("Title or body is required for text-only announcements");
+  }
+  if (data.contentType === "text_image") {
+    if (!imageUrl) throw new Error("Image is required for text + image announcements");
+    if (!title && !body) throw new Error("Title or body is required for text + image announcements");
+  }
+  if (data.contentType === "text_image_link") {
+    if (!imageUrl) throw new Error("Image is required for announcements with links");
+    if (!title && !body) throw new Error("Title or body is required for announcements with links");
+    if (!ctaLabel || !ctaUrl) throw new Error("CTA label and URL are required for announcements with links");
+  }
+
+  if (data.startsAt && data.endsAt) {
+    const start = new Date(data.startsAt).getTime();
+    const end = new Date(data.endsAt).getTime();
+    if (!Number.isNaN(start) && !Number.isNaN(end) && end < start) {
+      throw new Error("End date must be after start date");
+    }
+  }
+}
+
+function marketingAnnouncementPayload(data: MarketingAnnouncementInput) {
+  return {
+    title: data.title?.trim() ?? "",
+    body: data.body?.trim() ?? "",
+    image_url: data.imageUrl?.trim() ?? "",
+    cta_label: data.ctaLabel?.trim() ?? "",
+    cta_url: data.ctaUrl?.trim() ?? "",
+    content_type: data.contentType,
+    display_style: data.displayStyle,
+    starts_at: data.startsAt || null,
+    ends_at: data.endsAt || null,
+    priority: data.priority ?? 0,
+    is_active: data.isActive ?? true,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function revalidateMarketingAnnouncementPaths() {
+  revalidatePath("/");
+  revalidatePath("/ta");
+  revalidatePath("/admin/home");
+}
+
+export async function addMarketingAnnouncement(data: MarketingAnnouncementInput) {
+  await requireAdmin();
+  validateMarketingAnnouncementInput(data);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("marketing_announcements").insert(marketingAnnouncementPayload(data));
+  if (error) throw new Error(error.message);
+
+  revalidateMarketingAnnouncementPaths();
+}
+
+export async function updateMarketingAnnouncement(id: string, data: MarketingAnnouncementInput) {
+  await requireAdmin();
+  validateMarketingAnnouncementInput(data);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("marketing_announcements")
+    .update(marketingAnnouncementPayload(data))
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateMarketingAnnouncementPaths();
+}
+
+export async function deleteMarketingAnnouncement(id: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("marketing_announcements").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateMarketingAnnouncementPaths();
 }
 

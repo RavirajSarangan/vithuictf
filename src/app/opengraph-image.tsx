@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { BRAND } from "@/lib/constants";
 
-export const alt = `${BRAND.name} — O/L & A/L ICT Tuition Sri Lanka`;
+export const alt = `${BRAND.name} — O/L & A/L ICT Institute Sri Lanka`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -25,7 +25,7 @@ export default function OgImage() {
           {BRAND.fullName}
         </div>
         <div style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.1, maxWidth: 900 }}>
-          O/L &amp; A/L ICT Tuition
+          O/L &amp; A/L ICT Institute
         </div>
         <div style={{ fontSize: 36, fontWeight: 600, marginTop: 12, opacity: 0.95 }}>Islandwide · Sri Lanka</div>
         <div style={{ fontSize: 22, marginTop: 32, opacity: 0.85 }}>

@@ -15,7 +15,7 @@ export const SINHALA_UI_OVERRIDES: Partial<Record<MarketingUiKey, string>> = {
   "lang.si": "සිංහල",
   "hero.badge": "ICTF ආයතනය · යාපනය",
   "hero.title": "O/L & A/L ICT",
-  "hero.accent": "ටියුෂන්",
+  "hero.accent": "ආයතනය",
   "hero.subtitle": "ශ්‍රී ලංකාවේ විශ්වාසදායක ICT අධ්‍යයන වේදිකාව සමඟ ඔබේ සිහින සාක්ෂාත් කර ගන්න.",
   "faq.badge": "නිති අසන ප්‍රශ්න",
   "faq.title": "ප්‍රශ්න",

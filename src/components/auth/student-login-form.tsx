@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { GraduationCap, ShieldCheck } from "lucide-react";
 import { useAuth, getRoleRedirect } from "@/providers/auth-provider";
 import { authFieldClassName } from "@/components/auth/auth-field-styles";
 import { PasswordField } from "@/components/auth/password-field";
@@ -12,16 +13,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { BRAND } from "@/lib/constants";
+import { EMAIL_PATTERN, isLoginErrorCode } from "@/lib/auth/login-errors";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const loginInputClassName = authFieldClassName;
 
+type LoginMode = "studentId" | "email";
+
+const loginModeOptions: { id: LoginMode; labelKey: "auth.studentId" | "auth.staffAdminLogin"; icon: typeof GraduationCap }[] = [
+  { id: "studentId", labelKey: "auth.studentId", icon: GraduationCap },
+  { id: "email", labelKey: "auth.staffAdminLogin", icon: ShieldCheck },
+];
+
 export function StudentLoginForm() {
+  const [loginMode, setLoginMode] = useState<LoginMode>("studentId");
   const [studentId, setStudentId] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signInWithStudentId } = useAuth();
+  const { signInAsStaff, signInWithStudentId } = useAuth();
   const router = useRouter();
   const { t } = useMarketingText();
 
@@ -29,11 +40,33 @@ export function StudentLoginForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      const user = await signInWithStudentId(studentId, password);
+      if (loginMode === "email") {
+        const normalizedEmail = email.trim().toLowerCase();
+        if (!EMAIL_PATTERN.test(normalizedEmail)) {
+          toast.error(t("auth.invalidEmail"));
+          return;
+        }
+      }
+
+      const user =
+        loginMode === "email"
+          ? await signInAsStaff(email.trim().toLowerCase(), password)
+          : await signInWithStudentId(studentId, password);
       router.push(getRoleRedirect(user.role));
       toast.success(t("auth.loginSuccess"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("auth.loginFailed"));
+      if (err instanceof Error && isLoginErrorCode(err.message)) {
+        const keyMap = {
+          INVALID_EMAIL: "auth.invalidEmail",
+          STUDENT_ID_INVALID: "auth.studentIdInvalid",
+          STUDENT_ID_NOT_FOUND: "auth.studentIdNotFound",
+          STAFF_EMAIL_ONLY: "auth.staffEmailOnly",
+          STUDENT_ID_ONLY: "auth.studentIdOnly",
+        } as const;
+        toast.error(t(keyMap[err.message]));
+      } else {
+        toast.error(err instanceof Error ? err.message : t("auth.loginFailed"));
+      }
     } finally {
       setLoading(false);
     }
@@ -43,31 +76,83 @@ export function StudentLoginForm() {
     <>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-icvf-navy sm:text-3xl">{t("auth.welcomeBack")}</h1>
-        <p className="mt-2 text-sm text-icvf-text-light sm:text-base">{t("auth.signInSub")}</p>
+        <p className="mt-2 text-sm text-icvf-text-light sm:text-base">
+          {loginMode === "email" ? t("auth.signInSubStaff") : t("auth.signInSub")}
+        </p>
       </div>
 
-      <div className="mb-6 inline-flex rounded-xl bg-slate-100 p-1">
-        <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-icvf-navy shadow-sm">
-          {t("auth.studentId")}
-        </span>
+      <div
+        className="mb-6 grid w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1"
+        role="tablist"
+        aria-label={t("auth.signInHeading")}
+      >
+        {loginModeOptions.map(({ id, labelKey, icon: Icon }) => {
+          const active = loginMode === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setLoginMode(id)}
+              className={cn(
+                "flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200",
+                active
+                  ? "bg-white text-icvf-navy shadow-sm ring-1 ring-black/[0.04]"
+                  : "text-icvf-text-light hover:text-icvf-navy"
+              )}
+            >
+              <Icon className={cn("size-4 shrink-0", active ? "text-icvf-accent" : "text-current")} aria-hidden />
+              <span className="truncate">{t(labelKey)}</span>
+            </button>
+          );
+        })}
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="studentId" className="text-sm font-semibold text-icvf-navy">
-            {t("auth.studentId")}
-          </Label>
-          <Input
-            id="studentId"
-            type="text"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            className={loginInputClassName}
-            placeholder={t("auth.studentIdPlaceholder")}
-            autoComplete="username"
-            required
-          />
-        </div>
+        {loginMode === "studentId" ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="studentId" className="text-sm font-semibold text-icvf-navy">
+              {t("auth.studentId")}
+            </Label>
+            <Input
+              id="studentId"
+              type="text"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              className={loginInputClassName}
+              placeholder={t("auth.studentIdPlaceholder")}
+              autoComplete="username"
+              required
+            />
+            <p className="text-xs leading-relaxed text-icvf-text-light">
+              {t("auth.studentIdMissingHelp")}{" "}
+              <a
+                href={`mailto:${BRAND.contact.email}?subject=Student%20ID%20request`}
+                className="font-medium text-icvf-navy hover:text-icvf-accent hover:underline"
+              >
+                {BRAND.contact.email}
+              </a>
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email" className="text-sm font-semibold text-icvf-navy">
+              {t("auth.email")}
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={loginInputClassName}
+              placeholder={t("auth.emailPlaceholder")}
+              autoComplete="email"
+              required
+            />
+          </div>
+        )}
 
         <PasswordField
           id="password"
@@ -98,12 +183,24 @@ export function StudentLoginForm() {
         </a>
       </p>
 
-      <p className="mt-8 text-center text-sm text-icvf-text-light">
-        {t("auth.noAccount")}{" "}
-        <Link href="/register" className="font-semibold text-icvf-navy hover:text-icvf-accent hover:underline">
-          {t("auth.createAccount")}
-        </Link>
-      </p>
+      {loginMode === "studentId" ? (
+        <p className="mt-8 text-center text-sm text-icvf-text-light">
+          {t("auth.noAccount")}{" "}
+          <Link href="/register" className="font-semibold text-icvf-navy hover:text-icvf-accent hover:underline">
+            {t("auth.createAccount")}
+          </Link>
+        </p>
+      ) : (
+        <p className="mt-8 text-center text-sm text-icvf-text-light">
+          {t("auth.needHelp")}{" "}
+          <a
+            href={`mailto:${BRAND.contact.email}?subject=Staff%20access%20request`}
+            className="font-semibold text-icvf-navy hover:text-icvf-accent hover:underline"
+          >
+            {BRAND.contact.email}
+          </a>
+        </p>
+      )}
 
       <SecurityComplianceBadges
         variant="login"

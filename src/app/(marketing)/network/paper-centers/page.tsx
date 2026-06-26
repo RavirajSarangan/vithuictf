@@ -31,7 +31,7 @@ export default async function PaperCentersPage() {
           <h1 className="text-3xl font-bold text-icvf-navy sm:text-4xl">ICT Paper Center Network — Sri Lanka</h1>
           <p className="mt-4 text-lg text-icvf-text-light">
             ICTF operates an islandwide paper center network for O/L and A/L ICT past paper practice. Combine
-            in-person paper sessions with live Zoom tuition and the ICTF Student Portal.
+            in-person paper sessions with live Zoom institute programs and the ICTF Student Portal.
           </p>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -45,7 +45,7 @@ export default async function PaperCentersPage() {
                     href={`/locations/${center.district.toLowerCase()}`}
                     className="mt-3 inline-block text-sm text-icvf-navy underline"
                   >
-                    ICT tuition in {center.district}
+                    ICT institute in {center.district}
                   </Link>
                 ) : null}
               </article>

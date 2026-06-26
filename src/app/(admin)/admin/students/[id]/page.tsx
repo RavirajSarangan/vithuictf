@@ -86,15 +86,15 @@ export default function AdminStudentDetailPage() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-8 w-64 bg-white/10" />
-        <Skeleton className="h-48 w-full bg-white/10" />
+        <Skeleton className="h-8 w-64 bg-muted" />
+        <Skeleton className="h-48 w-full bg-muted" />
       </div>
     );
   }
 
   if (!student) {
     return (
-      <div className="text-center text-white/60">
+      <div className="text-center text-muted-foreground">
         <p>Student not found</p>
         <Button nativeButton={false} render={<Link href="/admin/students" />} variant="ghost" className="mt-4 text-icvf-accent">
           <ArrowLeft className="mr-2 size-4" /> Back to Students
@@ -122,7 +122,7 @@ export default function AdminStudentDetailPage() {
         description={`Student ID: ${student.studentId}`}
         action={
           <div className="flex gap-2">
-            <Button variant="outline" className="border-white/20 text-white" onClick={handleResend} disabled={resending}>
+            <Button variant="outline"  onClick={handleResend} disabled={resending}>
               {resending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Mail className="mr-2 size-4" />}
               Resend Welcome Email
             </Button>
@@ -154,45 +154,45 @@ export default function AdminStudentDetailPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border-white/10 bg-white/5 text-white">
+        <Card >
           <CardHeader>
             <CardTitle className="text-base">Account Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-white/60">Username</span>
+              <span className="text-muted-foreground">Username</span>
               <span>{student.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60">Student ID</span>
+              <span className="text-muted-foreground">Student ID</span>
               <span className="font-mono">{student.studentId}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60">Course</span>
+              <span className="text-muted-foreground">Course</span>
               <Badge className="bg-icvf-accent/20 text-icvf-accent">{student.courseName}</Badge>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-white/5 text-white">
+        <Card >
           <CardHeader>
             <CardTitle className="text-base">Performance</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-white/60">Grade</span>
+              <span className="text-muted-foreground">Grade</span>
               <span>{student.grade}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60">Rank</span>
+              <span className="text-muted-foreground">Rank</span>
               <span>#{student.rank}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60">Points</span>
+              <span className="text-muted-foreground">Points</span>
               <span>{student.points.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60">Performance</span>
+              <span className="text-muted-foreground">Performance</span>
               <span>{student.performance}%</span>
             </div>
           </CardContent>

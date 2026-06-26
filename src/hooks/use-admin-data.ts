@@ -10,6 +10,7 @@ import {
   mapContactInquiry,
   mapCourse,
   mapFeaturedRanking,
+  mapMarketingAnnouncement,
   mapPaperCenter,
   mapPayment,
   mapResource,
@@ -25,6 +26,7 @@ import type {
   ContactInquiry,
   Course,
   FeaturedRanking,
+  MarketingAnnouncement,
   PaperCenter,
   Payment,
   Parent,
@@ -69,6 +71,32 @@ export function useAdminStats() {
   }, []);
 
   return stats;
+}
+
+export function useAdminRevenueTrend() {
+  const [data, setData] = useState<{ date: string; revenue: number }[] | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("payments")
+      .select("amount, payment_date")
+      .eq("status", "paid")
+      .then(({ data: rows }) => {
+        const byDate = new Map<string, number>();
+        for (const payment of rows ?? []) {
+          const date = new Date(payment.payment_date).toISOString().slice(0, 10);
+          byDate.set(date, (byDate.get(date) ?? 0) + Number(payment.amount));
+        }
+        setData(
+          Array.from(byDate.entries())
+            .map(([date, revenue]) => ({ date, revenue }))
+            .sort((a, b) => a.date.localeCompare(b.date))
+        );
+      });
+  }, []);
+
+  return data;
 }
 
 
@@ -321,6 +349,30 @@ export function useContactInquiries() {
           return;
         }
         setData((rows ?? []).map(mapContactInquiry));
+      });
+  }, [version]);
+
+  return { data, refresh };
+}
+
+export function useAdminMarketingAnnouncements() {
+  const [data, setData] = useState<MarketingAnnouncement[]>([]);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    createClient()
+      .from("marketing_announcements")
+      .select("*")
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: false })
+      .then(({ data: rows, error }) => {
+        if (error) {
+          console.error("marketing_announcements fetch failed:", error.message);
+          setData([]);
+          return;
+        }
+        setData((rows ?? []).map(mapMarketingAnnouncement));
       });
   }, [version]);
 

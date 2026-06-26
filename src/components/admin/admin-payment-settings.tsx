@@ -21,25 +21,25 @@ export function AdminPaymentSettingsPanel() {
   const { settings, loading, refresh } = usePlatformSettings();
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(settings.onlinePaymentsEnabled);
-  const [tuition, setTuition] = useState(settings.defaultTuitionLkr);
+  const [instituteFee, setInstituteFee] = useState(settings.defaultInstituteFeeLkr);
   const [settingsKey, setSettingsKey] = useState(
-    () => `${settings.onlinePaymentsEnabled}:${settings.defaultTuitionLkr}`
+    () => `${settings.onlinePaymentsEnabled}:${settings.defaultInstituteFeeLkr}`
   );
 
-  const nextSettingsKey = `${settings.onlinePaymentsEnabled}:${settings.defaultTuitionLkr}`;
+  const nextSettingsKey = `${settings.onlinePaymentsEnabled}:${settings.defaultInstituteFeeLkr}`;
   const dirty =
-    enabled !== settings.onlinePaymentsEnabled || tuition !== settings.defaultTuitionLkr;
+    enabled !== settings.onlinePaymentsEnabled || instituteFee !== settings.defaultInstituteFeeLkr;
 
   if (settingsKey !== nextSettingsKey && !dirty && !saving) {
     setSettingsKey(nextSettingsKey);
     setEnabled(settings.onlinePaymentsEnabled);
-    setTuition(settings.defaultTuitionLkr);
+    setInstituteFee(settings.defaultInstituteFeeLkr);
   }
 
   if (loading) {
     return (
-      <GlassCard className="border-white/10 bg-white/5 p-6 text-white">
-        <p className="text-sm text-white/60">Loading payment settings…</p>
+      <GlassCard className="p-6">
+        <p className="text-sm text-muted-foreground">Loading payment settings…</p>
       </GlassCard>
     );
   }
@@ -49,15 +49,15 @@ export function AdminPaymentSettingsPanel() {
   const live = isOnlinePaymentsAvailable(settings);
 
   const onSave = async () => {
-    if (tuition < 1) {
-      toast.error("Default tuition fee must be at least LKR 1");
+    if (instituteFee < 1) {
+      toast.error("Default institute fee must be at least LKR 1");
       return;
     }
     setSaving(true);
     try {
       await updatePlatformPaymentSettings({
         onlinePaymentsEnabled: enabled,
-        defaultTuitionLkr: tuition,
+        defaultInstituteFeeLkr: instituteFee,
       });
       refresh();
       toast.success(enabled ? "Online payments enabled" : "Online payments set to coming soon");
@@ -70,11 +70,11 @@ export function AdminPaymentSettingsPanel() {
 
   const onReset = () => {
     setEnabled(settings.onlinePaymentsEnabled);
-    setTuition(settings.defaultTuitionLkr);
+    setInstituteFee(settings.defaultInstituteFeeLkr);
   };
 
   return (
-    <GlassCard className="border-white/10 bg-white/5 p-6 text-white">
+    <GlassCard className="p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -86,41 +86,41 @@ export function AdminPaymentSettingsPanel() {
                   ? "bg-green-600"
                   : status === "misconfigured"
                     ? "bg-amber-600"
-                    : "bg-white/15 text-white"
+                    : "bg-muted text-foreground"
               }
             >
               {live ? "Live" : status === "misconfigured" ? "Needs Stripe keys" : "Coming soon"}
             </Badge>
           </div>
-          <p className="mt-2 max-w-xl text-sm text-white/60">
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
             Students see Pay with Stripe only when enabled here and Stripe keys are configured.
             Manual fee recording below always works for staff.
           </p>
         </div>
-        <Badge variant="outline" className="border-white/20 text-white/80">
+        <Badge variant="outline" className="border-input text-muted-foreground">
           Stripe: {stripeReady ? "configured" : "not configured"}
         </Badge>
       </div>
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
-        <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 p-4">
+        <div className="flex items-center justify-between rounded-lg border border-border bg-black/20 p-4">
           <div>
-            <Label className="text-white">Enable online checkout</Label>
-            <p className="text-xs text-white/50">Off = students see coming soon</p>
+            <Label>Enable online checkout</Label>
+            <p className="text-xs text-muted-foreground">Off = students see coming soon</p>
           </div>
           <Switch checked={enabled} onCheckedChange={setEnabled} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="default-institute-fee" className="text-white">
-            Default tuition fee (LKR)
+          <Label htmlFor="default-institute-fee">
+            Default institute fee (LKR)
           </Label>
           <Input
             id="default-institute-fee"
             type="number"
             min={1}
-            value={tuition}
-            onChange={(e) => setTuition(Number(e.target.value) || 0)}
-            className="border-white/15 bg-black/20 text-white"
+            value={instituteFee}
+            onChange={(e) => setInstituteFee(Number(e.target.value) || 0)}
+            className="border-input bg-background text-foreground"
           />
         </div>
       </div>
@@ -133,15 +133,15 @@ export function AdminPaymentSettingsPanel() {
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Button
-          className="bg-icvf-accent hover:bg-icvf-accent-hover"
-          disabled={saving || !dirty || tuition < 1}
+          
+          disabled={saving || !dirty || instituteFee < 1}
           onClick={() => void onSave()}
         >
           {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
           Save payment settings
         </Button>
         {dirty ? (
-          <Button variant="outline" className="border-white/20 text-white" onClick={onReset}>
+          <Button variant="outline"  onClick={onReset}>
             Reset
           </Button>
         ) : null}

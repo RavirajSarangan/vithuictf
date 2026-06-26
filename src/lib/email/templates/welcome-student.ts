@@ -37,7 +37,7 @@ const PORTAL_FEATURES = [
   },
   {
     title: "Calendar & announcements",
-    description: "Stay updated with class schedules and important tuition notices.",
+    description: "Stay updated with class schedules and important institute notices.",
   },
   {
     title: "Student profile & index number",

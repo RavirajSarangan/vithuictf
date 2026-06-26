@@ -30,7 +30,7 @@ export default function AdminInquiriesPage() {
           icon={Mail}
           title="No inquiries yet"
           description="Contact form submissions will appear here"
-          className="border-white/10 bg-white/5 text-white"
+          
         />
       ) : (
         <AdminTable
@@ -42,7 +42,7 @@ export default function AdminInquiriesPage() {
               key: "status",
               label: "Status",
               render: (r) => (
-                <Badge variant="secondary" className="border-white/10 bg-white/10 text-white capitalize">
+                <Badge variant="secondary" className="border-border bg-muted text-foreground capitalize">
                   {r.status}
                 </Badge>
               ),
@@ -57,7 +57,7 @@ export default function AdminInquiriesPage() {
               label: "",
               render: (r) =>
                 r.status === "new" ? (
-                  <Button size="sm" variant="outline" className="border-white/20 text-white" onClick={() => markRead(r.id)}>
+                  <Button size="sm" variant="outline"  onClick={() => markRead(r.id)}>
                     Mark read
                   </Button>
                 ) : null,

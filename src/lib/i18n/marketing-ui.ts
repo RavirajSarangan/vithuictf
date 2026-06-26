@@ -49,6 +49,7 @@ export type MarketingUiKey =
   | "hero.passRate"
   | "hero.mobileProofTitle"
   | "hero.abGrades"
+  | "hero.scrollHint"
   | "btn.whatsapp"
   | "results.badge"
   | "results.title"
@@ -76,8 +77,14 @@ export type MarketingUiKey =
   | "marketing.comingSoon.chipPrograms"
   | "marketing.comingSoon.chipResults"
   | "marketing.comingSoon.chipCenters"
+  | "marketing.comingSoon.chipFaq"
+  | "marketing.comingSoon.chipRegister"
   | "marketing.comingSoon.chipStatus"
+  | "marketing.comingSoon.statusBadge"
+  | "marketing.comingSoon.sectionStatus"
+  | "marketing.comingSoon.focusLabel"
   | "marketing.comingSoon.building"
+  | "marketing.comingSoon.rotatorSuffix"
   | "marketing.siteStatus.comingSoon.eyebrow"
   | "marketing.siteStatus.comingSoon.title"
   | "marketing.siteStatus.comingSoon.subtitle"
@@ -143,6 +150,13 @@ export type MarketingUiKey =
   | "footer.youtube"
   | "footer.telegram"
   | "footer.whatsapp"
+  | "footer.quickLinks"
+  | "footer.programs"
+  | "footer.portal"
+  | "footer.heritage"
+  | "footer.description"
+  | "footer.marquee.lms"
+  | "footer.marquee.results"
   | "contact.badge"
   | "contact.title"
   | "contact.accent"
@@ -271,6 +285,14 @@ export type MarketingUiKey =
   | "auth.registerHere"
   | "auth.welcomeBack"
   | "auth.loginWithEmail"
+  | "auth.staffAdminLogin"
+  | "auth.signInSubStaff"
+  | "auth.studentIdMissingHelp"
+  | "auth.invalidEmail"
+  | "auth.studentIdNotFound"
+  | "auth.studentIdInvalid"
+  | "auth.staffEmailOnly"
+  | "auth.studentIdOnly"
   | "auth.studentId"
   | "auth.studentIdPlaceholder"
   | "auth.secureLogin"
@@ -324,7 +346,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "nav.faq": { en: "FAQ", ta: "கேள்விகள்" },
   "nav.contact": { en: "Contact", ta: "தொடர்பு" },
   "nav.register": { en: "Register", ta: "பதிவு" },
-  "nav.institute": { en: "Tuition", ta: "பயிற்சி" },
+  "nav.institute": { en: "Institute", ta: "நிறுவனம்" },
   "btn.login": { en: "Login", ta: "உள்நுழை" },
   "btn.dashboard": { en: "Dashboard", ta: "டாஷ்போர்டு" },
   "btn.apply": { en: "Register Now", ta: "இப்போது பதிவு செய்" },
@@ -352,8 +374,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "hero.coursesOffered": { en: "Courses Offered", ta: "வழங்கப்படும் பாடங்கள்" },
   "hero.placementRate": { en: "Placement Rate", ta: "வேலைவாய்ப்பு விகிதம்" },
   "hero.yearsExperience": { en: "Years Experience", ta: "அனுபவ ஆண்டுகள்" },
-  "hero.badge": { en: "ICTF Tuition · Jaffna", ta: "ICTF பயிற்சி · யாழ்ப்பாணம்" },
-  "hero.title": { en: "O/L & A/L ICT Tuition", ta: "O/L & A/L ICT பயிற்சி" },
+  "hero.badge": { en: "ICTF Institute · Jaffna", ta: "ICTF நிறுவனம் · யாழ்ப்பாணம்" },
+  "hero.title": { en: "O/L & A/L ICT Institute", ta: "O/L & A/L ICT நிறுவனம்" },
   "hero.accent": { en: "Islandwide", ta: "தீவு முழுவதும்" },
   "hero.subtitle": {
     en: "Live Zoom classes, paper center practice, revision programs, and the ICTF student portal. Register online to join a class today.",
@@ -371,6 +393,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "hero.passRate": { en: "A/B Pass Rate", ta: "A/B வெற்றி விகிதம்" },
   "hero.mobileProofTitle": { en: "Proven results", ta: "நிரூபிக்கப்பட்ட முடிவுகள்" },
   "hero.abGrades": { en: "A/B Grades", ta: "A/B தரங்கள்" },
+  "hero.scrollHint": { en: "Scroll to explore", ta: "ஆராய உருட்டவும்" },
   "btn.whatsapp": { en: "WhatsApp Us", ta: "WhatsApp செய்யுங்கள்" },
   "results.badge": { en: "Results", ta: "முடிவுகள்" },
   "results.title": { en: "Exam results our students are proud of", ta: "எங்கள் மாணவர்கள் பெருமைப்படும் தேர்வு முடிவுகள்" },
@@ -405,7 +428,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     en: "Physical centers and online classrooms working together for every learner.",
     ta: "ஒவ்வொரு மாணவருக்கும் உடல் மையங்களும் ஆன்லைன் வகுப்பறைகளும் ஒன்றிணைந்து.",
   },
-  "marketing.comingSoon.eyebrow": { en: "ICTF Tuition", ta: "ICTF பயிற்சி" },
+  "marketing.comingSoon.eyebrow": { en: "ICTF Institute", ta: "ICTF நிறுவனம்" },
   "marketing.comingSoon.title": { en: "Coming Soon", ta: "விரைவில் வருகிறது" },
   "marketing.comingSoon.titleLead": { en: "Coming", ta: "விரைவில்" },
   "marketing.comingSoon.titleAccent": { en: "Soon", ta: "வருகிறது" },
@@ -416,12 +439,30 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "marketing.comingSoon.chipPrograms": { en: "Programs & Courses", ta: "திட்டங்கள் & வகுப்புகள்" },
   "marketing.comingSoon.chipResults": { en: "Results & Rankings", ta: "முடிவுகள் & தரவரிசை" },
   "marketing.comingSoon.chipCenters": { en: "Islandwide Centers", ta: "தீவு முழுவதும் மையங்கள்" },
-  "marketing.comingSoon.chipStatus": { en: "Preparing", ta: "தயாராகிறது" },
+  "marketing.comingSoon.chipFaq": { en: "FAQ & Help", ta: "கேள்விகள் & உதவி" },
+  "marketing.comingSoon.chipRegister": { en: "Student Registration", ta: "மாணவர் பதிவு" },
+  "marketing.comingSoon.chipStatus": { en: "Ongoing", ta: "நடப்பில்" },
+  "marketing.comingSoon.statusBadge": {
+    en: "Site expansion in progress",
+    ta: "தள விரிவாக்கம் நடப்பில் உள்ளது",
+  },
+  "marketing.comingSoon.sectionStatus": {
+    en: "Ongoing",
+    ta: "நடப்பில்",
+  },
+  "marketing.comingSoon.focusLabel": {
+    en: "Currently preparing",
+    ta: "தற்போது தயாராகிறது",
+  },
   "marketing.comingSoon.building": {
     en: "New sections are loading",
     ta: "புதிய பிரிவுகள் ஏற்றப்படுகின்றன",
   },
-  "marketing.siteStatus.comingSoon.eyebrow": { en: "ICTF Tuition", ta: "ICTF பயிற்சி" },
+  "marketing.comingSoon.rotatorSuffix": {
+    en: "coming soon",
+    ta: "விரைவில் வருகிறது",
+  },
+  "marketing.siteStatus.comingSoon.eyebrow": { en: "ICTF Institute", ta: "ICTF நிறுவனம்" },
   "marketing.siteStatus.comingSoon.title": { en: "Coming Soon", ta: "விரைவில் வருகிறது" },
   "marketing.siteStatus.comingSoon.subtitle": {
     en: "We are preparing something great for students across Sri Lanka. The full site will open shortly.",
@@ -537,6 +578,19 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "footer.youtube": { en: "YouTube Channel", ta: "YouTube சேனல்" },
   "footer.telegram": { en: "Telegram Channel", ta: "Telegram சேனல்" },
   "footer.whatsapp": { en: "WhatsApp", ta: "WhatsApp" },
+  "footer.quickLinks": { en: "Quick Links", ta: "விரைவு இணைப்புகள்" },
+  "footer.programs": { en: "Our Programs", ta: "எங்கள் திட்டங்கள்" },
+  "footer.portal": { en: "Portal Access", ta: "போர்டல் அணுகல்" },
+  "footer.heritage": {
+    en: "Rooted in Jaffna · Serving ICT students islandwide",
+    ta: "யாழில் வேரூன்றியது · தீவு முழுவதும் ICT மாணவர்களுக்கு",
+  },
+  "footer.description": {
+    en: "O/L & A/L ICT institute — Zoom classes, paper centers, and the student portal across Sri Lanka.",
+    ta: "O/L & A/L ICT நிறுவனம் — Zoom வகுப்புகள், பேப்பர் மையங்கள் மற்றும் மாணவர் போர்டல்.",
+  },
+  "footer.marquee.lms": { en: "LMS Portal", ta: "LMS போர்டல்" },
+  "footer.marquee.results": { en: "Student Results", ta: "மாணவர் முடிவுகள்" },
   "contact.badge": { en: "Contact", ta: "தொடர்பு" },
   "contact.title": { en: "Contact ICTF", ta: "ICTF-ஐ தொடர்பு கொள்ளுங்கள்" },
   "contact.accent": { en: "for registration help", ta: "பதிவு உதவிக்கு" },
@@ -663,8 +717,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.comingSoon": { en: "Coming Soon", ta: "விரைவில் வருகிறது" },
   "auth.signInHeading": { en: "Sign in to continue", ta: "தொடர உள்நுழையுங்கள்" },
   "auth.signInSub": {
-    en: "Sign in to continue your learning journey.",
-    ta: "உங்கள் கற்றல் பயணத்தைத் தொடர உள்நுழையுங்கள்.",
+    en: "Sign in with your Student ID only. Email login is not available for students.",
+    ta: "உங்கள் மாணவர் அடையாளத்துடன் மட்டும் உள்நுழையுங்கள். மாணவர்களுக்கு மின்னஞ்சல் உள்நுழைவு இல்லை.",
   },
   "auth.fullName": { en: "Full Name", ta: "முழு பெயர்" },
   "auth.email": { en: "Email", ta: "மின்னஞ்சல்" },
@@ -683,8 +737,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.newStudent": { en: "New student?", ta: "புதிய மாணவரா?" },
   "auth.registerNow": { en: "Register Now", ta: "இப்போது பதிவு செய்" },
   "auth.registerCardDesc": {
-    en: "Islandwide online ICT tuition — study from anywhere through ICTF.",
-    ta: "தீவு முழுவதும் ஆன்லைன் ICT பயிற்சி — ICTF மூலம் எங்கிருந்தும் படியுங்கள்.",
+    en: "Islandwide online ICT institute — study from anywhere through ICTF.",
+    ta: "தீவு முழுவதும் ஆன்லைன் ICT நிறுவனம் — ICTF மூலம் எங்கிருந்தும் படியுங்கள்.",
   },
   "auth.islandwide": { en: "Islandwide", ta: "தீவு முழுவதும்" },
   "auth.paperCenters": { en: "Paper Centers", ta: "பேப்பர் மையங்கள்" },
@@ -749,6 +803,35 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.registerHere": { en: "Register here", ta: "இங்கே பதிவு செய்" },
   "auth.welcomeBack": { en: "Welcome back", ta: "மீண்டும் வரவேற்கிறோம்" },
   "auth.loginWithEmail": { en: "Email", ta: "மின்னஞ்சல்" },
+  "auth.staffAdminLogin": { en: "Staff", ta: "ஊழியர்" },
+  "auth.signInSubStaff": {
+    en: "Staff email sign-in is for admin accounts only.",
+    ta: "ஊழியர் மின்னஞ்சல் உள்நுழைவு நிர்வாகக் கணக்குகளுக்கு மட்டுமே.",
+  },
+  "auth.studentIdMissingHelp": {
+    en: "Don't have a Student ID yet? Contact admin for help.",
+    ta: "உங்களிடம் மாணவர் அடையாளம் இல்லையா? உதவிக்கு நிர்வாகியைத் தொடர்பு கொள்ளுங்கள்.",
+  },
+  "auth.invalidEmail": {
+    en: "Enter a valid email address.",
+    ta: "சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்.",
+  },
+  "auth.studentIdNotFound": {
+    en: "Student ID not found. If you are missing your ID, contact admin.",
+    ta: "மாணவர் அடையாளம் கிடைக்கவில்லை. உங்கள் அடையாளம் இல்லை என்றால் நிர்வாகியைத் தொடர்பு கொள்ளுங்கள்.",
+  },
+  "auth.studentIdInvalid": {
+    en: "Enter a valid Student ID.",
+    ta: "சரியான மாணவர் அடையாளத்தை உள்ளிடவும்.",
+  },
+  "auth.staffEmailOnly": {
+    en: "This email is not an admin account. Use the Student ID tab for student login.",
+    ta: "இந்த மின்னஞ்சல் நிர்வாகக் கணக்கு அல்ல. மாணவர் உள்நுழைவுக்கு மாணவர் அடையாளம் தாவலைப் பயன்படுத்துங்கள்.",
+  },
+  "auth.studentIdOnly": {
+    en: "Students must sign in with Student ID. Use the Staff tab for admin email login.",
+    ta: "மாணவர்கள் மாணவர் அடையாளத்துடன் மட்டும் உள்நுழைய வேண்டும். நிர்வாக மின்னஞ்சலுக்கு ஊழியர் தாவலைப் பயன்படுத்துங்கள்.",
+  },
   "auth.studentId": { en: "Student ID", ta: "மாணவர் அடையாளம்" },
   "auth.studentIdPlaceholder": { en: "Enter your Student ID", ta: "உங்கள் மாணவர் அடையாளத்தை உள்ளிடவும்" },
   "auth.secureLogin": { en: "Secure 256-bit SSL encryption", ta: "பாதுகாப்பான 256-bit SSL குறியாக்கம்" },
