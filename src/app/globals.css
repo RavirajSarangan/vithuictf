@@ -1142,6 +1142,42 @@
   box-shadow: none !important;
 }
 
+/* Mobile sheet — navbar-04 style panel + blurred backdrop */
+[data-slot=sheet-content].marketing-mobile-sheet {
+  top: max(0.75rem, env(safe-area-inset-top)) !important;
+  bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;
+  height: auto !important;
+}
+
+body:has([data-slot=sheet-content].marketing-mobile-sheet) [data-slot=sheet-overlay] {
+  background: rgba(28, 37, 71, 0.28) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.marketing-mobile-sheet .marketing-nav-brand--dark .brand-logo-img {
+  transform: scale(1.08);
+  transform-origin: left center;
+}
+
+.marketing-mobile-sheet-actions button:not([aria-pressed="true"]) {
+  color: rgba(39, 52, 97, 0.55) !important;
+}
+
+.marketing-mobile-sheet-actions button:not([aria-pressed="true"]):hover {
+  color: var(--icvf-navy) !important;
+}
+
+.marketing-mobile-sheet-actions > div {
+  border-color: rgba(39, 52, 97, 0.12) !important;
+  background: rgba(39, 52, 97, 0.04) !important;
+}
+
+.marketing-mobile-sheet [data-slot=accordion-trigger] {
+  color: var(--icvf-navy) !important;
+  background: transparent !important;
+}
+
 /* Keep ICVF gold register CTA — layout-only nav restyle must not override brand colors */
 [data-marketing-header] .marketing-nav-register,
 [data-marketing-header] .marketing-nav-register-cta,

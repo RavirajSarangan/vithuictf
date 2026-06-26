@@ -11,6 +11,7 @@ export function MarketingHeader() {
   return (
     <MarketingNavbar
       logo={<NavBrand />}
+      sheetLogo={<NavBrand tone="dark" />}
       loginHref="/login"
       registerHref="/register"
       mobileBadge={t("hero.badge")}

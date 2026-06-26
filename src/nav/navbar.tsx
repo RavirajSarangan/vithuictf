@@ -18,6 +18,7 @@ import { NavMenu } from "@/nav/nav-menu";
 
 export interface MarketingNavbarProps {
   logo: ReactNode;
+  sheetLogo?: ReactNode;
   loginHref: string;
   registerHref: string;
   mobileBadge?: string;
@@ -51,6 +52,7 @@ function useMarketingHeaderOffsetSync(pathname: string) {
 
 export function MarketingNavbar({
   logo,
+  sheetLogo,
   loginHref,
   registerHref,
   mobileBadge: _mobileBadge,
@@ -124,7 +126,7 @@ export function MarketingNavbar({
       <MobileNavSheet
         open={mobileOpen}
         onOpenChange={setMobileOpen}
-        logo={logo}
+        logo={sheetLogo ?? logo}
         loginHref={loginHref}
         registerHref={registerHref}
         extraActions={extraActions}

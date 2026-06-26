@@ -120,7 +120,7 @@ export function MobileNavSheet({
           </nav>
 
           {extraActions ? (
-            <div className="mt-6 flex items-center">{extraActions}</div>
+            <div className="marketing-mobile-sheet-actions mt-6 flex items-center">{extraActions}</div>
           ) : null}
 
           <div className="mt-6 flex flex-col gap-3 border-t border-icvf-navy/8 pt-5">
