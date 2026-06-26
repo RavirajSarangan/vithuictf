@@ -60,7 +60,7 @@ export function MobileNavSheet({
         <SheetTitle className="sr-only">Navigation menu</SheetTitle>
 
         <div className="flex items-center justify-between gap-3 border-b border-icvf-navy/8 px-5 py-4">
-          <div className="min-w-0 [&_.marketing-nav-brand]:h-8 [&_.marketing-nav-brand]:max-h-8 [&_[data-brand-logo]]:!h-8 [&_[data-brand-logo]]:!max-w-[7.5rem]">
+          <div className="min-w-0 [&_.marketing-nav-brand]:h-9 [&_.marketing-nav-brand]:max-h-9 [&_[data-brand-logo]]:!h-9 [&_[data-brand-logo]]:!max-w-[9.5rem]">
             {logo}
           </div>
           <button
@@ -124,12 +124,14 @@ export function MobileNavSheet({
           ) : null}
 
           <div className="mt-6 flex flex-col gap-3 border-t border-icvf-navy/8 pt-5">
-            <MarketingSessionActions
-              variant="nav-mobile-register"
-              loginHref={loginHref}
-              registerHref={registerHref}
-              onNavigate={close}
-            />
+            <div className="marketing-nav-mobile-menu-register flex justify-center">
+              <MarketingSessionActions
+                variant="nav-mobile-register"
+                loginHref={loginHref}
+                registerHref={registerHref}
+                onNavigate={close}
+              />
+            </div>
             <MarketingSessionActions
               variant="nav-mobile-sheet"
               loginHref={loginHref}

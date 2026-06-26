@@ -1,6 +1,6 @@
 "use client";
 
-import { useTheme } from "next-themes";
+import { useTheme } from "@/providers/theme-provider";
 import { useEffect } from "react";
 import { BRAND } from "@/lib/constants";
 

@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { BrandLogoSettings } from "@/types";
 
 export const DEFAULT_BRAND_LOGO_SETTINGS: BrandLogoSettings = {
-  nav: { widthRem: 10.5, scale: 1.45, scaleSm: 1.52 },
-  footer: { widthRem: 14, heightRem: 4, widthRemSm: 15, heightRemSm: 4.5 },
+  nav: { widthRem: 12.5, scale: 1.05, scaleSm: 1.1 },
+  footer: { widthRem: 17, heightRem: 5, widthRemSm: 19, heightRemSm: 5.5 },
 };
 
 const brandLogoSettingsSchema = z.object({

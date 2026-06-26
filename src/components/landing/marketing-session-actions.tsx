@@ -14,18 +14,27 @@ function NavRegisterButton({
   href,
   onClick,
   children,
+  compact = false,
 }: {
   href: string;
   onClick?: () => void;
   children: ReactNode;
+  compact?: boolean;
 }) {
   return (
-    <div className="group relative shrink-0">
-      <div
-        className="pointer-events-none absolute inset-0 -m-1 rounded-full bg-icvf-accent/45 opacity-70 blur-md transition-all duration-300 ease-out group-hover:-m-1.5 group-hover:opacity-90 group-hover:blur-lg"
-        aria-hidden
-      />
-      <ButtonLink href={href} onClick={onClick} variant="icvf" className={navRegisterButtonClass}>
+    <div className={cn("group relative shrink-0", compact && "marketing-nav-register-compact")}>
+      {!compact ? (
+        <div
+          className="pointer-events-none absolute inset-0 -m-1 rounded-full bg-icvf-accent/45 opacity-70 blur-md transition-all duration-300 ease-out group-hover:-m-1.5 group-hover:opacity-90 group-hover:blur-lg"
+          aria-hidden
+        />
+      ) : null}
+      <ButtonLink
+        href={href}
+        onClick={onClick}
+        variant="icvf"
+        className={cn(navRegisterButtonClass, compact && "h-8 min-h-8 px-3 text-[11px] shadow-none")}
+      >
         {children}
       </ButtonLink>
     </div>
@@ -107,7 +116,11 @@ export function MarketingSessionActions({
 
     if (variant === "nav-desktop-register" || variant === "nav-mobile-register") {
       return (
-        <NavRegisterButton href={portalHref} onClick={onNavigate}>
+        <NavRegisterButton
+          href={portalHref}
+          onClick={onNavigate}
+          compact={variant === "nav-mobile-register"}
+        >
           {t("btn.dashboard")}
         </NavRegisterButton>
       );
@@ -157,7 +170,11 @@ export function MarketingSessionActions({
 
   if (variant === "nav-desktop-register" || variant === "nav-mobile-register") {
     return (
-      <NavRegisterButton href={registerHref} onClick={onNavigate}>
+      <NavRegisterButton
+        href={registerHref}
+        onClick={onNavigate}
+        compact={variant === "nav-mobile-register"}
+      >
         {t("btn.registerNav")}
       </NavRegisterButton>
     );

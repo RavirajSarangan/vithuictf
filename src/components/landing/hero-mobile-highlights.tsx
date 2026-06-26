@@ -113,11 +113,11 @@ export function HeroMobileLearningChips() {
       <MotionStaggerItem className="marketing-full-bleed min-w-0">
         <div className="marketing-marquee-track py-0.5">
           <div
-            className="marketing-marquee-fade-left bg-gradient-to-r from-[#fffdf8] via-[#fffdf8]/90 to-transparent"
+            className="marketing-marquee-fade-left bg-gradient-to-r from-[var(--marketing-page-bg)] via-[var(--marketing-page-bg)]/90 to-transparent"
             aria-hidden
           />
           <div
-            className="marketing-marquee-fade-right bg-gradient-to-l from-[#f8fafc] via-[#f8fafc]/90 to-transparent"
+            className="marketing-marquee-fade-right bg-gradient-to-l from-[var(--marketing-page-bg-mid)] via-[var(--marketing-page-bg-mid)]/90 to-transparent"
             aria-hidden
           />
           <div className="hero-learning-chips-marquee flex w-max items-center gap-2.5 motion-reduce:animate-none sm:gap-3">

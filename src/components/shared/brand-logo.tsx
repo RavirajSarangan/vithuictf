@@ -9,8 +9,8 @@ const DISPLAY_HEIGHT_PX = {
   md: 36,
   lg: 40,
   xl: 44,
-  nav: 40,
-  footer: 56,
+  nav: 48,
+  footer: 64,
   authLogin: 50,
   authLoginAside: 48,
 } as const;
@@ -26,16 +26,16 @@ const MARK_LAYOUT_PX: Partial<
 const PNG_LAYOUT_PX: Partial<
   Record<BrandLogoSize, { width: number; height: number }>
 > = {
-  nav: { width: 154, height: 40 },
-  footer: { width: 200, height: 56 },
+  nav: { width: 185, height: 48 },
+  footer: { width: 228, height: 64 },
 };
 
 /** Light SVG wordmark on dark surfaces (nav, footer, portal sidebar). */
 const LIGHT_WORDMARK_LAYOUT_PX: Partial<
   Record<BrandLogoSize, { width: number; height: number }>
 > = {
-  nav: { width: 154, height: 40 },
-  footer: { width: 200, height: 56 },
+  nav: { width: 185, height: 48 },
+  footer: { width: 228, height: 64 },
 };
 
 /** Dark PNG wordmark crop boxes (light-background auth pages). */

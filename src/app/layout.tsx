@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -56,11 +57,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} h-full`}>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `!function(){try{var e=localStorage.getItem("icvf-theme")||"light",t=document.documentElement,n=e;"system"===e&&(n=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"),"dark"===n?t.classList.add("dark"):t.classList.remove("dark")}catch(e){}}();`,
-          }}
-        />
         {supabaseOrigin ? (
           <>
             <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />
@@ -70,6 +66,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="https://vitals.vercel-insights.com" />
       </head>
       <body className="min-h-dvh font-sans antialiased">
+        <Script id="icvf-theme-init" strategy="beforeInteractive">
+          {`!function(){try{var e=localStorage.getItem("icvf-theme")||"light",t=document.documentElement,n=e;"system"===e&&(n=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"),"dark"===n?t.classList.add("dark"):t.classList.remove("dark")}catch(e){}}();`}
+        </Script>
         <ThemeProvider>
           <ThemeColorMeta />
           <IcvfSiteCursorLazy />

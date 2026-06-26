@@ -146,7 +146,7 @@ export function HeroSection() {
   return (
     <section
       id="home"
-      className="hero-section relative flex min-h-0 flex-col overflow-x-clip pt-4 sm:-mt-[var(--marketing-header-offset)] sm:pt-[calc(var(--marketing-header-offset)+0.5rem)] max-lg:max-h-none lg:max-h-none"
+      className="hero-section relative flex min-h-0 flex-col overflow-x-clip -mt-[var(--marketing-header-offset)] pt-[calc(var(--marketing-header-offset)+1rem)] sm:pt-[calc(var(--marketing-header-offset)+0.5rem)] max-lg:max-h-none lg:max-h-none"
     >
       <HeroDecor />
 

@@ -76,28 +76,31 @@ export function MarketingNavbar({
         data-marketing-header
         data-mobile-open={mobileOpen ? "true" : undefined}
         className={cn(
-          "pointer-events-auto fixed top-4 left-1/2 z-50 h-14 w-[calc(100%-1.25rem)] max-w-[min(100%,var(--breakpoint-xl))] -translate-x-1/2 rounded-full border border-white/10 bg-icvf-navy shadow-[0_10px_32px_-12px_rgba(0,0,0,0.55)] sm:top-6 sm:h-16 sm:w-[calc(100%-2rem)] lg:w-fit"
+          "pointer-events-auto fixed top-4 left-1/2 z-50 h-14 w-[calc(100%-1.25rem)] max-w-[min(100%,var(--breakpoint-xl))] -translate-x-1/2 overflow-hidden rounded-full border border-white/10 bg-icvf-navy shadow-[0_10px_32px_-12px_rgba(0,0,0,0.55)] sm:top-6 sm:h-16 sm:w-[calc(100%-2rem)] lg:w-fit lg:overflow-visible"
         )}
       >
-        <div className="grid h-full w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:hidden">
-          <div className="min-w-0 justify-self-start">{logo}</div>
-          <div className="justify-self-end">
+        <div className="marketing-nav-mobile-bar flex h-full w-full items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 lg:hidden">
+          <div className="marketing-nav-mobile-logo shrink-0 overflow-visible">
+            {logo}
+          </div>
+
+          <div className="marketing-nav-mobile-actions flex shrink-0 items-center gap-2">
             <MarketingSessionActions
               variant="nav-mobile-register"
               loginHref={loginHref}
               registerHref={registerHref}
               onNavigate={closeMobile}
             />
+            <button
+              type="button"
+              className="flex size-9 shrink-0 touch-manipulation items-center justify-center rounded-full border border-white/30 bg-white/10 text-white shadow-sm transition-transform active:scale-95"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={mobileOpen}
+            >
+              <Menu className="size-[1.125rem]" strokeWidth={2.25} />
+            </button>
           </div>
-          <button
-            type="button"
-            className="flex size-10 shrink-0 touch-manipulation items-center justify-center rounded-full border border-white/20 bg-white/5 text-white transition-transform active:scale-95 sm:size-9"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={mobileOpen}
-          >
-            <Menu className="size-5" strokeWidth={2} />
-          </button>
         </div>
 
         <div className="relative mx-auto hidden h-16 w-full min-w-0 items-center gap-5 px-5 lg:flex">

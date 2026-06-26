@@ -1,13 +1,9 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { IcvfSiteCursor } from "@/components/shared/icvf-site-cursor";
 
-const IcvfSiteCursor = dynamic(
-  () => import("@/components/shared/icvf-site-cursor").then((mod) => mod.IcvfSiteCursor),
-  { ssr: false }
-);
-
+/** Defers custom cursor paint until idle — no dynamic import to avoid stale chunk errors. */
 export function IcvfSiteCursorLazy() {
   const [ready, setReady] = useState(false);
 
