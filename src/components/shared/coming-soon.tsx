@@ -24,7 +24,7 @@ export function ComingSoon({ portalName, description, helperText }: ComingSoonPr
         <CardContent className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
             {helperText ??
-              "Student and teacher portals are live. This feature will open in a future release."}
+              "Student and staff portals are live. This feature will open in a future release."}
           </p>
           <ButtonLink href="/login" variant="icvf" className="w-full">
             Login

@@ -6,12 +6,14 @@ export const PORTAL_ACCESS = {
   parent: false,
   teacher: false,
   admin: true,
+  content_manager: true,
 } as const;
 
 export function getComingSoonPath(role: UserRole): string | null {
   if (role === "parent" && !PORTAL_ACCESS.parent) return "/coming-soon/parent";
-  if (role === "teacher" && !PORTAL_ACCESS.teacher) return "/coming-soon/teacher";
+  if (role === "teacher" && !PORTAL_ACCESS.teacher) return "/coming-soon/staff";
   if (role === "admin" && !PORTAL_ACCESS.admin) return "/coming-soon/admin";
+  if (role === "content_manager" && !PORTAL_ACCESS.content_manager) return "/coming-soon/staff";
   return null;
 }
 

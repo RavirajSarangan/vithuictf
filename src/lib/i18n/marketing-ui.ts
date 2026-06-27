@@ -287,12 +287,17 @@ export type MarketingUiKey =
   | "auth.welcomeBack"
   | "auth.loginWithEmail"
   | "auth.staffAdminLogin"
+  | "auth.contentTeamLogin"
+  | "auth.socialTrackingLogin"
   | "auth.signInSubStaff"
+  | "auth.signInSubContentTeam"
+  | "auth.signInSubSocialTracking"
   | "auth.studentIdMissingHelp"
   | "auth.invalidEmail"
   | "auth.studentIdNotFound"
   | "auth.studentIdInvalid"
   | "auth.staffEmailOnly"
+  | "auth.contentTeamOnly"
   | "auth.studentIdOnly"
   | "auth.studentId"
   | "auth.studentIdPlaceholder"
@@ -692,8 +697,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.portalBadge": { en: "ICTF Portal Access", ta: "ICTF தள அணுகல்" },
   "auth.loginTitle": { en: "Choose your portal", ta: "உங்கள் தளத்தைத் தேர்ந்தெடுக்கவும்" },
   "auth.loginSubtitle": {
-    en: "Select how you access the ICTF portal — student classes, parent updates, or teacher tools.",
-    ta: "ICTF தளத்தை எவ்வாறு அணுகுகிறீர்கள் என்பதைத் தேர்ந்தெடுக்கவும் — மாணவர் வகுப்புகள், பெற்றோர் புதுப்பிப்புகள் அல்லது ஆசிரியர் கருவிகள்.",
+    en: "Select how you access the ICTF portal — student classes, parent updates, or staff tools.",
+    ta: "ICTF தளத்தை எவ்வாறு அணுகுகிறீர்கள் என்பதைத் தேர்ந்தெடுக்கவும் — மாணவர் வகுப்புகள், பெற்றோர் புதுப்பிப்புகள் அல்லது staff கருவிகள்.",
   },
   "auth.registerBadge": { en: "Select your portal", ta: "உங்கள் தளத்தைத் தேர்ந்தெடுக்கவும்" },
   "auth.registerTitle": { en: "Choose where you study", ta: "நீங்கள் எங்கு படிக்கிறீர்கள் என்பதைத் தேர்வு செய்யுங்கள்" },
@@ -713,8 +718,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     en: "Track your child's attendance, results, and school announcements.",
     ta: "உங்கள் பிள்ளையின் வருகை, முடிவுகள் மற்றும் பள்ளி அறிவிப்புகளைக் கண்காணிக்கவும்.",
   },
-  "auth.facultyAccess": { en: "Faculty Access", ta: "ஆசிரியர் அணுகல்" },
-  "auth.teacherPortal": { en: "Teacher Portal", ta: "ஆசிரியர் தளம்" },
+  "auth.facultyAccess": { en: "Staff Access", ta: "Staff அணுகல்" },
+  "auth.teacherPortal": { en: "Staff", ta: "Staff" },
   "auth.teacherPortalDesc": {
     en: "Manage classes, upload materials, and monitor student progress.",
     ta: "வகுப்புகளை நிர்வகித்து, பொருட்களை பதிவேற்றி, மாணவர் முன்னேற்றத்தைக் கண்காணிக்கவும்.",
@@ -808,10 +813,20 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.registerHere": { en: "Register here", ta: "இங்கே பதிவு செய்" },
   "auth.welcomeBack": { en: "Welcome back", ta: "மீண்டும் வரவேற்கிறோம்" },
   "auth.loginWithEmail": { en: "Email", ta: "மின்னஞ்சல்" },
-  "auth.staffAdminLogin": { en: "ICTF", ta: "ICTF" },
+  "auth.staffAdminLogin": { en: "Staff", ta: "Staff" },
+  "auth.contentTeamLogin": { en: "Content", ta: "Content" },
+  "auth.socialTrackingLogin": { en: "Social Tracking", ta: "Social Tracking" },
   "auth.signInSubStaff": {
-    en: "Admin email sign-in for institute administrators.",
-    ta: "நிறுவன நிர்வாகிகளுக்கான நிர்வாக மின்னஞ்சல் உள்நுழைவு.",
+    en: "Email sign-in for institute administrators and staff.",
+    ta: "நிறுவன நிர்வாகிகள் மற்றும் staff-க்கான மின்னஞ்சல் உள்நுழைவு.",
+  },
+  "auth.signInSubContentTeam": {
+    en: "Content team sign-in for social media tracking.",
+    ta: "சமூக ஊடக கண்காணிப்புக்கான content team உள்நுழைவு.",
+  },
+  "auth.signInSubSocialTracking": {
+    en: "Admin-assigned accounts only. You will go straight to social tracking after sign-in.",
+    ta: "நிர்வாகியால் ஒதுக்கப்பட்ட கணக்குகள் மட்டும். உள்நுழைந்த பிறகு நேரடியாக social tracking-க்கு செல்வீர்கள்.",
   },
   "auth.studentIdMissingHelp": {
     en: "Don't have a Student ID yet? Contact admin for help.",
@@ -830,8 +845,12 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     ta: "சரியான மாணவர் அடையாளத்தை உள்ளிடவும்.",
   },
   "auth.staffEmailOnly": {
-    en: "This email is not an admin account. Use the Student ID tab for student login.",
-    ta: "இந்த மின்னஞ்சல் நிர்வாகக் கணக்கு அல்ல. மாணவர் உள்நுழைவுக்கு மாணவர் அடையாளம் தாவலைப் பயன்படுத்துங்கள்.",
+    en: "This email is not a staff account. Use Student ID or Social Tracking for other logins.",
+    ta: "இந்த மின்னஞ்சல் staff கணக்கு அல்ல. மற்ற உள்நுழைவுகளுக்கு Student ID அல்லது Social Tracking-ஐப் பயன்படுத்துங்கள்.",
+  },
+  "auth.contentTeamOnly": {
+    en: "This email is not assigned for social tracking. Use the Social Tracking tab or contact an administrator.",
+    ta: "இந்த மின்னஞ்சல் social tracking-க்கு ஒதுக்கப்படவில்லை. Social Tracking tab-ஐப் பயன்படுத்துங்கள் அல்லது நிர்வாகியைத் தொடர்பு கொள்ளுங்கள்.",
   },
   "auth.studentIdOnly": {
     en: "Students must sign in with Student ID. Use the Admin tab for administrator email login.",

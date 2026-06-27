@@ -87,7 +87,7 @@ export const BRAND = {
       { label: "Login", href: "/login" },
       { label: "Register Now", href: "/register" },
       { label: "Parent Portal", href: "/coming-soon/parent" },
-      { label: "Teacher Portal", href: "/coming-soon/teacher" },
+      { label: "Staff", href: "/coming-soon/staff" },
     ],
   },
 } as const;
