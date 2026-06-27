@@ -24,6 +24,8 @@ const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefine
 
 const themeListeners = new Set<() => void>();
 
+const SERVER_SNAPSHOT_KEY = "light:light:light";
+
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -49,24 +51,21 @@ function readStoredTheme(): Theme {
   return "light";
 }
 
-function readThemeSnapshot(): ThemeSnapshot {
+function computeThemeSnapshotKey(): string {
   const theme = readStoredTheme();
   const systemTheme = getSystemTheme();
-  return { theme, systemTheme, resolvedTheme: resolveTheme(theme) };
+  const resolvedTheme = resolveTheme(theme);
+  return `${theme}:${systemTheme}:${resolvedTheme}`;
 }
 
-const serverThemeSnapshot: ThemeSnapshot = {
-  theme: "light",
-  systemTheme: "light",
-  resolvedTheme: "light",
-};
+function parseThemeSnapshotKey(key: string): ThemeSnapshot {
+  const [theme, systemTheme, resolvedTheme] = key.split(":") as [Theme, ResolvedTheme, ResolvedTheme];
+  return { theme, systemTheme, resolvedTheme };
+}
 
-let clientThemeSnapshot = serverThemeSnapshot;
-
-function getThemeSnapshot(): ThemeSnapshot {
-  if (typeof window === "undefined") return serverThemeSnapshot;
-  clientThemeSnapshot = readThemeSnapshot();
-  return clientThemeSnapshot;
+function getThemeSnapshotKey(): string {
+  if (typeof window === "undefined") return SERVER_SNAPSHOT_KEY;
+  return computeThemeSnapshotKey();
 }
 
 function notifyThemeListeners() {
@@ -91,11 +90,13 @@ function subscribeTheme(listener: () => void) {
 
 /** Theme context without inline `<script>` — bootstrap runs via `next/script` in root layout. */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const snapshot = React.useSyncExternalStore(
+  const snapshotKey = React.useSyncExternalStore(
     subscribeTheme,
-    getThemeSnapshot,
-    () => serverThemeSnapshot
+    getThemeSnapshotKey,
+    () => SERVER_SNAPSHOT_KEY
   );
+
+  const snapshot = React.useMemo(() => parseThemeSnapshotKey(snapshotKey), [snapshotKey]);
 
   React.useEffect(() => {
     applyResolvedTheme(snapshot.resolvedTheme);
@@ -118,7 +119,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       resolvedTheme: snapshot.resolvedTheme,
       systemTheme: snapshot.systemTheme,
     }),
-    [snapshot, setTheme]
+    [snapshot.theme, snapshot.resolvedTheme, snapshot.systemTheme, setTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
