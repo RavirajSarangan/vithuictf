@@ -32,10 +32,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
       { url: "/favicon.png", type: "image/png", sizes: "512x512" },
-      { url: BRAND.logoMark, type: "image/svg+xml" },
     ],
-    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "512x512" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
     shortcut: ["/favicon.png"],
   },
   verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION

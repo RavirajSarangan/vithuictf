@@ -84,8 +84,8 @@ export function CanvasSection({ id, children, className, tone = "dark" }: Canvas
         tone === "darker" && "bg-canvas-bg-elevated",
         tone === "panel" && "bg-canvas-panel",
         tone === "navy" && "bg-icvf-navy-dark",
-        tone === "light" && "bg-white text-icvf-text-dark",
-        tone === "surface" && "bg-icvf-surface text-icvf-text-dark",
+        tone === "light" && "bg-transparent text-icvf-text-dark",
+        tone === "surface" && "bg-transparent text-icvf-text-dark",
         tone === "gradient" &&
           "bg-gradient-to-br from-[#0a1628] via-icvf-navy-dark to-[#0d2137]",
         className

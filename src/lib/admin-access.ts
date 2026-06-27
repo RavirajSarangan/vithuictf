@@ -6,6 +6,7 @@ export const ADMIN_ONLY_ROUTES = [
   "/admin/teachers",
   "/admin/notifications",
   "/admin/home",
+  "/admin/blog",
 ] as const;
 
 const adminOnlyHrefs = new Set<string>(ADMIN_ONLY_ROUTES);

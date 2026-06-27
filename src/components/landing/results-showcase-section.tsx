@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowRight, Trophy } from "lucide-react";
-import Link from "next/link";
 import { ButtonLink } from "@/components/shared/button-link";
 import {
   MarketingHorizontalRankCard,
@@ -95,14 +94,8 @@ export function ResultsShowcaseSection() {
           ))}
         </MarketingHorizontalRankList>
         {rankings.length > 0 ? (
-          <p className="mt-4 text-center">
-            <Link
-              href="/rankings"
-              className="text-sm font-medium text-icvf-accent hover:text-icvf-accent-hover hover:underline"
-            >
-              {t("results.viewHistory")}
-              {rankings.length > 5 ? ` · ${rankings.length} ${t("results.totalAchievers")}` : ""}
-            </Link>
+          <p className="mt-4 text-center text-sm text-icvf-text-light">
+            {rankings.length} {t("results.totalAchievers")}
           </p>
         ) : null}
       </div>

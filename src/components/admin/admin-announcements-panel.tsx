@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   addMarketingAnnouncement,
   deleteMarketingAnnouncement,
   updateMarketingAnnouncement,
+  uploadAdminAsset,
   type MarketingAnnouncementInput,
 } from "@/lib/actions/admin";
 import { syncClientCachesAfterAdminSave } from "@/lib/client-cache-sync";
@@ -13,6 +14,14 @@ import { useAdminMarketingAnnouncements } from "@/hooks/use-data";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { AdminTable } from "@/components/admin/admin-table";
 import { MarketingAnnouncementPopup } from "@/components/landing/marketing-announcement-popup";
+import { Banner } from "@/components/ui/banner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +56,7 @@ const DISPLAY_STYLE_OPTIONS: { value: MarketingAnnouncementDisplayStyle; label: 
   { value: "minimal", label: "Minimal" },
   { value: "image_hero", label: "Image hero" },
   { value: "promo", label: "Promo" },
+  { value: "banner", label: "Header Banner" },
 ];
 
 type FormState = {
@@ -167,6 +177,34 @@ export function AdminAnnouncementsPanel() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [uploadFolder, setUploadFolder] = useState("announcements");
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size exceeds 10MB limit.");
+      return;
+    }
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      formData.set("folder", uploadFolder);
+      const url = await uploadAdminAsset(formData);
+      setForm((prev) => ({
+        ...prev,
+        ctaUrl: url,
+        contentType: "text_image_link",
+        ctaLabel: prev.ctaLabel || "Download",
+      }));
+      toast.success("File uploaded and linked as CTA");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
   const previewAnnouncement = useMemo(() => formToPreviewAnnouncement(form), [form]);
 
@@ -347,6 +385,49 @@ export function AdminAnnouncementsPanel() {
             </>
           )}
 
+          <div className="border-t border-border pt-4 sm:col-span-2 space-y-4">
+            <h4 className="font-heading text-sm font-semibold text-icvf-navy">File Attachment (Optional, Max 10MB)</h4>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="upload-folder">Upload Folder Path</Label>
+                <Input
+                  id="upload-folder"
+                  value={uploadFolder}
+                  onChange={(e) => setUploadFolder(e.target.value)}
+                  placeholder="announcements"
+                />
+              </div>
+              <div className="space-y-2 flex flex-col justify-end">
+                <Label>File Upload</Label>
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void handleFileUpload(file);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={uploadingFile}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploadingFile ? "Uploading File..." : "Choose File"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+            {form.ctaUrl && form.ctaUrl.includes("/storage/v1/object/public/") && (
+              <p className="text-xs text-emerald-600 font-medium">
+                Linked file: {form.ctaUrl.split("/").pop()}
+              </p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label>Starts at</Label>
             <Input
@@ -450,12 +531,44 @@ export function AdminAnnouncementsPanel() {
       />
 
       {previewOpen && (
-        <MarketingAnnouncementPopup
-          announcement={previewAnnouncement}
-          preview
-          previewOpen={previewOpen}
-          onPreviewOpenChange={setPreviewOpen}
-        />
+        previewAnnouncement.displayStyle === "banner" ? (
+          <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+            <DialogContent className="sm:max-w-4xl p-6 bg-white text-zinc-950 dark:bg-zinc-950 dark:text-white">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-heading text-icvf-navy-dark dark:text-white mb-2">
+                  Header Banner Preview
+                </DialogTitle>
+                <DialogDescription>
+                  This banner will be displayed at the very top of the marketing pages.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 border rounded-xl overflow-hidden bg-marketing-page dark:bg-zinc-900 p-1">
+                <Banner id="preview-banner" variant="rainbow" changeLayout={false}>
+                  <span className="flex items-center gap-2">
+                    <span>{previewAnnouncement.title}</span>
+                    {previewAnnouncement.body && <span className="opacity-90">— {previewAnnouncement.body}</span>}
+                    {previewAnnouncement.ctaUrl && (
+                      <a
+                        href={previewAnnouncement.ctaUrl}
+                        onClick={(e) => e.preventDefault()}
+                        className="ml-2 rounded-full bg-icvf-accent px-3 py-0.5 text-xs font-semibold text-icvf-navy-dark"
+                      >
+                        {previewAnnouncement.ctaLabel || "Learn More"}
+                      </a>
+                    )}
+                  </span>
+                </Banner>
+              </div>
+            </DialogContent>
+          </Dialog>
+        ) : (
+          <MarketingAnnouncementPopup
+            announcement={previewAnnouncement}
+            preview
+            previewOpen={previewOpen}
+            onPreviewOpenChange={setPreviewOpen}
+          />
+        )
       )}
     </div>
   );

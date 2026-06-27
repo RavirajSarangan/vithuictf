@@ -40,7 +40,7 @@ export function AuthRegisterBrandAside({ className }: AuthRegisterBrandAsideProp
 
       <div className="relative">
         <Link href="/" className="inline-flex" aria-label={BRAND.name}>
-          <BrandLogo size="authLoginAside" priority className="brightness-0 invert" />
+          <BrandLogo size="authLoginDesktop" src={BRAND.logoAuthDesktop} priority />
         </Link>
 
         <h2 className="mt-10 max-w-md text-3xl font-bold leading-tight text-white sm:text-4xl lg:mt-14">

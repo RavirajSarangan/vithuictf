@@ -3,11 +3,11 @@ import { SITE_URL } from "@/lib/seo/site";
 
 const PUBLIC_ALLOW = [
   "/",
+  "/blog/",
   "/programs/",
   "/locations/",
   "/network/",
   "/about/",
-  "/rankings",
   "/card/",
   "/verify/",
   "/ta/",
@@ -24,6 +24,7 @@ const PRIVATE_DISALLOW = [
   "/api/",
   "/coming-soon",
   "/maintenance",
+  "/rankings",
 ] as const;
 
 const AI_CRAWLERS = [

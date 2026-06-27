@@ -1,6 +1,7 @@
 import type {
   Achievement,
   ActivityItem,
+  BlogPostStatus,
   Certificate,
   ContactInquiry,
   Course,
@@ -390,7 +391,7 @@ export function mapMarketingAnnouncement(
   const contentType = row.content_type;
   const displayStyle = row.display_style;
   const validContentTypes = ["image_only", "text_only", "text_image", "text_image_link"] as const;
-  const validDisplayStyles = ["minimal", "card", "image_hero", "promo"] as const;
+  const validDisplayStyles = ["minimal", "card", "image_hero", "promo", "banner"] as const;
 
   return {
     id: row.id,
@@ -465,6 +466,70 @@ export function mapSubjectCategory(row: {
     color: row.color,
     sortOrder: row.sort_order,
     active: row.active,
+  };
+}
+
+export function mapBlogCategory(row: {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}) {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    description: row.description,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapBlogPost(row: {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover_image_url: string;
+  category_id: string | null;
+  status: string;
+  is_featured: boolean;
+  seo_title: string;
+  seo_description: string;
+  tags: string[] | null;
+  author_name: string;
+  reading_time_minutes: number;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  blog_categories?: { name: string; slug: string } | null;
+}) {
+  const status: BlogPostStatus = row.status === "published" ? "published" : "draft";
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    excerpt: row.excerpt,
+    content: row.content,
+    coverImageUrl: row.cover_image_url,
+    categoryId: row.category_id,
+    categoryName: row.blog_categories?.name,
+    categorySlug: row.blog_categories?.slug,
+    status,
+    isFeatured: row.is_featured,
+    seoTitle: row.seo_title,
+    seoDescription: row.seo_description,
+    tags: row.tags ?? [],
+    authorName: row.author_name,
+    readingTimeMinutes: row.reading_time_minutes,
+    publishedAt: row.published_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 

@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import { MarketingFooter } from "@/components/landing/marketing-footer";
 import { MarketingBrandVariables } from "@/components/shared/marketing-brand-variables";
 import { HtmlLangSync } from "@/components/shared/html-lang-sync";
 import { MarketingHeader } from "@/components/landing/marketing-header";
@@ -7,11 +7,6 @@ import { MarketingAnnouncementPopup } from "@/components/landing/marketing-annou
 import { MarketingLanguageProvider } from "@/contexts/marketing-language-context";
 import { getActiveMarketingAnnouncement } from "@/lib/marketing-data";
 import { getMarketingLocaleFromCookies } from "@/lib/seo/marketing-locale-server";
-
-const MarketingFooter = dynamic(
-  () => import("@/components/landing/marketing-footer").then((mod) => mod.MarketingFooter),
-  { loading: () => <footer className="min-h-[12rem] bg-[#0a1628]" aria-hidden /> }
-);
 
 export const revalidate = 60;
 
@@ -27,9 +22,12 @@ export default async function MarketingLayout({ children }: { children: React.Re
         <HtmlLangSync />
         <MarketingBrandVariables />
         <MarketingHashSync />
-        <MarketingHeader />
+
+        <MarketingHeader announcement={announcement} />
         <MarketingAnnouncementPopup announcement={announcement} />
-        <main className="pt-[var(--marketing-header-offset)]">{children}</main>
+        <main className="bg-transparent pt-[var(--marketing-header-offset)]">
+          {children}
+        </main>
         <MarketingFooter />
       </div>
     </MarketingLanguageProvider>

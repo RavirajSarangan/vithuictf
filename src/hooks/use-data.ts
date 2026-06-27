@@ -42,6 +42,8 @@ export {
   useAdminPaperCenters,
   useAdminFeaturedRankings,
   useAdminMarketingAnnouncements,
+  useAdminBlogPosts,
+  useAdminBlogCategories,
   useAdminAnalytics,
   useAdminRevenueTrend,
   useContactInquiries,

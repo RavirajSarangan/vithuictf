@@ -205,7 +205,7 @@ export function MarketingFooter() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, ease: EASE }}
             >
-              <BrandLogo size="footer" light priority />
+              <BrandLogo size="footer" src={BRAND.logoFooter} priority />
             </motion.div>
             <p className="mt-4 text-base font-semibold tracking-tight text-white">
               {BRAND.name}{" "}

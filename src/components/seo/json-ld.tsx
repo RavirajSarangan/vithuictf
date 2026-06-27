@@ -210,3 +210,49 @@ export function HomePageJsonLd({
     </>
   );
 }
+
+export function ArticleJsonLd({
+  title,
+  description,
+  url,
+  image,
+  datePublished,
+  dateModified,
+  authorName,
+}: {
+  title: string;
+  description?: string;
+  url: string;
+  image?: string;
+  datePublished: string;
+  dateModified?: string;
+  authorName?: string;
+}) {
+  const data: JsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description: description ?? title,
+    url,
+    image: image ? (image.startsWith("http") ? image : absoluteUrl(image)) : absoluteUrl("/og-image.png"),
+    datePublished,
+    dateModified: dateModified ?? datePublished,
+    author: {
+      "@type": "Person",
+      name: authorName ?? "ICTF",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: BRAND.fullName,
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl(BRAND.logo),
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
+  };
+  return <JsonLdScript data={data} />;
+}

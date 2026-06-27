@@ -37,6 +37,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/certificates", label: "Certificates", icon: Award },
   { href: "/admin/home", label: "Home Content", icon: Settings },
+  { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/analytics", label: "Analytics", icon: LineChart },
   { href: "/admin/inquiries", label: "Inquiries", icon: Mail },
 ];

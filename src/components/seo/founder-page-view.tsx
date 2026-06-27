@@ -87,7 +87,7 @@ export async function FounderPageView({ locale }: { locale: MarketingLocale }) {
           />
         </div>
         <p className="mt-6 text-center text-sm text-icvf-text-light">
-          <Link href="/rankings" className="text-icvf-navy underline">
+          <Link href="/#results" className="text-icvf-navy underline">
             {locale === "ta" ? "தேர்வு முடிவுகள்" : locale === "si" ? "විභාග ප්‍රතිඵල" : "View examination results"}
           </Link>
         </p>

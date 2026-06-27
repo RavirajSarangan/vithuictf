@@ -16,7 +16,7 @@ export function FooterIctMarquee() {
     t("footer.marquee.results"),
   ];
 
-  const loop = Array.from({ length: 3 }, () => items).flat();
+  const loop = Array.from({ length: 2 }, () => items).flat();
   const track = [...loop, ...loop];
 
   return (
@@ -25,14 +25,6 @@ export function FooterIctMarquee() {
       aria-hidden
     >
       <div className="marketing-marquee-track">
-        <div
-          className="marketing-marquee-fade-left bg-gradient-to-r from-[#171f3d] to-transparent"
-          aria-hidden
-        />
-        <div
-          className="marketing-marquee-fade-right bg-gradient-to-l from-[#171f3d] to-transparent"
-          aria-hidden
-        />
         <div className="footer-ict-marquee flex w-max items-center gap-5 whitespace-nowrap sm:gap-12 motion-reduce:animate-none">
           {track.map((label, index) => {
             const Icon = MARQUEE_ICONS[index % MARQUEE_ICONS.length] ?? Video;

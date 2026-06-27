@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { AuthLoginBrandAside } from "@/components/auth/auth-login-brand-aside";
 import { StudentLoginForm } from "@/components/auth/student-login-form";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { BRAND } from "@/lib/constants";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 
 export function AuthLoginShell() {
@@ -28,7 +29,7 @@ export function AuthLoginShell() {
 
           <div className="mb-8 flex flex-col items-center gap-2 text-center lg:hidden">
             <Link href="/" className="flex flex-col items-center gap-2" aria-label={t("auth.studentPortal")}>
-              <BrandLogo size="authLogin" priority />
+              <BrandLogo size="authLoginMobile" src={BRAND.logoAuthMobile} priority />
               <p className="text-xs text-icvf-text-light">{t("auth.studentPortal")}</p>
             </Link>
           </div>

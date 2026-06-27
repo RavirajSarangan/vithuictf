@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireStaff, requireAdmin, signUpWithRole } from "@/lib/actions/auth";
+import { requireStaff, requireAdmin, signUpWithRole, getSessionProfile } from "@/lib/actions/auth";
 import { logAdminAction } from "@/lib/audit";
 import { sendStudentWelcomeEmail } from "@/lib/actions/email";
 import { BRAND } from "@/lib/constants";
@@ -11,9 +11,12 @@ import {
   revalidateMarketingPaths,
   revalidateSitePublicPaths,
   revalidateStudentPortalPaths,
+  revalidateBlogPaths,
 } from "@/lib/revalidation-paths";
 import { clearSitePublicModeCache } from "@/lib/site-access";
-import type { CourseLevel, MarketingAnnouncementContentType, MarketingAnnouncementDisplayStyle, SitePublicMode, BrandLogoSettings } from "@/types";
+import { slugifyBlogTitle, validateBlogSlug } from "@/lib/blog/slug";
+import { computeReadingTimeMinutes } from "@/lib/blog/reading-time";
+import type { CourseLevel, MarketingAnnouncementContentType, MarketingAnnouncementDisplayStyle, SitePublicMode, BrandLogoSettings, BlogPostStatus } from "@/types";
 import { validateBrandLogoSettings } from "@/lib/brand-logo-settings";
 
 export async function getStudent(id: string) {
@@ -627,6 +630,7 @@ const MARKETING_ANNOUNCEMENT_DISPLAY_STYLES: MarketingAnnouncementDisplayStyle[]
   "card",
   "image_hero",
   "promo",
+  "banner",
 ];
 
 export type MarketingAnnouncementInput = {
@@ -736,5 +740,201 @@ export async function deleteMarketingAnnouncement(id: string) {
   if (error) throw new Error(error.message);
 
   revalidateMarketingAnnouncementPaths();
+}
+
+// --- Blog CMS ---
+
+export type BlogCategoryInput = {
+  name: string;
+  slug?: string;
+  description?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+};
+
+export type BlogPostInput = {
+  title: string;
+  slug?: string;
+  excerpt?: string;
+  content: string;
+  coverImageUrl?: string;
+  categoryId?: string | null;
+  status: BlogPostStatus;
+  isFeatured?: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  tags?: string[];
+  authorName?: string;
+};
+
+function blogCategoryPayload(data: BlogCategoryInput) {
+  const name = data.name.trim();
+  if (!name) throw new Error("Category name is required");
+
+  const slug = (data.slug?.trim() || slugifyBlogTitle(name));
+  validateBlogSlug(slug);
+
+  return {
+    name,
+    slug,
+    description: data.description?.trim() ?? "",
+    sort_order: data.sortOrder ?? 0,
+    is_active: data.isActive ?? true,
+  };
+}
+
+async function assertUniqueBlogCategorySlug(slug: string, excludeId?: string) {
+  const supabase = await createClient();
+  let query = supabase.from("blog_categories").select("id").eq("slug", slug);
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data } = await query.maybeSingle();
+  if (data) throw new Error("A category with this slug already exists");
+}
+
+async function assertUniqueBlogPostSlug(slug: string, excludeId?: string) {
+  const supabase = await createClient();
+  let query = supabase.from("blog_posts").select("id").eq("slug", slug);
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data } = await query.maybeSingle();
+  if (data) throw new Error("A post with this slug already exists");
+}
+
+function validateBlogPostInput(data: BlogPostInput, forPublish: boolean): string {
+  const title = data.title.trim();
+  if (!title) throw new Error("Title is required");
+
+  const slug = (data.slug?.trim() || slugifyBlogTitle(title));
+  validateBlogSlug(slug);
+
+  const content = data.content ?? "";
+  if (forPublish && !content.trim()) {
+    throw new Error("Content is required to publish");
+  }
+
+  return slug;
+}
+
+function blogPostPayload(data: BlogPostInput, existingPublishedAt?: string | null) {
+  const slug = validateBlogPostInput(data, data.status === "published");
+  const now = new Date().toISOString();
+
+  let publishedAt: string | null = existingPublishedAt ?? null;
+  if (data.status === "published") {
+    publishedAt = publishedAt ?? now;
+  }
+
+  return {
+    title: data.title.trim(),
+    slug,
+    excerpt: data.excerpt?.trim() ?? "",
+    content: data.content ?? "",
+    cover_image_url: data.coverImageUrl?.trim() ?? "",
+    category_id: data.categoryId || null,
+    status: data.status,
+    is_featured: data.isFeatured ?? false,
+    seo_title: data.seoTitle?.trim() ?? "",
+    seo_description: data.seoDescription?.trim() ?? "",
+    tags: data.tags ?? [],
+    author_name: data.authorName?.trim() ?? "",
+    reading_time_minutes: computeReadingTimeMinutes(data.content ?? ""),
+    published_at: publishedAt,
+    updated_at: now,
+  };
+}
+
+function revalidateBlogAdminPaths(slugs: string[] = []) {
+  revalidateBlogPaths(slugs);
+  revalidatePath("/admin/blog");
+}
+
+export async function addBlogCategory(data: BlogCategoryInput) {
+  await requireAdmin();
+  const payload = blogCategoryPayload(data);
+  await assertUniqueBlogCategorySlug(payload.slug);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("blog_categories").insert(payload);
+  if (error) throw new Error(error.message);
+
+  revalidateBlogAdminPaths();
+}
+
+export async function updateBlogCategory(id: string, data: BlogCategoryInput) {
+  await requireAdmin();
+  const payload = blogCategoryPayload(data);
+  await assertUniqueBlogCategorySlug(payload.slug, id);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("blog_categories").update(payload).eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateBlogAdminPaths();
+}
+
+export async function deleteBlogCategory(id: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("blog_categories").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateBlogAdminPaths();
+}
+
+export async function addBlogPost(data: BlogPostInput) {
+  await requireAdmin();
+  const profile = await getSessionProfile();
+  const withAuthor: BlogPostInput = {
+    ...data,
+    authorName: data.authorName?.trim() || profile?.displayName || "ICTF",
+  };
+
+  const payload = blogPostPayload(withAuthor);
+  await assertUniqueBlogPostSlug(payload.slug);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("blog_posts").insert(payload);
+  if (error) throw new Error(error.message);
+
+  revalidateBlogAdminPaths([payload.slug]);
+}
+
+export async function updateBlogPost(id: string, data: BlogPostInput) {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data: existing, error: fetchError } = await supabase
+    .from("blog_posts")
+    .select("slug, published_at")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) throw new Error(fetchError.message);
+  if (!existing) throw new Error("Post not found");
+
+  const payload = blogPostPayload(data, existing.published_at);
+  await assertUniqueBlogPostSlug(payload.slug, id);
+
+  const { error } = await supabase.from("blog_posts").update(payload).eq("id", id);
+  if (error) throw new Error(error.message);
+
+  const slugs = [existing.slug];
+  if (payload.slug !== existing.slug) slugs.push(payload.slug);
+  revalidateBlogAdminPaths(slugs);
+}
+
+export async function deleteBlogPost(id: string) {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("blog_posts")
+    .select("slug")
+    .eq("id", id)
+    .maybeSingle();
+
+  const { error } = await supabase.from("blog_posts").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateBlogAdminPaths(existing?.slug ? [existing.slug] : []);
 }
 

@@ -62,24 +62,35 @@ export function SriLankaCentersMap({ centers, className }: SriLankaCentersMapPro
                 type="button"
                 aria-label={`${center.name}, ${center.district}`}
                 onClick={() => setSelectedId(center.id)}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
+                className="absolute -translate-x-1/2 -translate-y-[calc(100%-4px)] pb-2"
                 style={{ left: `${position.x}%`, top: `${position.y}%` }}
               >
+                {/* Coordinate pulsing halo */}
                 <span
                   className={cn(
-                    "absolute inset-0 -m-2 animate-ping rounded-full bg-icvf-accent/40",
+                    "absolute bottom-0.5 left-1/2 size-5 -translate-x-1/2 rounded-full bg-icvf-accent/30 animate-ping",
                     isSelected ? "opacity-75" : "opacity-0"
                   )}
                 />
+                {/* Coordinate dot */}
+                <span className="absolute bottom-1.5 left-1/2 size-2 -translate-x-1/2 rounded-full border border-white/20 bg-icvf-accent shadow-sm" />
+
+                {/* Floating Glassmorphic Pin Head */}
                 <span
                   className={cn(
-                    "relative flex size-4 items-center justify-center rounded-full border-2 shadow-lg transition-transform hover:scale-125",
+                    "relative flex size-7 items-center justify-center rounded-full border bg-white/45 backdrop-blur-[4px] shadow-lg transition-transform hover:scale-110",
+                    "after:absolute after:bottom-[-4.5px] after:left-1/2 after:size-2.5 after:-translate-x-1/2 after:rotate-45 after:border-b after:border-r after:bg-white/45 after:backdrop-blur-[4px]",
                     isSelected
-                      ? "border-white bg-icvf-accent scale-125"
-                      : "border-icvf-accent/80 bg-icvf-navy-dark"
+                      ? "border-icvf-accent scale-110 bg-white/65 after:bg-white/65 after:border-icvf-accent"
+                      : "border-white/50 after:border-white/50"
                   )}
                 >
-                  <span className="size-1.5 rounded-full bg-white" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/favicon.png"
+                    alt=""
+                    className="relative z-10 size-4 object-contain"
+                  />
                 </span>
               </button>
             );

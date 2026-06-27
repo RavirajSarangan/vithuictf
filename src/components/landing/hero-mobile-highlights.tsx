@@ -105,21 +105,13 @@ export function HeroMobileLearningChips() {
     key: titleKey,
   }));
 
-  const loop = Array.from({ length: 4 }, () => chipItems).flat();
+  const loop = Array.from({ length: 2 }, () => chipItems).flat();
   const track = [...loop, ...loop];
 
   return (
     <MotionStagger className="mt-3 min-w-0 max-w-full" stagger={0.06}>
       <MotionStaggerItem className="marketing-full-bleed min-w-0">
         <div className="marketing-marquee-track py-0.5">
-          <div
-            className="marketing-marquee-fade-left bg-gradient-to-r from-[var(--marketing-page-bg)] via-[var(--marketing-page-bg)]/90 to-transparent"
-            aria-hidden
-          />
-          <div
-            className="marketing-marquee-fade-right bg-gradient-to-l from-[var(--marketing-page-bg-mid)] via-[var(--marketing-page-bg-mid)]/90 to-transparent"
-            aria-hidden
-          />
           <div className="hero-learning-chips-marquee flex w-max items-center gap-2.5 motion-reduce:animate-none sm:gap-3">
             {track.map(({ icon, label, key }, index) => (
               <LearningChip key={`${key}-${index}`} icon={icon} label={label} />

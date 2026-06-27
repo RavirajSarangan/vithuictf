@@ -1,4 +1,4 @@
--- ICTF SLMP combined migrations (generated 2026-06-25T04:24:12Z)
+-- ICTF SLMP combined migrations (generated 2026-06-27T03:37:24Z)
 -- Run in Supabase Dashboard → SQL Editor if CLI is unavailable
 
 -- >>> BEGIN 20240624120000_initial_schema.sql
@@ -1231,6 +1231,14 @@ $$;
 
 -- >>> END 20240625180000_fix_handle_new_user_student_provision.sql
 
+-- >>> BEGIN 20240625190000_student_exam_year_ict_grade.sql
+-- A/L exam year and optional O/L ICT grade level for student registration
+ALTER TABLE public.students
+  ADD COLUMN IF NOT EXISTS exam_year text,
+  ADD COLUMN IF NOT EXISTS ict_grade text;
+
+-- >>> END 20240625190000_student_exam_year_ict_grade.sql
+
 -- >>> BEGIN 20240625200000_student_nic_number.sql
 ALTER TABLE public.students
   ADD COLUMN IF NOT EXISTS nic_number text;
@@ -1238,26 +1246,248 @@ ALTER TABLE public.students
 CREATE UNIQUE INDEX IF NOT EXISTS students_nic_number_lower_idx
   ON public.students (lower(nic_number))
   WHERE nic_number IS NOT NULL;
+
 -- >>> END 20240625200000_student_nic_number.sql
 
+-- >>> BEGIN 20240625210000_marketing_coming_soon.sql
+-- Admin toggle: blur homepage sections below hero with "Coming Soon" overlay
+ALTER TABLE public.platform_settings
+  ADD COLUMN IF NOT EXISTS marketing_coming_soon_enabled BOOLEAN NOT NULL DEFAULT true;
+
+UPDATE public.platform_settings
+SET marketing_coming_soon_enabled = true
+WHERE id = 1;
+
+-- >>> END 20240625210000_marketing_coming_soon.sql
+
+-- >>> BEGIN 20240625220000_site_public_mode.sql
+-- Site-wide public mode: live, coming_soon, or maintenance (admin-controlled)
+ALTER TABLE public.platform_settings
+  ADD COLUMN IF NOT EXISTS site_public_mode TEXT NOT NULL DEFAULT 'live'
+  CHECK (site_public_mode IN ('live', 'coming_soon', 'maintenance'));
+
+UPDATE public.platform_settings
+SET site_public_mode = 'live'
+WHERE id = 1;
+
+-- >>> END 20240625220000_site_public_mode.sql
+
+-- >>> BEGIN 20240626120000_seo_unblock_and_faqs.sql
+-- SEO FAQ content + keep site live (homepage Coming Soon overlay stays admin-controlled)
+UPDATE public.platform_settings
+SET site_public_mode = 'live'
+WHERE id = 1;
+
+-- Bilingual + Sinhala FAQ columns for AEO
+ALTER TABLE public.faqs
+  ADD COLUMN IF NOT EXISTS question_ta TEXT,
+  ADD COLUMN IF NOT EXISTS answer_ta TEXT,
+  ADD COLUMN IF NOT EXISTS question_si TEXT,
+  ADD COLUMN IF NOT EXISTS answer_si TEXT,
+  ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'general',
+  ADD COLUMN IF NOT EXISTS target_keyword TEXT;
+
+-- Sri Lanka ICT SEO FAQs (EN + TA + SI)
+INSERT INTO public.faqs (question, answer, question_ta, answer_ta, question_si, answer_si, category, target_keyword, sort_order)
+VALUES
+  (
+    'What is the best way to study O/L ICT in Sri Lanka?',
+    'ICTF (ICT Foundation) offers structured O/L ICT classes via live Zoom sessions, past paper practice at islandwide paper centers, and an online student portal with video lessons and revision materials. Students across all districts can enroll online.',
+    'இலங்கையில் O/L ICT படிப்பதற்கான சிறந்த வழி என்ன?',
+    'ICTF (ICT அடித்தளம்) நேரடி Zoom வகுப்புகள், தீவு முழுவதும் பேப்பர் மையங்களில் பயிற்சி, வீடியோ பாடங்கள் மற்றும் மறுபரிசீலனை பொருட்களுடன் கட்டமைக்கப்பட்ட O/L ICT வகுப்புகளை வழங்குகிறது.',
+    'ශ්‍රී ලංකාවේ O/L ICT අධ්‍යයනය කිරීමට හොඳම ක්‍රමය කුමක්ද?',
+    'ICTF (ICT Foundation) සජීවී Zoom පන්ති, දිවයින පුරා ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන, වීඩියෝ පාඩම් සහ නැවත පුහුණු ද්‍රව්‍ය සහිත සංවිධානාත්මක O/L ICT පන්ති ලබා දෙයි.',
+    'ol-ict',
+    'O/L ICT classes Sri Lanka',
+    10
+  ),
+  (
+    'Does ICTF offer A/L ICT online classes via Zoom?',
+    'Yes. ICTF delivers A/L ICT tuition through live Zoom classes led by experienced faculty, including revision programs, past paper discussions, and access to the ICTF Student Portal for notes and recordings.',
+    'ICTF A/L ICT ஆன்லைன் Zoom வகுப்புகளை வழங்குகிறதா?',
+    'ஆம். ICTF அனுபவமுள்ள ஆசிரியர்களால் நடத்தப்படும் நேரடி Zoom வகுப்புகள், மறுபரிசீலனை நிரல்கள், குறிப்புகள் மற்றும் பதிவுகளுக்கான ICTF மாணவர் தளம் வழியாக A/L ICT பயிற்சியை வழங்குகிறது.',
+    'ICTF A/L ICT Zoom මගින් අන්තර්ජාල පන්ති ලබා දෙනවාද?',
+    'ඔව්. ICTF අත්දැකීම් සහිත ගුරුවරුන් විසින් සජීවී Zoom පන්ති, නැවත පුහුණු වැඩසටහන් සහ ICTF ශිෂ්‍ය ද්වාරය හරහා A/L ICT ටියුෂන් ලබා දෙයි.',
+    'al-ict',
+    'A/L ICT tuition Sri Lanka Zoom',
+    11
+  ),
+  (
+    'Where are ICTF paper centers in Sri Lanka?',
+    'ICTF operates a growing islandwide paper center network across districts including Jaffna, Colombo, Kandy, Kurunegala, Gampaha, and more. Visit ictf.lk/network/paper-centers or contact us on WhatsApp +94 77 459 1161 for your nearest center.',
+    'இலங்கையில் ICTF பேப்பர் மையங்கள் எங்கே உள்ளன?',
+    'ICTF யாழ்ப்பாணம், கொழும்பு, கண்டி, குருணாகலை, கம்பஹா உள்ளிட்ட மாவட்டங்களில் தீவு முழுவதும் பேப்பர் மைய நெட்வொர்க்கை இயக்குகிறது. ictf.lk/network/paper-centers பார்வையிடுங்கள்.',
+    'ශ්‍රී ලංකාවේ ICTF ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන කොහේද?',
+    'ICTF යාපනය, කොළඹ, මහනුවර, කුරුණෑගල, ගම්පහ ඇතුළු දිස්ත්‍රික්කවල දිවයින පුරා මධ්‍යස්ථාන ජාලයක් පවත්වයි. ictf.lk/network/paper-centers බලන්න.',
+    'centers',
+    'ICT paper classes Sri Lanka',
+    12
+  ),
+  (
+    'How much does ICT tuition cost in Sri Lanka at ICTF?',
+    'ICTF tuition fees are priced in Sri Lankan Rupees (LKR). Fees vary by program (O/L ICT, A/L ICT, or degree pathways). Register at ictf.lk/register or WhatsApp +94 77 459 1161 for current batch fees and payment plans.',
+    'ICTF-ல் இலங்கையில் ICT பயிற்சி கட்டணம் எவ்வளவு?',
+    'ICTF கட்டணங்கள் இலங்கை ரூபாயில் (LKR) வழங்கப்படுகின்றன. O/L ICT, A/L ICT அல்லது பட்ட நிரல்களுக்கு கட்டணம் மாறுபடும். ictf.lk/register-ல் பதிவு செய்யுங்கள்.',
+    'ICTF හි ශ්‍රී ලංකාවේ ICT ටියුෂන් ගාස්තු කීයද?',
+    'ICTF ගාස්තු ශ්‍රී ලංකා රුපියල් (LKR) වලින් ගණනය කරයි. O/L ICT, A/L ICT හෝ උපාධි මාර්ග අනුව වෙනස් වේ. ictf.lk/register හරහා ලියාපදිංචි වන්න.',
+    'fees',
+    'ICT tuition fees Sri Lanka LKR',
+    13
+  ),
+  (
+    'Can I study ICT from Jaffna, Colombo, or other districts?',
+    'Yes. ICTF is headquartered in Jaffna and serves students islandwide through online Zoom classes and local paper centers. Whether you are in Jaffna, Colombo, Kandy, or any district, you can enroll and learn with ICTF.',
+    'யாழ்ப்பாணம், கொழும்பு அல்லது பிற மாவட்டங்களிலிருந்து ICT படிக்க முடியுமா?',
+    'ஆம். ICTF யாழ்ப்பாணத்தில் அமைந்துள்ளது மற்றும் ஆன்லைன் Zoom வகுப்புகள் மற்றும் உள்ளூர் பேப்பர் மையங்கள் மூலம் தீவு முழுவதும் மாணவர்களுக்கு சேவை செய்கிறது.',
+    'යාපනය, කොළඹ හෝ වෙනත් දිස්ත්‍රික්කවලින් ICT අධ්‍යයනය කළ හැකිද?',
+    'ඔව්. ICTF යාපනයේ ප්‍රධාන කාර්යාලය සහිත අතර Zoom පන්ති සහ දේශීය මධ්‍යස්ථාන හරහා දිවයින පුරා ශිෂ්‍යයින්ට සේවය කරයි.',
+    'geo',
+    'ICT tuition Jaffna Colombo Sri Lanka',
+    14
+  ),
+  (
+    'Who founded ICTF and teaches ICT?',
+    'ICT Foundation (ICTF) was founded by Vithoosan Sivanathan, an experienced ICT educator in Sri Lanka known for producing top O/L and A/L ICT examination results including island ranks.',
+    'ICTF-ஐ யார் நிறுவினார் மற்றும் ICT கற்பிக்கிறார்?',
+    'ICT அடித்தளத்தை (ICTF) விதூசன் சிவநாதன் நிறுவினார் — இலங்கையில் O/L மற்றும் A/L ICT தேர்வு முடிவுகளில் தீவு தரவரிசைகள் உட்பட சிறந்த முடிவுகளை உருவாக்கிய அனுபவமுள்ள ICT கல்வியாளர்.',
+    'ICTF නිර්මාණය කළේ කවුද?',
+    'ICT Foundation (ICTF) විසින් Vithoosan Sivanathan නිර්මාණය කරන ලදී — ශ්‍රී ලංකාවේ O/L සහ A/L ICT විභාග සාර්ථකත්වය සහ දිවයින ශ්‍රේණිගත කිරීම් සමඟ ප්‍රසිද්ධ ICT අධ්‍යාපනිකයෙක්.',
+    'founder',
+    'Vithoosan Sivanathan ICT teacher Sri Lanka',
+    15
+  ),
+  (
+    'How do I register for ICTF ICT classes?',
+    'Register online at ictf.lk/register with your name, email, study program (O/L or A/L ICT), and contact details. You can also WhatsApp +94 77 459 1161 with your name, grade, and district to complete enrollment.',
+    'ICTF ICT வகுப்புகளுக்கு எப்படி பதிவு செய்வது?',
+    'ictf.lk/register-ல் உங்கள் பெயர், மின்னஞ்சல், படிப்பு நிரல் (O/L அல்லது A/L ICT) மற்றும் தொடர்பு விவரங்களுடன் ஆன்லைனில் பதிவு செய்யுங்கள். WhatsApp +94 77 459 1161-லும் தொடர்பு கொள்ளலாம்.',
+    'ICTF ICT පන්ති සඳහා ලියාපදිංචි වන්නේ කෙසේද?',
+    'ictf.lk/register හරහා ඔබේ නම, විද්‍යුත් තැපෑල, අධ්‍යයන වැඩසටහන (O/L හෝ A/L ICT) සහ සම්බන්ධතා විස්තර සමඟ ලියාපදිංචි වන්න.',
+    'register',
+    'ICTF register Sri Lanka',
+    16
+  ),
+  (
+    'Does ICTF have a student portal for ICT learning?',
+    'Yes. The ICTF Student Portal provides video lessons, live class schedules, study resources, exam results, leaderboard, achievements, and an AI study assistant — accessible from any device in Sri Lanka.',
+    'ICT ICT கற்றலுக்கு ICTF-க்கு மாணவர் தளம் உள்ளதா?',
+    'ஆம். ICTF மாணவர் தளம் வீடியோ பாடங்கள், நேரடி வகுப்பு அட்டவணை, படிப்பு வளங்கள், தேர்வு முடிவுகள், லீடர்போர்டு, சாதனைகள் மற்றும் AI படிப்பு உதவியாளரை வழங்குகிறது.',
+    'ICTF හි ICT අධ්‍යයනය සඳහා ශිෂ්‍ය ද්වාරයක් තිබේද?',
+    'ඔව්. ICTF ශිෂ්‍ය ද්වාරය වීඩියෝ පාඩම්, සජීවී පන්ති කාලසටහන්, අධ්‍යයන සම්පත්, විභාග ප්‍රතිඵල, නායක පුවරුව සහ AI අධ්‍යයන සහායක ලබා දෙයි.',
+    'portal',
+    'ICT student portal Sri Lanka',
+    17
+  )
+ON CONFLICT DO NOTHING;
+
+-- >>> END 20240626120000_seo_unblock_and_faqs.sql
+
+-- >>> BEGIN 20240626130000_restore_marketing_coming_soon.sql
+-- Restore homepage Coming Soon overlay (sections below hero)
+UPDATE public.platform_settings
+SET marketing_coming_soon_enabled = true
+WHERE id = 1;
+
+-- >>> END 20240626130000_restore_marketing_coming_soon.sql
+
+-- >>> BEGIN 20240627120000_rename_tuition_to_institute_fee.sql
+-- Rename default tuition fee column to institute fee terminology
+ALTER TABLE public.platform_settings
+  RENAME COLUMN default_tuition_lkr TO default_institute_fee_lkr;
+
+-- >>> END 20240627120000_rename_tuition_to_institute_fee.sql
+
+-- >>> BEGIN 20240627120100_faq_institute_terminology.sql
+-- Replace tuition terminology in SEO FAQs with institute terminology
+UPDATE public.faqs
+SET
+  answer = 'Yes. ICTF delivers A/L ICT institute programs through live Zoom classes led by experienced faculty, including revision programs, past paper discussions, and access to the ICTF Student Portal for notes and recordings.',
+  answer_ta = 'ஆம். ICTF அனுபவமுள்ள ஆசிரியர்களால் நடத்தப்படும் நேரடி Zoom வகுப்புகள், மறுபரிசீலனை நிரல்கள், குறிப்புகள் மற்றும் பதிவுகளுக்கான ICTF மாணவர் தளம் வழியாக A/L ICT நிறுவனத்தை வழங்குகிறது.',
+  answer_si = 'ඔව්. ICTF අත්දැකීම් සහිත ගුරුවරුන් විසින් සජීවී Zoom පන්ති, නැවත පුහුණු වැඩසටහන් සහ ICTF ශිෂ්‍ය ද්වාරය හරහා A/L ICT ආයතනය ලබා දෙයි.',
+  target_keyword = 'A/L ICT institute Sri Lanka Zoom'
+WHERE target_keyword = 'A/L ICT tuition Sri Lanka Zoom';
+
+UPDATE public.faqs
+SET
+  question = 'How much does ICT institute cost in Sri Lanka at ICTF?',
+  answer = 'ICTF institute fees are priced in Sri Lankan Rupees (LKR). Fees vary by program (O/L ICT, A/L ICT, or degree pathways). Register at ictf.lk/register or WhatsApp +94 77 459 1161 for current batch fees and payment plans.',
+  question_ta = 'ICTF-ல் இலங்கையில் ICT நிறுவன கட்டணம் எவ்வளவு?',
+  answer_ta = 'ICTF கட்டணங்கள் இலங்கை ரூபாயில் (LKR) வழங்கப்படுகின்றன. O/L ICT, A/L ICT அல்லது பட்ட நிரல்களுக்கு கட்டணம் மாறுபடும். ictf.lk/register-ல் பதிவு செய்யுங்கள்.',
+  question_si = 'ICTF හි ශ්‍රී ලංකාවේ ICT ආයතන ගාස්තු කීයද?',
+  answer_si = 'ICTF ගාස්තු ශ්‍රී ලංකා රුපියල් (LKR) වලින් ගණනය කරයි. O/L ICT, A/L ICT හෝ උපාධි මාර්ග අනුව වෙනස් වේ. ictf.lk/register හරහා ලියාපදිංචි වන්න.',
+  target_keyword = 'ICT institute fees Sri Lanka LKR'
+WHERE target_keyword = 'ICT tuition fees Sri Lanka LKR';
+
+UPDATE public.faqs
+SET target_keyword = 'ICT institute Jaffna Colombo Sri Lanka'
+WHERE target_keyword = 'ICT tuition Jaffna Colombo Sri Lanka';
+
+-- >>> END 20240627120100_faq_institute_terminology.sql
+
+-- >>> BEGIN 20240628120000_marketing_announcements.sql
+-- Marketing announcement popups for public site
+
+CREATE TABLE public.marketing_announcements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  image_url TEXT NOT NULL DEFAULT '',
+  cta_label TEXT NOT NULL DEFAULT '',
+  cta_url TEXT NOT NULL DEFAULT '',
+  content_type TEXT NOT NULL DEFAULT 'text_only'
+    CHECK (content_type IN ('image_only', 'text_only', 'text_image', 'text_image_link')),
+  display_style TEXT NOT NULL DEFAULT 'card'
+    CHECK (display_style IN ('minimal', 'card', 'image_hero', 'promo')),
+  starts_at TIMESTAMPTZ,
+  ends_at TIMESTAMPTZ,
+  priority INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX marketing_announcements_active_schedule_idx
+  ON public.marketing_announcements (is_active, priority DESC, created_at DESC);
+
+ALTER TABLE public.marketing_announcements ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY marketing_announcements_public_read
+  ON public.marketing_announcements FOR SELECT
+  USING (
+    is_active = true
+    AND (starts_at IS NULL OR starts_at <= now())
+    AND (ends_at IS NULL OR ends_at >= now())
+  );
+
+CREATE POLICY marketing_announcements_admin_write
+  ON public.marketing_announcements FOR ALL
+  USING (public.is_admin());
+
+-- >>> END 20240628120000_marketing_announcements.sql
+
 -- >>> BEGIN 20240628130000_brand_logo_settings.sql
+-- Admin-managed marketing nav & footer logo dimensions
 ALTER TABLE public.platform_settings
   ADD COLUMN IF NOT EXISTS brand_logo_settings JSONB NOT NULL DEFAULT '{
     "nav": { "widthRem": 10.75, "scale": 1.22, "scaleSm": 1.26 },
     "footer": { "widthRem": 13.5, "heightRem": 4.25, "widthRemSm": 14, "heightRemSm": 4.5 }
   }'::jsonb;
+
 -- >>> END 20240628130000_brand_logo_settings.sql
 
 -- >>> BEGIN 20240628130100_brand_logo_size_defaults.sql
+-- Larger default nav/footer logo sizes for clearer visibility
 UPDATE public.platform_settings
 SET brand_logo_settings = '{
   "nav": { "widthRem": 12.5, "scale": 1.34, "scaleSm": 1.4 },
   "footer": { "widthRem": 20, "heightRem": 6.25, "widthRemSm": 22, "heightRemSm": 6.75 }
 }'::jsonb
 WHERE id = 1;
+
 -- >>> END 20240628130100_brand_logo_size_defaults.sql
 
 -- >>> BEGIN 20240628130200_brand_logo_size_optimal.sql
+-- Optimal default logo sizes for header/footer visibility
 UPDATE public.platform_settings
 SET brand_logo_settings = '{
   "nav": { "widthRem": 13.75, "scale": 1.38, "scaleSm": 1.44 },
@@ -1265,6 +1495,7 @@ SET brand_logo_settings = '{
 }'::jsonb
 WHERE id = 1;
 
+-- Enable Realtime for live logo size updates
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -1274,9 +1505,11 @@ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_settings;
   END IF;
 END $$;
+
 -- >>> END 20240628130200_brand_logo_size_optimal.sql
 
 -- >>> BEGIN 20240628130300_footer_logo_compact.sql
+-- Compact footer logo: smaller size, left-aligned with brand copy
 UPDATE public.platform_settings
 SET brand_logo_settings = jsonb_set(
   jsonb_set(
@@ -1296,9 +1529,11 @@ SET brand_logo_settings = jsonb_set(
   '4'::jsonb
 )
 WHERE id = 1;
+
 -- >>> END 20240628130300_footer_logo_compact.sql
 
 -- >>> BEGIN 20240628130400_footer_logo_larger.sql
+-- Larger footer logo defaults (left-aligned, prominent but not full-bleed)
 UPDATE public.platform_settings
 SET brand_logo_settings = jsonb_set(
   jsonb_set(
@@ -1318,9 +1553,11 @@ SET brand_logo_settings = jsonb_set(
   '6'::jsonb
 )
 WHERE id = 1;
+
 -- >>> END 20240628130400_footer_logo_larger.sql
 
 -- >>> BEGIN 20240628130500_footer_logo_small.sql
+-- Compact footer logo: slightly larger than nav, left-aligned
 UPDATE public.platform_settings
 SET brand_logo_settings = jsonb_set(
   jsonb_set(
@@ -1340,5 +1577,131 @@ SET brand_logo_settings = jsonb_set(
   '3.5'::jsonb
 )
 WHERE id = 1;
+
 -- >>> END 20240628130500_footer_logo_small.sql
+
+-- >>> BEGIN 20240628130600_footer_logo_db_driven_defaults.sql
+-- Footer/nav logo sizes controlled via platform_settings.brand_logo_settings
+-- (admin panel + CSS variables). Replaces compact overrides from prior migrations.
+UPDATE public.platform_settings
+SET brand_logo_settings = '{
+  "nav": { "widthRem": 12.5, "scale": 1.05, "scaleSm": 1.1 },
+  "footer": { "widthRem": 17, "heightRem": 5, "widthRemSm": 19, "heightRemSm": 5.5 }
+}'::jsonb
+WHERE id = 1;
+
+-- >>> END 20240628130600_footer_logo_db_driven_defaults.sql
+
+-- >>> BEGIN 20240628130700_footer_logo_compact_restore.sql
+-- Compact footer logo: balanced with brand copy below (left-aligned)
+UPDATE public.platform_settings
+SET brand_logo_settings = jsonb_set(
+  jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        COALESCE(brand_logo_settings, '{}'::jsonb),
+        '{footer,widthRem}',
+        '11.5'::jsonb
+      ),
+      '{footer,heightRem}',
+      '3.25'::jsonb
+    ),
+    '{footer,widthRemSm}',
+    '12.5'::jsonb
+  ),
+  '{footer,heightRemSm}',
+  '3.5'::jsonb
+)
+WHERE id = 1;
+
+-- >>> END 20240628130700_footer_logo_compact_restore.sql
+
+-- >>> BEGIN 20240628130800_marketing_announcements_banner_check.sql
+-- Drop the existing constraint and recreate it to support the new 'banner' display style.
+ALTER TABLE public.marketing_announcements
+  DROP CONSTRAINT IF EXISTS marketing_announcements_display_style_check;
+
+ALTER TABLE public.marketing_announcements
+  ADD CONSTRAINT marketing_announcements_display_style_check
+  CHECK (display_style IN ('minimal', 'card', 'image_hero', 'promo', 'banner'));
+
+-- >>> END 20240628130800_marketing_announcements_banner_check.sql
+
+-- >>> BEGIN 20240628140000_blog_posts.sql
+-- Blog categories and posts for marketing CMS
+
+CREATE TABLE public.blog_categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT NOT NULL DEFAULT '',
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.blog_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  excerpt TEXT NOT NULL DEFAULT '',
+  content TEXT NOT NULL DEFAULT '',
+  cover_image_url TEXT NOT NULL DEFAULT '',
+  category_id UUID REFERENCES public.blog_categories(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'draft'
+    CHECK (status IN ('draft', 'published')),
+  is_featured BOOLEAN NOT NULL DEFAULT false,
+  seo_title TEXT NOT NULL DEFAULT '',
+  seo_description TEXT NOT NULL DEFAULT '',
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  author_name TEXT NOT NULL DEFAULT '',
+  reading_time_minutes INT NOT NULL DEFAULT 1,
+  published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX blog_posts_slug_idx ON public.blog_posts (slug);
+CREATE INDEX blog_posts_status_published_idx ON public.blog_posts (status, published_at DESC NULLS LAST);
+CREATE INDEX blog_posts_category_status_idx ON public.blog_posts (category_id, status, published_at DESC NULLS LAST);
+CREATE INDEX blog_posts_featured_idx ON public.blog_posts (is_featured, published_at DESC NULLS LAST);
+CREATE INDEX blog_categories_slug_idx ON public.blog_categories (slug);
+
+CREATE OR REPLACE FUNCTION public.set_blog_posts_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER blog_posts_updated_at
+  BEFORE UPDATE ON public.blog_posts
+  FOR EACH ROW
+  EXECUTE FUNCTION public.set_blog_posts_updated_at();
+
+ALTER TABLE public.blog_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY blog_categories_public_read
+  ON public.blog_categories FOR SELECT
+  USING (is_active = true);
+
+CREATE POLICY blog_categories_admin_write
+  ON public.blog_categories FOR ALL
+  USING (public.is_admin());
+
+CREATE POLICY blog_posts_public_read
+  ON public.blog_posts FOR SELECT
+  USING (
+    status = 'published'
+    AND published_at IS NOT NULL
+    AND published_at <= now()
+  );
+
+CREATE POLICY blog_posts_admin_write
+  ON public.blog_posts FOR ALL
+  USING (public.is_admin());
+
+-- >>> END 20240628140000_blog_posts.sql
 

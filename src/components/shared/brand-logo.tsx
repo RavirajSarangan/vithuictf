@@ -9,10 +9,13 @@ const DISPLAY_HEIGHT_PX = {
   md: 36,
   lg: 40,
   xl: 44,
-  nav: 48,
-  footer: 64,
+  nav: 56,
+  footer: 68,
   authLogin: 50,
+  authLoginMobile: 55,
   authLoginAside: 48,
+  authLoginDesktop: 56,
+  mobileSheet: 52,
 } as const;
 
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT_PX;
@@ -25,25 +28,20 @@ const MARK_LAYOUT_PX: Partial<
 /** PNG wordmark layout boxes (dark PNG, often inverted on navy). */
 const PNG_LAYOUT_PX: Partial<
   Record<BrandLogoSize, { width: number; height: number }>
-> = {
-  nav: { width: 185, height: 48 },
-  footer: { width: 228, height: 64 },
-};
+> = {};
 
-/** Light SVG wordmark on dark surfaces (nav, footer, portal sidebar). */
-const LIGHT_WORDMARK_LAYOUT_PX: Partial<
-  Record<BrandLogoSize, { width: number; height: number }>
-> = {
-  nav: { width: 185, height: 48 },
-  footer: { width: 228, height: 64 },
-};
+/** Sizes driven by platform_settings.brand_logo_settings via CSS variables on :root. */
+const DB_DRIVEN_SIZES = new Set<BrandLogoSize>(["nav", "footer"]);
 
 /** Dark PNG wordmark crop boxes (light-background auth pages). */
 const WORDMARK_LAYOUT_PX: Partial<
   Record<BrandLogoSize, { width: number; height: number }>
 > = {
   authLogin: { width: 142, height: 50 },
+  authLoginMobile: { width: 156, height: 55 },
   authLoginAside: { width: 150, height: 48 },
+  authLoginDesktop: { width: 118, height: 56 },
+  mobileSheet: { width: 188, height: 52 },
 };
 
 interface BrandLogoProps {
@@ -51,6 +49,8 @@ interface BrandLogoProps {
   className?: string;
   alt?: string;
   priority?: boolean;
+  /** Override default brand asset path. */
+  src?: string;
   /** Use square ICTF.svg mark (nav, footer, dark surfaces). */
   mark?: boolean;
   light?: boolean;
@@ -61,8 +61,12 @@ function isSvgSrc(src: string): boolean {
   return src.endsWith(".svg");
 }
 
-function layoutWidth(height: number): number {
-  const aspect = BRAND.logoWidth / BRAND.logoHeight;
+function layoutWidth(
+  height: number,
+  aspectWidth: number = BRAND.logoWidth,
+  aspectHeight: number = BRAND.logoHeight
+): number {
+  const aspect = aspectWidth / aspectHeight;
   return Math.round(height * aspect);
 }
 
@@ -71,24 +75,36 @@ export function BrandLogo({
   className,
   alt = BRAND.name,
   priority,
+  src: srcOverride,
   mark,
   light,
   fill,
 }: BrandLogoProps) {
-  const src = mark ? BRAND.logoMark : light ? BRAND.logoLight : BRAND.logo;
+  const src = srcOverride ?? (mark ? BRAND.logoMark : light ? BRAND.logoLight : BRAND.logo);
   const isSvg = isSvgSrc(src);
+  const isVectorWordmark = src === BRAND.logoNav || src === BRAND.logoFooter;
+  const dbDriven = DB_DRIVEN_SIZES.has(size);
   const markLayout = mark ? MARK_LAYOUT_PX[size] : undefined;
-  const pngLayout = !mark && !light ? PNG_LAYOUT_PX[size] : undefined;
-  const lightWordmarkLayout = light && !mark ? LIGHT_WORDMARK_LAYOUT_PX[size] : undefined;
-  const wordmarkLayout = !mark && !light ? WORDMARK_LAYOUT_PX[size] : undefined;
-  const layout = markLayout ?? pngLayout ?? lightWordmarkLayout ?? wordmarkLayout;
+  const pngLayout = !mark && !light && !dbDriven ? PNG_LAYOUT_PX[size] : undefined;
+  const wordmarkLayout = !mark && !light && !dbDriven ? WORDMARK_LAYOUT_PX[size] : undefined;
+  const layout = markLayout ?? pngLayout ?? wordmarkLayout;
   const height = layout?.height ?? DISPLAY_HEIGHT_PX[size];
-  const width = layout?.width ?? (mark ? height : layoutWidth(height));
+  const width =
+    layout?.width ??
+    (mark
+      ? height
+      : isVectorWordmark
+        ? layoutWidth(
+            height,
+            src === BRAND.logoFooter ? BRAND.logoFooterWidth : BRAND.logoNavWidth,
+            src === BRAND.logoFooter ? BRAND.logoFooterHeight : BRAND.logoNavHeight
+          )
+        : layoutWidth(height));
   const isPngLayout = Boolean(pngLayout);
 
   const imageClassName = cn(
     "brand-logo-img block h-full w-full max-w-none shrink-0 leading-none",
-    mark || isSvg || isPngLayout
+    mark || isSvg || isPngLayout || light || dbDriven || isVectorWordmark || wordmarkLayout
       ? "object-contain object-left"
       : "object-cover object-center object-left",
     className
@@ -113,8 +129,9 @@ export function BrandLogo({
   return (
     <span
       data-brand-logo
+      data-brand-logo-size={size}
       className="inline-block shrink-0 overflow-hidden leading-none"
-      style={{ width, height }}
+      style={dbDriven ? undefined : { width, height }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

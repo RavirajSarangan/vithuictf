@@ -34,6 +34,8 @@ const CORE_TABLES: Array<{ table: string; select: string }> = [
   { table: "success_stories", select: "id" },
   { table: "calendar_sessions", select: "id" },
   { table: "subject_categories", select: "id" },
+  { table: "blog_categories", select: "id" },
+  { table: "blog_posts", select: "id" },
 ];
 
 function loadEnvLocal() {

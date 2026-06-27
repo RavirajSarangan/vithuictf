@@ -11,17 +11,24 @@ interface NavBrandProps {
 
 /** Wordmark for marketing nav surfaces. */
 export function NavBrand({ className, tone = "light" }: NavBrandProps) {
+  const isSheet = tone === "dark";
+
   return (
     <Link
       href="/"
       className={cn(
         "marketing-nav-brand flex h-full min-w-0 items-center justify-start leading-none",
-        tone === "dark" && "marketing-nav-brand--dark",
+        isSheet && "marketing-nav-brand--dark",
         className
       )}
       aria-label={BRAND.name}
     >
-      <BrandLogo size="nav" light={tone === "light"} priority />
+      <BrandLogo
+        size={isSheet ? "mobileSheet" : "nav"}
+        src={isSheet ? BRAND.logo : BRAND.logoNav}
+        className={isSheet ? "!object-contain" : undefined}
+        priority
+      />
     </Link>
   );
 }

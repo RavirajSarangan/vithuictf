@@ -207,3 +207,22 @@ export const PAPER_CENTERS_SEO = {
     si: ["ICT ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන", "ශ්‍රී ලංකා ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන"],
   },
 };
+
+export const BLOG_SEO = {
+  path: "/blog",
+  title: {
+    en: "ICT Blog | O/L & A/L ICT Tips — ICTF Sri Lanka",
+    ta: "ICT Blog | O/L & A/L ICT Tips — ICTF Sri Lanka",
+    si: "ICT Blog | O/L & A/L ICT Tips — ICTF Sri Lanka",
+  },
+  description: {
+    en: "Read ICTF blog articles on O/L and A/L ICT exam preparation, study tips, Zoom class updates, and institute news for students across Sri Lanka.",
+    ta: "Read ICTF blog articles on O/L and A/L ICT exam preparation, study tips, Zoom class updates, and institute news for students across Sri Lanka.",
+    si: "Read ICTF blog articles on O/L and A/L ICT exam preparation, study tips, Zoom class updates, and institute news for students across Sri Lanka.",
+  },
+  keywords: {
+    en: ["ICT blog", "O/L ICT tips", "A/L ICT study guide", "ICTF blog Sri Lanka", "ICT exam preparation"],
+    ta: ["ICT blog", "O/L ICT tips", "A/L ICT study guide"],
+    si: ["ICT blog", "O/L ICT tips", "A/L ICT study guide"],
+  },
+};

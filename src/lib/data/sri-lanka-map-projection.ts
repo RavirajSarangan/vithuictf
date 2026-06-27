@@ -27,13 +27,48 @@ export const SRI_LANKA_DISTRICT_COORDS: Record<string, { lat: number; lon: numbe
   matara: { lat: 5.9549, lon: 80.555 },
   badulla: { lat: 6.9891, lon: 81.0557 },
   negombo: { lat: 7.2083, lon: 79.8358 },
+  puttalam: { lat: 8.0362, lon: 79.8283 },
 };
 
 export function projectLatLonToMapPercent(lat: number, lon: number): { x: number; y: number } {
-  const svgX = SVG_X_ORIGIN + (lon - LON_ORIGIN) * X_SCALE;
-  const svgY = SVG_Y_ORIGIN + (lat - LAT_ORIGIN) * Y_SCALE;
+  const { x, y } = projectLatLonToSvg(lat, lon);
   return {
-    x: Math.round((svgX / 10) * 10) / 10,
-    y: Math.round((svgY / 10) * 10) / 10,
+    x: Math.round((x / 10) * 10) / 10,
+    y: Math.round((y / 10) * 10) / 10,
   };
 }
+
+/** Raw viewBox coordinates (0–1000) for inline SVG overlays. */
+export function projectLatLonToSvg(lat: number, lon: number): { x: number; y: number } {
+  const x = SVG_X_ORIGIN + (lon - LON_ORIGIN) * X_SCALE;
+  const y = SVG_Y_ORIGIN + (lat - LAT_ORIGIN) * Y_SCALE;
+  return {
+    x: Math.round(x * 10) / 10,
+    y: Math.round(y * 10) / 10,
+  };
+}
+
+export const HERO_FOUNDER_MAP_MARKERS = {
+  jaffna: projectLatLonToSvg(
+    SRI_LANKA_DISTRICT_COORDS.jaffna.lat,
+    SRI_LANKA_DISTRICT_COORDS.jaffna.lon
+  ),
+  vavuniya: projectLatLonToSvg(
+    SRI_LANKA_DISTRICT_COORDS.vavuniya.lat,
+    SRI_LANKA_DISTRICT_COORDS.vavuniya.lon
+  ),
+  puttalam: projectLatLonToSvg(
+    SRI_LANKA_DISTRICT_COORDS.puttalam.lat,
+    SRI_LANKA_DISTRICT_COORDS.puttalam.lon
+  ),
+  colombo: projectLatLonToSvg(
+    SRI_LANKA_DISTRICT_COORDS.colombo.lat,
+    SRI_LANKA_DISTRICT_COORDS.colombo.lon
+  ),
+  galle: projectLatLonToSvg(
+    SRI_LANKA_DISTRICT_COORDS.galle.lat,
+    SRI_LANKA_DISTRICT_COORDS.galle.lon
+  ),
+} as const;
+
+export type HeroFounderMapCityKey = keyof typeof HERO_FOUNDER_MAP_MARKERS;

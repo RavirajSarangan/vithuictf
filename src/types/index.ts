@@ -309,7 +309,8 @@ export type MarketingAnnouncementDisplayStyle =
   | "minimal"
   | "card"
   | "image_hero"
-  | "promo";
+  | "promo"
+  | "banner";
 
 export interface MarketingAnnouncement {
   id: string;
@@ -341,7 +342,14 @@ export interface SiteStats {
 export type SitePublicMode = "live" | "coming_soon" | "maintenance";
 
 export interface BrandLogoSettings {
-  nav: { widthRem: number; scale: number; scaleSm: number };
+  nav: {
+    widthRem: number;
+    heightRem: number;
+    widthRemSm: number;
+    heightRemSm: number;
+    scale: number;
+    scaleSm: number;
+  };
   footer: {
     widthRem: number;
     heightRem: number;
@@ -404,4 +412,38 @@ export interface CalendarSession {
   teacherName: string;
   room: string;
   mode: SessionMode;
+}
+
+export type BlogPostStatus = "draft" | "published";
+
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  coverImageUrl: string;
+  categoryId: string | null;
+  categoryName?: string;
+  categorySlug?: string;
+  status: BlogPostStatus;
+  isFeatured: boolean;
+  seoTitle: string;
+  seoDescription: string;
+  tags: string[];
+  authorName: string;
+  readingTimeMinutes: number;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { getComingSoonPath, isPortalRouteBlocked } from "@/lib/portal-access";
+import { getBlockedMarketingRedirect } from "@/lib/marketing-page-access";
 import {
   fetchSitePublicMode,
   getSiteGateRedirectPath,
@@ -73,6 +74,11 @@ export async function middleware(request: NextRequest) {
 
   if (isSiteGateWebhookPath(pathname)) {
     return NextResponse.next();
+  }
+
+  const blockedMarketing = getBlockedMarketingRedirect(pathname);
+  if (blockedMarketing) {
+    return NextResponse.redirect(new URL(blockedMarketing, request.url));
   }
 
   const siteMode = await fetchSitePublicMode();

@@ -26,7 +26,6 @@ import {
 import { AdminTable } from "@/components/admin/admin-table";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { AdminMarketingVisibilityPanel } from "@/components/admin/admin-marketing-visibility-panel";
-import { AdminBrandLogoPanel } from "@/components/admin/admin-brand-logo-panel";
 import { AdminAnnouncementsPanel } from "@/components/admin/admin-announcements-panel";
 import { AdminEmailTestPanel } from "@/components/admin/admin-email-test-panel";
 import { Button } from "@/components/ui/button";
@@ -66,7 +65,6 @@ export default function AdminHomePage() {
     <Tabs defaultValue="visibility" className="flex flex-col gap-4">
       <TabsList className="flex flex-wrap">
         <TabsTrigger value="visibility">Visibility</TabsTrigger>
-        <TabsTrigger value="branding">Branding</TabsTrigger>
         <TabsTrigger value="announcements">Announcements</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
         <TabsTrigger value="stats">Site Stats</TabsTrigger>
@@ -79,9 +77,6 @@ export default function AdminHomePage() {
       </TabsList>
       <TabsContent value="visibility">
         <AdminMarketingVisibilityPanel />
-      </TabsContent>
-      <TabsContent value="branding">
-        <AdminBrandLogoPanel />
       </TabsContent>
       <TabsContent value="announcements">
         <AdminAnnouncementsPanel />

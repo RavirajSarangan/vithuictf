@@ -25,6 +25,7 @@ export function revalidateMarketingPaths() {
     "/",
     "/ta",
     "/si",
+    "/blog",
     "/rankings",
     "/network",
     "/coming-soon",
@@ -35,6 +36,14 @@ export function revalidateMarketingPaths() {
 
   for (const path of paths) {
     revalidatePath(path);
+  }
+}
+
+/** Blog listing and post detail pages. */
+export function revalidateBlogPaths(slugs: string[] = []) {
+  revalidatePath("/blog");
+  for (const slug of slugs) {
+    revalidatePath(`/blog/${slug}`);
   }
 }
 

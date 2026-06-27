@@ -8,7 +8,10 @@ import { ButtonLink } from "@/components/shared/button-link";
 import { cn } from "@/lib/utils";
 
 const navRegisterButtonClass =
-  "marketing-nav-register relative z-10 h-8 min-h-8 px-3 text-[11px] sm:h-9 sm:min-h-9 sm:px-4 sm:text-sm shadow-[0_0_24px_-8px_rgba(245,166,35,0.95)]";
+  "marketing-nav-register relative z-10 inline-flex h-8 min-h-8 shrink-0 items-center justify-center px-3.5 text-[11px] sm:h-9 sm:min-h-9 sm:px-4 sm:text-sm shadow-[0_0_20px_-10px_rgba(245,166,35,0.9)]";
+
+const navLoginButtonClass =
+  "marketing-nav-login !text-white/90 h-8 min-h-8 shrink-0 px-3 text-sm font-semibold hover:!text-white";
 
 function NavRegisterButton({
   href,
@@ -23,12 +26,6 @@ function NavRegisterButton({
 }) {
   return (
     <div className={cn("group relative shrink-0", compact && "marketing-nav-register-compact")}>
-      {!compact ? (
-        <div
-          className="pointer-events-none absolute inset-0 -m-1 rounded-full bg-icvf-accent/45 opacity-70 blur-md transition-all duration-300 ease-out group-hover:-m-1.5 group-hover:opacity-90 group-hover:blur-lg"
-          aria-hidden
-        />
-      ) : null}
       <ButtonLink
         href={href}
         onClick={onClick}
@@ -131,7 +128,7 @@ export function MarketingSessionActions({
         <button
           type="button"
           onClick={() => void handleSignOut()}
-          className="marketing-nav-link shrink-0 border-0 bg-transparent p-0"
+          className={cn(navLoginButtonClass, "border-0 bg-transparent")}
         >
           {t("btn.signOut")}
         </button>
@@ -182,9 +179,9 @@ export function MarketingSessionActions({
 
   if (variant === "nav-desktop-login") {
     return (
-      <Link href={loginHref} className="marketing-nav-link shrink-0 text-white/85 hover:text-white">
+      <ButtonLink href={loginHref} variant="icvf-ghost" className={navLoginButtonClass}>
         {t("btn.login")}
-      </Link>
+      </ButtonLink>
     );
   }
 
@@ -193,7 +190,7 @@ export function MarketingSessionActions({
       href={loginHref}
       onClick={onNavigate}
       className={cn(
-        "marketing-nav-link block text-center text-base text-white/85 hover:text-white",
+        "block w-full touch-manipulation py-2.5 text-left text-base font-medium text-icvf-navy no-underline transition-colors hover:text-icvf-navy-dark",
         className
       )}
     >

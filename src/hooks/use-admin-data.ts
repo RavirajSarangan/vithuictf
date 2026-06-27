@@ -17,8 +17,12 @@ import {
   mapParent,
   mapStudent,
   mapTeacher,
+  mapBlogCategory,
+  mapBlogPost,
 } from "@/lib/supabase/mappers";
 import type {
+  BlogCategory,
+  BlogPost,
   Certificate,
   ClassProgram,
   Company,
@@ -412,6 +416,53 @@ export function useAdminMarketingAnnouncements() {
           return;
         }
         setData((rows ?? []).map(mapMarketingAnnouncement));
+      });
+  }, [version]);
+
+  return { data, refresh };
+}
+
+export function useAdminBlogCategories() {
+  const [data, setData] = useState<BlogCategory[]>([]);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    createClient()
+      .from("blog_categories")
+      .select("*")
+      .order("sort_order")
+      .order("name")
+      .then(({ data: rows, error }) => {
+        if (error) {
+          console.error("blog_categories fetch failed:", error.message);
+          setData([]);
+          return;
+        }
+        setData((rows ?? []).map(mapBlogCategory));
+      });
+  }, [version]);
+
+  return { data, refresh };
+}
+
+export function useAdminBlogPosts() {
+  const [data, setData] = useState<BlogPost[]>([]);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    createClient()
+      .from("blog_posts")
+      .select("*, blog_categories ( name, slug )")
+      .order("created_at", { ascending: false })
+      .then(({ data: rows, error }) => {
+        if (error) {
+          console.error("blog_posts fetch failed:", error.message);
+          setData([]);
+          return;
+        }
+        setData((rows ?? []).map(mapBlogPost));
       });
   }, [version]);
 

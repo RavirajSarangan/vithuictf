@@ -146,7 +146,7 @@ export function HeroSection() {
   return (
     <section
       id="home"
-      className="hero-section relative flex min-h-0 flex-col overflow-x-clip -mt-[var(--marketing-header-offset)] pt-[calc(var(--marketing-header-offset)+1rem)] sm:pt-[calc(var(--marketing-header-offset)+0.5rem)] max-lg:max-h-none lg:max-h-none"
+      className="hero-section relative flex min-h-0 flex-col overflow-x-clip lg:overflow-x-visible -mt-[var(--marketing-header-offset)] pt-[calc(var(--marketing-header-offset)+1rem)] sm:pt-[calc(var(--marketing-header-offset)+0.5rem)] max-lg:max-h-none lg:max-h-none"
     >
       <HeroDecor />
 
@@ -191,7 +191,7 @@ export function HeroSection() {
             </div>
           </div>
 
-          <div className="hero-founder-slot order-2 mt-2 w-full min-w-0 shrink-0 sm:mt-3 lg:order-1 lg:mt-0 lg:self-end">
+          <div className="hero-founder-slot order-2 mt-2 w-full min-w-0 shrink-0 overflow-visible sm:mt-3 lg:order-1 lg:mt-0 lg:self-end lg:overflow-visible">
             <div className="hero-founder-stage">
               <HeroFounderIslandMap />
               <HeroFounderPhoto src={founderImage} />

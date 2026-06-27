@@ -4,6 +4,7 @@ import type { MarketingUiKey } from "@/lib/i18n/marketing-ui";
 export const SINHALA_UI_OVERRIDES: Partial<Record<MarketingUiKey, string>> = {
   "nav.programs": "වැඩසටහන්",
   "nav.about": "අප ගැන",
+  "nav.blog": "Blog",
   "nav.results": "ප්‍රතිඵල",
   "nav.faq": "නිති අසන ප්‍රශ්න",
   "nav.contact": "සම්බන්ධ වන්න",
@@ -23,4 +24,5 @@ export const SINHALA_UI_OVERRIDES: Partial<Record<MarketingUiKey, string>> = {
   "faq.subtitle": "O/L සහ A/L ICT පන්ති, ලියාපදිංචිය සහ ICTF ශිෂ්‍ය ද්වාරය පිළිබඳව.",
   "about.badge": "නිර්මාතෘ",
   "about.title": "ගුරුත්වය සහ ප්‍රතිඵල",
+  "footer.builtBy": "ICTF Digital මගින් නිර්මාණය කරන ලදී",
 };

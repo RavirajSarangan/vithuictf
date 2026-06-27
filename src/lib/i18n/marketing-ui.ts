@@ -10,6 +10,7 @@ export type MarketingUiKey =
   | "nav.centers"
   | "nav.faq"
   | "nav.contact"
+  | "nav.blog"
   | "nav.register"
   | "nav.institute"
   | "btn.login"
@@ -345,6 +346,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "nav.centers": { en: "Network", ta: "நெட்வொர்க்" },
   "nav.faq": { en: "FAQ", ta: "கேள்விகள்" },
   "nav.contact": { en: "Contact", ta: "தொடர்பு" },
+  "nav.blog": { en: "Blog", ta: "வலைப்பதிவு", si: "Blog" },
   "nav.register": { en: "Register", ta: "பதிவு" },
   "nav.institute": { en: "Institute", ta: "நிறுவனம்" },
   "btn.login": { en: "Login", ta: "உள்நுழை" },
@@ -367,7 +369,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "apply.submit": { en: "Submit Application", ta: "விண்ணப்பத்தை சமர்ப்பி" },
   "apply.submitting": { en: "Submitting...", ta: "சமர்ப்பிக்கிறது..." },
   "apply.haveAccount": { en: "Already have an account?", ta: "ஏற்கனவே கணக்கு உள்ளதா?" },
-  "lang.en": { en: "EN", ta: "EN", si: "EN" },
+  "lang.en": { en: "English", ta: "English", si: "English" },
   "lang.ta": { en: "தமிழ்", ta: "தமிழ்", si: "தமிழ்" },
   "lang.si": { en: "සිංහල", ta: "සිංහල", si: "සිංහල" },
   "hero.studentsEnrolled": { en: "Students Enrolled", ta: "பதிவு செய்த மாணவர்கள்" },
@@ -591,8 +593,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "footer.marquee.lms": { en: "LMS Portal", ta: "LMS போர்டல்" },
   "footer.marquee.results": { en: "Student Results", ta: "மாணவர் முடிவுகள்" },
   "footer.builtBy": {
-    en: "Built by ICTF Solution",
-    ta: "ICTF Solution மூலம் உருவாக்கப்பட்டது",
+    en: "Built by ICTF Digital",
+    ta: "ICTF Digital மூலம் உருவாக்கப்பட்டது",
   },
   "contact.badge": { en: "Contact", ta: "தொடர்பு" },
   "contact.title": { en: "Contact ICTF", ta: "ICTF-ஐ தொடர்பு கொள்ளுங்கள்" },

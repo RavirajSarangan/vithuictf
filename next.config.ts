@@ -49,6 +49,9 @@ const nextConfig: NextConfig = {
     const immutableStatic = [
       { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
     ] as const;
+    const faviconCache = [
+      { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+    ] as const;
 
     // Derive the Supabase origins (https + wss for realtime) so CSP can allowlist them.
     const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : "";
@@ -104,11 +107,11 @@ const nextConfig: NextConfig = {
             },
             {
               source: "/favicon.png",
-              headers: [...immutableStatic],
+              headers: [...faviconCache],
             },
             {
               source: "/apple-icon.png",
-              headers: [...immutableStatic],
+              headers: [...faviconCache],
             },
             {
               source: "/ICTF.svg",
