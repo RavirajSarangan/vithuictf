@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/server";
 import {
   mapClassProgram,
   mapCompany,
@@ -58,7 +58,7 @@ export const EMPTY_MARKETING_HOME_DATA: MarketingHomeData = {
 const FETCH_TIMEOUT_MS = 6_000;
 
 async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const [
     siteStatsRes,
@@ -128,7 +128,7 @@ const getActiveMarketingAnnouncementCached = cache(async (): Promise<MarketingAn
   try {
     const result = await Promise.race([
       (async () => {
-        const supabase = await createClient();
+        const supabase = createPublicClient();
         const { data, error } = await supabase
           .from("marketing_announcements")
           .select("*")

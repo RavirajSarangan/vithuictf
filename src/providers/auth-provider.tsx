@@ -12,7 +12,7 @@ import type { User, UserRole } from "@/types";
 import type { RegisterStudentInput } from "@/lib/validation/register-student";
 import { createClient } from "@/lib/supabase/client";
 import { mapProfile } from "@/lib/supabase/mappers";
-import { signUpWithRole, resolveStudentLoginEmail } from "@/lib/actions/auth";
+import { registerStudentAccount, resolveStudentLoginEmail } from "@/lib/actions/auth";
 import { EMAIL_PATTERN, LOGIN_ERROR } from "@/lib/auth/login-errors";
 import { getComingSoonPath } from "@/lib/portal-access";
 
@@ -206,7 +206,10 @@ export function AuthProvider({
   );
 
   const signUp = useCallback(async (input: RegisterStudentInput) => {
-    await signUpWithRole(input.email, input.password, input.displayName, "student", input);
+    const registration = await registerStudentAccount(input);
+    if (!registration.ok) {
+      throw new Error(registration.error);
+    }
 
     const supabase = createClient();
     const email = input.email.trim().toLowerCase();

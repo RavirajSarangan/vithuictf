@@ -298,16 +298,33 @@ async function ensureStudentRow(
 }
 
 export async function checkUsernameAvailable(username: string): Promise<boolean> {
-  const normalized = normalizeUsername(username);
-  if (normalized.length < 3) return false;
+  try {
+    const normalized = normalizeUsername(username);
+    if (normalized.length < 3) return false;
 
-  if (!isAdminClientConfigured()) {
+    if (!isAdminClientConfigured()) {
+      return true;
+    }
+
+    const admin = createAdminClient();
+    const { data } = await admin.from("students").select("id").eq("username", normalized).maybeSingle();
+    return !data;
+  } catch {
     return true;
   }
+}
 
-  const admin = createAdminClient();
-  const { data } = await admin.from("students").select("id").eq("username", normalized).maybeSingle();
-  return !data;
+/** Client-safe registration — returns errors instead of throwing (production hides thrown action errors). */
+export async function registerStudentAccount(
+  input: RegisterStudentInput
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await signUpWithRole(input.email, input.password, input.displayName, "student", input);
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
+    return { ok: false, error: message };
+  }
 }
 
 export async function signUpWithRole(
@@ -319,7 +336,9 @@ export async function signUpWithRole(
 ) {
   if (!isAdminClientConfigured()) {
     throw new Error(
-      "Registration backend is not fully configured. Add SUPABASE_SERVICE_ROLE_KEY to .env.local (Supabase Dashboard → Project Settings → API → service_role secret), then restart the dev server."
+      process.env.NODE_ENV === "production"
+        ? "Registration is temporarily unavailable. Please try again later or contact support."
+        : "Registration backend is not fully configured. Add SUPABASE_SERVICE_ROLE_KEY to .env.local (Supabase Dashboard → Project Settings → API → service_role secret), then restart the dev server."
     );
   }
 

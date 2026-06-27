@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GraduationCap, School } from "lucide-react";
@@ -98,17 +98,16 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
   const { t } = useMarketingText();
   const courses = useCourses();
 
-  const courseSelectItems = useMemo(
-    () => courses.map((course) => ({ value: course.id, label: course.name })),
-    [courses]
-  );
-
   const selectedCourse = courses.find((course) => course.id === courseId);
 
   useEffect(() => {
-    void getRegistrationBackendStatus().then((status) => {
-      setMissingServiceRole(status.missingServiceRole);
-    });
+    void getRegistrationBackendStatus()
+      .then((status) => {
+        setMissingServiceRole(status.missingServiceRole);
+      })
+      .catch(() => {
+        setMissingServiceRole(false);
+      });
   }, []);
 
   const normalizedUsername = normalizeUsername(username);
@@ -133,6 +132,8 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
     try {
       const available = await checkUsernameAvailable(normalizedUsername);
       setUsernameCheck(available ? "available" : "taken");
+    } catch {
+      setUsernameCheck(null);
     } finally {
       setCheckingUsername(false);
     }
@@ -176,9 +177,14 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
       await signUp(input);
       toast.success(t("auth.registerSuccess"));
       router.push("/onboarding");
-      router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("auth.registerFailed"));
+      const message =
+        err instanceof Error && err.message.includes("Server Components render")
+          ? t("auth.registerFailed")
+          : err instanceof Error
+            ? err.message
+            : t("auth.registerFailed");
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -335,11 +341,7 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
 
         <div className="flex flex-col gap-2">
           <RequiredLabel htmlFor={`${idPrefix}-course`}>{t("auth.course")}</RequiredLabel>
-          <Select
-            value={courseId || null}
-            onValueChange={(value) => setCourseId(value ?? "")}
-            items={courseSelectItems}
-          >
+          <Select value={courseId || null} onValueChange={(value) => setCourseId(value ?? "")}>
             <SelectTrigger id={`${idPrefix}-course`} className={authSelectTriggerClassName}>
               <SelectValue placeholder={t("auth.selectCourse")} />
             </SelectTrigger>

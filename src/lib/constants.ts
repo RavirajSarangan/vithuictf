@@ -12,7 +12,7 @@ export const BRAND = {
   /** Legacy light wordmark asset (footer, portal shell). */
   logoLight: "/ICTF-light.svg",
   /** Marketing nav + header wordmark (navy bar). */
-  logoNav: "/landing/Vector%20(1).webp",
+  logoNav: "/Vector%20(2).webp",
   /** Marketing footer wordmark. */
   logoFooter: "/Vector%20(2).webp",
   navIcon: "/ICTF.svg",
@@ -20,9 +20,9 @@ export const BRAND = {
   /** Horizontal wordmark intrinsic ratio (ICTF-light.svg). */
   logoWidth: 1880,
   logoHeight: 717,
-  /** Nav/header wordmark intrinsic ratio (landing/Vector (1).webp). */
-  logoNavWidth: 100,
-  logoNavHeight: 46,
+  /** Nav/header wordmark intrinsic ratio (Vector (2).webp). */
+  logoNavWidth: 339,
+  logoNavHeight: 150,
   /** Footer wordmark intrinsic ratio (Vector (2).webp). */
   logoFooterWidth: 339,
   logoFooterHeight: 150,
