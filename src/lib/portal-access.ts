@@ -4,7 +4,7 @@ import type { UserRole } from "@/types";
 export const PORTAL_ACCESS = {
   student: true,
   parent: false,
-  teacher: false,
+  teacher: true,
   admin: true,
   content_manager: true,
 } as const;

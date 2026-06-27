@@ -4,7 +4,7 @@ import { PORTAL_ACCESS } from "@/lib/portal-access";
 
 export default function StaffComingSoonPage() {
   if (PORTAL_ACCESS.teacher) {
-    redirect("/login");
+    redirect("/login/staff");
   }
 
   return (

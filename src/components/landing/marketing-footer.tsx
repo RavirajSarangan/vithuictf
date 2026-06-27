@@ -33,7 +33,7 @@ const FOOTER_PORTAL_COMING_SOON = {
     enabled: !PORTAL_ACCESS.parent,
   },
   Staff: {
-    href: "/coming-soon/staff",
+    href: "/login/staff",
     enabled: !PORTAL_ACCESS.teacher,
   },
 } as const;
