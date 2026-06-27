@@ -7,6 +7,7 @@ export const metadata: Metadata = buildPageMetadata({
   description: RANKINGS_SEO.description.en,
   path: RANKINGS_SEO.path,
   keywords: RANKINGS_SEO.keywords.en,
+  noIndex: true,
 });
 
 export default function RankingsLayout({ children }: { children: React.ReactNode }) {

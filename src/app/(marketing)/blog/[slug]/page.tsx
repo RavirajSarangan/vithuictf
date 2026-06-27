@@ -44,6 +44,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     path: `/blog/${post.slug}`,
     ogImage: post.coverImageUrl || undefined,
     ogType: "article",
+    alternateLocales: ["en"],
   });
 }
 

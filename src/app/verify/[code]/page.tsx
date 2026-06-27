@@ -1,7 +1,21 @@
+import type { Metadata } from "next";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { CanvasSection, LightPremiumCard } from "@/components/canvas";
 import { BRAND } from "@/lib/constants";
+import { buildPortalPageMetadata } from "@/lib/seo/metadata";
 import Link from "next/link";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}): Promise<Metadata> {
+  const { code } = await params;
+  return buildPortalPageMetadata({
+    title: `Certificate Verification | ${BRAND.name}`,
+    description: `Verify an ICTF certificate using code ${code}. Official certificate lookup for ${BRAND.legalName}, Sri Lanka.`,
+  });
+}
 
 export default async function VerifyCertificatePage({
   params,

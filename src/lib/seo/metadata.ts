@@ -1,14 +1,26 @@
 import type { Metadata } from "next";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import { BRAND } from "@/lib/constants";
-import { DEFAULT_OG_IMAGE, SEO_LOCALES, SITE_URL, absoluteUrl, FOUNDER } from "@/lib/seo/site";
+import { DEFAULT_OG_IMAGE, ORG_GEO, SEO_LOCALES, SITE_URL, absoluteUrl, FOUNDER } from "@/lib/seo/site";
 
 export type PageLocale = MarketingLocale;
+
+const ALL_PAGE_LOCALES: PageLocale[] = ["en", "ta", "si"];
 
 function localeToHreflang(locale: PageLocale): string {
   if (locale === "ta") return "ta-LK";
   if (locale === "si") return "si-LK";
   return "en-LK";
+}
+
+export function buildGeoMetaTags(): Record<string, string> {
+  return {
+    "geo.region": "LK-NP",
+    "geo.placename": "Jaffna, Sri Lanka",
+    "geo.position": `${ORG_GEO.latitude};${ORG_GEO.longitude}`,
+    ICBM: `${ORG_GEO.latitude}, ${ORG_GEO.longitude}`,
+    "geo.country": "LK",
+  };
 }
 
 export function localizedPath(path: string, locale: PageLocale): string {
@@ -18,17 +30,29 @@ export function localizedPath(path: string, locale: PageLocale): string {
 
 export function buildLanguageAlternates(
   path: string,
-  locale: PageLocale = "en"
+  locale: PageLocale = "en",
+  alternateLocales: PageLocale[] = ALL_PAGE_LOCALES
 ): Metadata["alternates"] {
+  const canonical = absoluteUrl(localizedPath(path, locale));
+
+  if (alternateLocales.length === 1) {
+    const only = alternateLocales[0] ?? "en";
+    const hreflang = localeToHreflang(only);
+    return {
+      canonical,
+      languages: {
+        [hreflang]: absoluteUrl(localizedPath(path, only)),
+        "x-default": absoluteUrl(path),
+      },
+    };
+  }
+
   const languages: Record<string, string> = {};
-  for (const loc of ["en", "ta", "si"] as const) {
+  for (const loc of alternateLocales) {
     languages[localeToHreflang(loc)] = absoluteUrl(localizedPath(path, loc));
   }
   languages["x-default"] = absoluteUrl(path);
-  return {
-    canonical: absoluteUrl(localizedPath(path, locale)),
-    languages,
-  };
+  return { canonical, languages };
 }
 
 export interface BuildPageMetadataInput {
@@ -40,6 +64,8 @@ export interface BuildPageMetadataInput {
   ogImage?: string;
   ogType?: "website" | "article" | "profile";
   noIndex?: boolean;
+  /** Limit hreflang alternates (e.g. English-only blog). Defaults to en, ta, si. */
+  alternateLocales?: PageLocale[];
 }
 
 export function buildPageMetadata({
@@ -51,6 +77,7 @@ export function buildPageMetadata({
   ogImage = DEFAULT_OG_IMAGE,
   ogType = "website",
   noIndex = false,
+  alternateLocales = ALL_PAGE_LOCALES,
 }: BuildPageMetadataInput): Metadata {
   const canonicalPath = localizedPath(path, locale);
   const url = absoluteUrl(canonicalPath);
@@ -71,7 +98,8 @@ export function buildPageMetadata({
       email: true,
       address: true,
     },
-    alternates: buildLanguageAlternates(path, locale),
+    other: buildGeoMetaTags(),
+    alternates: buildLanguageAlternates(path, locale, alternateLocales),
     robots: noIndex
       ? { index: false, follow: false }
       : { index: true, follow: true, googleBot: { index: true, follow: true } },
@@ -104,3 +132,18 @@ export const rootMetadata: Metadata = buildPageMetadata({
 export const portalRobotsMetadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 };
+
+export function buildPortalPageMetadata({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}): Metadata {
+  return {
+    title,
+    description,
+    robots: portalRobotsMetadata.robots,
+    other: buildGeoMetaTags(),
+  };
+}

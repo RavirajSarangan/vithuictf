@@ -212,17 +212,17 @@ export const BLOG_SEO = {
   path: "/blog",
   title: {
     en: "ICT Blog | O/L & A/L ICT Tips — ICTF Sri Lanka",
-    ta: "ICT Blog | O/L & A/L ICT Tips — ICTF Sri Lanka",
-    si: "ICT Blog | O/L & A/L ICT Tips — ICTF Sri Lanka",
+    ta: "ICT வலைப்பதிவு | O/L & A/L ICT குறிப்புகள் — ICTF இலங்கை",
+    si: "ICT බ්ලොග් | O/L & A/L ICT උපදෙස් — ICTF ශ්‍රී ලංකාව",
   },
   description: {
     en: "Read ICTF blog articles on O/L and A/L ICT exam preparation, study tips, Zoom class updates, and institute news for students across Sri Lanka.",
-    ta: "Read ICTF blog articles on O/L and A/L ICT exam preparation, study tips, Zoom class updates, and institute news for students across Sri Lanka.",
-    si: "Read ICTF blog articles on O/L and A/L ICT exam preparation, study tips, Zoom class updates, and institute news for students across Sri Lanka.",
+    ta: "இலங்கை முழுவதும் மாணவர்களுக்கான O/L மற்றும் A/L ICT தேர்வு தயாரிப்பு, படிப்பு குறிப்புகள், Zoom வகுப்பு புதுப்பிப்புகள் மற்றும் ICTF நிறுவன செய்திகளைப் படியுங்கள்.",
+    si: "ශ්‍රී ලංකාව පුරා ශිෂ්‍යයින් සඳහා O/L සහ A/L ICT විභාග සූදානම, අධ්‍යයන උපදෙස්, Zoom පන්ති යාවත්කාලීන සහ ICTF ආයතන පුවත් බ්ලොග් ලිපි කියවන්න.",
   },
   keywords: {
     en: ["ICT blog", "O/L ICT tips", "A/L ICT study guide", "ICTF blog Sri Lanka", "ICT exam preparation"],
-    ta: ["ICT blog", "O/L ICT tips", "A/L ICT study guide"],
-    si: ["ICT blog", "O/L ICT tips", "A/L ICT study guide"],
+    ta: ["ICT வலைப்பதிவு", "O/L ICT குறிப்புகள்", "A/L ICT படிப்பு வழிகாட்டி", "ICTF வலைப்பதிவு"],
+    si: ["ICT බ්ලොග්", "O/L ICT උපදෙස්", "A/L ICT අධ්‍යයන මාර්ගෝපදේශ", "ICTF බ්ලොග්"],
   },
 };

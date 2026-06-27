@@ -2,6 +2,22 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
+const noopCookies = {
+  getAll() {
+    return [] as { name: string; value: string }[];
+  },
+  setAll() {
+    // Public reads never mutate auth cookies.
+  },
+};
+
+/** Cookie-less client for public marketing reads during static/ISR generation. */
+export function createPublicClient() {
+  return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    cookies: noopCookies,
+  });
+}
+
 export async function createClient() {
   const cookieStore = await cookies();
 

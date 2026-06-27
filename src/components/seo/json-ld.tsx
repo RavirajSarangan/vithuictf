@@ -193,6 +193,88 @@ export function BreadcrumbJsonLd({
   return <JsonLdScript data={data} />;
 }
 
+export function BlogIndexJsonLd({
+  postCount,
+  locale = "en",
+}: {
+  postCount: number;
+  locale?: MarketingLocale;
+}) {
+  const blogPath = localizedPath("/blog", locale);
+  const data: JsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "@id": `${absoluteUrl(blogPath)}#blog`,
+    url: absoluteUrl(blogPath),
+    name: `${BRAND.name} ICT Blog`,
+    description: "O/L and A/L ICT exam tips, study guidance, and institute updates for students across Sri Lanka.",
+    publisher: { "@id": `${SITE_URL}/#organization` },
+    inLanguage: ["en-LK", "ta-LK", "si-LK"],
+    blogPost: postCount > 0 ? { "@type": "ItemList", numberOfItems: postCount } : undefined,
+  };
+  return <JsonLdScript data={data} />;
+}
+
+export function ItemListJsonLd({
+  name,
+  items,
+}: {
+  name: string;
+  items: { name: string; url: string; description?: string }[];
+}) {
+  if (items.length === 0) return null;
+  const data: JsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "LocalBusiness",
+        name: item.name,
+        url: item.url.startsWith("http") ? item.url : absoluteUrl(item.url),
+        description: item.description,
+        address: { "@type": "PostalAddress", addressCountry: "LK" },
+      },
+    })),
+  };
+  return <JsonLdScript data={data} />;
+}
+
+export function WebPageJsonLd({
+  title,
+  description,
+  path,
+  locale = "en",
+}: {
+  title: string;
+  description: string;
+  path: string;
+  locale?: MarketingLocale;
+}) {
+  const pagePath = localizedPath(path, locale);
+  const data: JsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${absoluteUrl(pagePath)}#webpage`,
+    url: absoluteUrl(pagePath),
+    name: title,
+    description,
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+    about: { "@id": `${SITE_URL}/#organization` },
+    inLanguage: localeToHreflang(locale),
+  };
+  return <JsonLdScript data={data} />;
+}
+
+function localeToHreflang(locale: MarketingLocale): string {
+  if (locale === "ta") return "ta-LK";
+  if (locale === "si") return "si-LK";
+  return "en-LK";
+}
+
 export function HomePageJsonLd({
   faqs,
   locale = "en",

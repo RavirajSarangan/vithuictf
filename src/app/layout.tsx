@@ -10,6 +10,7 @@ import { DeferredAnalytics } from "@/components/shared/deferred-analytics";
 import { LegacyPwaDispose } from "@/components/shared/legacy-pwa-dispose";
 import { BRAND } from "@/lib/constants";
 import { rootMetadata } from "@/lib/seo/metadata";
+import { getMarketingHtmlLang } from "@/lib/seo/marketing-locale-server";
 import "./globals.css";
 
 const inter = Inter({
@@ -53,9 +54,16 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getMarketingHtmlLang();
+
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} h-full`}>
+    <html
+      lang={lang}
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+      className={`${inter.variable} h-full`}
+    >
       <head>
         {supabaseOrigin ? (
           <>

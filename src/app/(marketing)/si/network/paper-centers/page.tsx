@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { PaperCentersPageView } from "@/components/seo/paper-centers-page-view";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { PAPER_CENTERS_SEO } from "@/lib/seo/keywords";
-import PaperCentersPage from "../../../network/paper-centers/page";
 
 export const metadata: Metadata = buildPageMetadata({
   title: PAPER_CENTERS_SEO.title.si,
@@ -11,4 +11,6 @@ export const metadata: Metadata = buildPageMetadata({
   keywords: PAPER_CENTERS_SEO.keywords.si,
 });
 
-export default PaperCentersPage;
+export default function SiPaperCentersPage() {
+  return <PaperCentersPageView locale="si" />;
+}

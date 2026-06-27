@@ -68,7 +68,13 @@ function redirectForRole(role: UserRole, request: NextRequest): NextResponse {
   return NextResponse.redirect(new URL("/dashboard", request.url));
 }
 
-export async function middleware(request: NextRequest) {
+function nextWithPathname(request: NextRequest, pathname: string): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const localePrefix = pathname.match(/^\/(ta|si)(\/|$)/)?.[1];
 
@@ -83,12 +89,12 @@ export async function middleware(request: NextRequest) {
 
   const siteMode = await fetchSitePublicMode();
 
-  let response = NextResponse.next({ request });
+  let response = nextWithPathname(request, pathname);
   let role: UserRole | null = null;
   let session: { role: UserRole } | null = null;
 
   if (needsAuthSession(pathname, request)) {
-    const result = await updateSession(request);
+    const result = await updateSession(request, pathname);
     response = result.supabaseResponse;
     role = (result.role as UserRole | null) ?? null;
     session = result.user && role ? { role } : null;

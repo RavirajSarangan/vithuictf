@@ -2,9 +2,9 @@
 
 > O/L & A/L ICT institute, online Zoom classes, and an islandwide paper center network.
 > Founder: Vithoosan Sivanathan. Headquarters: Jaffna, Sri Lanka.
-> Contact: info@ictf.lk | +94 77 459 1161 | https://ictf.lk
+> Contact: info@ictf.lk | +94 77 459 1161 | https://www.ictf.lk
 
-Sitemap: https://ictf.lk/sitemap.xml
+Sitemap: https://www.ictf.lk/sitemap.xml
 Preferred-Languages: en, ta, si
 Content-Type: educational institution, ICT tuition, Sri Lanka
 
@@ -12,31 +12,29 @@ Content-Type: educational institution, ICT tuition, Sri Lanka
 
 ICT Foundation (ICTF) is Sri Lanka's trusted institute for Ordinary Level (O/L) and Advanced Level (A/L) ICT education. Classes are delivered live via Zoom with optional past-paper practice at partner paper centers across districts. The ICTF Student Portal provides video lessons, resources, results, leaderboard, and AI study support.
 
-Legal name: ICT Foundation (Pvt) Ltd
+Legal name: Information Communication Technology Forum (PVT) LTD
 
 ## Key pages (English)
 
-- https://ictf.lk/
-- https://ictf.lk/programs/ol-ict
-- https://ictf.lk/programs/al-ict
-- https://ictf.lk/programs/online-zoom
-- https://ictf.lk/network/paper-centers
-- https://ictf.lk/about/founder
-- https://ictf.lk/rankings
+- https://www.ictf.lk/
+- https://www.ictf.lk/programs/ol-ict
+- https://www.ictf.lk/programs/al-ict
+- https://www.ictf.lk/programs/online-zoom
+- https://www.ictf.lk/network/paper-centers
+- https://www.ictf.lk/about/founder
+- https://www.ictf.lk/blog
 
 ## Languages
 
-- English home: https://ictf.lk/
-- Tamil home: https://ictf.lk/ta
-- Sinhala home: https://ictf.lk/si
-- Tamil O/L ICT: https://ictf.lk/ta/programs/ol-ict
-- Tamil A/L ICT: https://ictf.lk/ta/programs/al-ict
-- Tamil paper centers: https://ictf.lk/ta/network/paper-centers
-- Tamil rankings: https://ictf.lk/ta/rankings
-- Sinhala O/L ICT: https://ictf.lk/si/programs/ol-ict
-- Sinhala A/L ICT: https://ictf.lk/si/programs/al-ict
-- Sinhala paper centers: https://ictf.lk/si/network/paper-centers
-- Sinhala rankings: https://ictf.lk/si/rankings
+- English home: https://www.ictf.lk/
+- Tamil home: https://www.ictf.lk/ta
+- Sinhala home: https://www.ictf.lk/si
+- Tamil O/L ICT: https://www.ictf.lk/ta/programs/ol-ict
+- Tamil A/L ICT: https://www.ictf.lk/ta/programs/al-ict
+- Tamil paper centers: https://www.ictf.lk/ta/network/paper-centers
+- Sinhala O/L ICT: https://www.ictf.lk/si/programs/ol-ict
+- Sinhala A/L ICT: https://www.ictf.lk/si/programs/al-ict
+- Sinhala paper centers: https://www.ictf.lk/si/network/paper-centers
 
 ## Programs
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BreadcrumbJsonLd, BlogIndexJsonLd } from "@/components/seo/json-ld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { BLOG_SEO } from "@/lib/seo/keywords";
 import {
@@ -27,6 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: BLOG_SEO.description.en,
     path: "/blog",
     keywords: BLOG_SEO.keywords.en,
+    alternateLocales: ["en"],
   });
 }
 
@@ -49,7 +51,15 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
       : posts;
 
   return (
-    <MarketingSection tone="light">
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Blog", path: "/blog" },
+        ]}
+      />
+      <BlogIndexJsonLd postCount={total} locale="en" />
+      <MarketingSection tone="light">
       <MarketingSectionIntro
         badge="ICTF Blog"
         title="ICT tips, exam guidance &"
@@ -146,6 +156,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           </div>
         )}
       </MarketingContainer>
-    </MarketingSection>
+      </MarketingSection>
+    </>
   );
 }
