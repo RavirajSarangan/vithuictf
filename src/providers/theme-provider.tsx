@@ -14,7 +14,15 @@ type ThemeContextValue = {
   systemTheme: ResolvedTheme;
 };
 
+type ThemeSnapshot = {
+  theme: Theme;
+  systemTheme: ResolvedTheme;
+  resolvedTheme: ResolvedTheme;
+};
+
 const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefined);
+
+const themeListeners = new Set<() => void>();
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") return "light";
@@ -41,51 +49,76 @@ function readStoredTheme(): Theme {
   return "light";
 }
 
+function readThemeSnapshot(): ThemeSnapshot {
+  const theme = readStoredTheme();
+  const systemTheme = getSystemTheme();
+  return { theme, systemTheme, resolvedTheme: resolveTheme(theme) };
+}
+
+const serverThemeSnapshot: ThemeSnapshot = {
+  theme: "light",
+  systemTheme: "light",
+  resolvedTheme: "light",
+};
+
+let clientThemeSnapshot = serverThemeSnapshot;
+
+function getThemeSnapshot(): ThemeSnapshot {
+  if (typeof window === "undefined") return serverThemeSnapshot;
+  clientThemeSnapshot = readThemeSnapshot();
+  return clientThemeSnapshot;
+}
+
+function notifyThemeListeners() {
+  themeListeners.forEach((listener) => listener());
+}
+
+function subscribeTheme(listener: () => void) {
+  themeListeners.add(listener);
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const onMedia = () => listener();
+  const onStorage = () => listener();
+
+  media.addEventListener("change", onMedia);
+  window.addEventListener("storage", onStorage);
+
+  return () => {
+    themeListeners.delete(listener);
+    media.removeEventListener("change", onMedia);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
 /** Theme context without inline `<script>` — bootstrap runs via `next/script` in root layout. */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>("light");
-  const [resolvedTheme, setResolvedTheme] = React.useState<ResolvedTheme | undefined>(undefined);
-  const [systemTheme, setSystemTheme] = React.useState<ResolvedTheme>("light");
+  const snapshot = React.useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    () => serverThemeSnapshot
+  );
 
   React.useEffect(() => {
-    const initial = readStoredTheme();
-    const resolved = resolveTheme(initial);
-    setThemeState(initial);
-    setSystemTheme(getSystemTheme());
-    setResolvedTheme(resolved);
-    applyResolvedTheme(resolved);
-  }, []);
-
-  React.useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      const nextSystem: ResolvedTheme = media.matches ? "dark" : "light";
-      setSystemTheme(nextSystem);
-      if (theme === "system") {
-        setResolvedTheme(nextSystem);
-        applyResolvedTheme(nextSystem);
-      }
-    };
-
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
-  }, [theme]);
+    applyResolvedTheme(snapshot.resolvedTheme);
+  }, [snapshot.resolvedTheme]);
 
   const setTheme = React.useCallback((next: Theme) => {
-    setThemeState(next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // Ignore storage write errors.
     }
-    const resolved = resolveTheme(next);
-    setResolvedTheme(resolved);
-    applyResolvedTheme(resolved);
+    applyResolvedTheme(resolveTheme(next));
+    notifyThemeListeners();
   }, []);
 
   const value = React.useMemo(
-    () => ({ theme, setTheme, resolvedTheme, systemTheme }),
-    [theme, setTheme, resolvedTheme, systemTheme]
+    () => ({
+      theme: snapshot.theme,
+      setTheme,
+      resolvedTheme: snapshot.resolvedTheme,
+      systemTheme: snapshot.systemTheme,
+    }),
+    [snapshot, setTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

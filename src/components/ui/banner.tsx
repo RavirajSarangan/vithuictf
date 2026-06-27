@@ -1,5 +1,5 @@
 "use client";
-import { type HTMLAttributes, useEffect, useState } from "react";
+import { type HTMLAttributes, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
@@ -45,12 +45,11 @@ export function Banner({
    */
   changeLayout?: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(() => {
+    if (!id || typeof window === "undefined") return true;
+    return localStorage.getItem(`nd-banner-${id}`) !== "true";
+  });
   const globalKey = id ? `nd-banner-${id}` : null;
-
-  useEffect(() => {
-    if (globalKey) setOpen(localStorage.getItem(globalKey) !== "true");
-  }, [globalKey]);
 
   if (!open) return null;
 

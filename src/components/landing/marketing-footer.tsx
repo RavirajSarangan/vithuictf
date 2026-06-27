@@ -75,8 +75,6 @@ function FooterComingSoonBadge({ label }: { label: string }) {
 }
 
 function FooterColumnTitle({ children }: { children: React.ReactNode }) {
-  const reduceMotion = useReducedMotion();
-
   return (
     <div>
       <h4 className="text-[0.6875rem] font-bold uppercase tracking-[0.24em] text-icvf-accent">

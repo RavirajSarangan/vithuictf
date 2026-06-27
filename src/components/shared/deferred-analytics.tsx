@@ -17,15 +17,37 @@ export function DeferredAnalytics() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const enable = () => setReady(true);
+    let cancelled = false;
+
+    const enable = () => {
+      if (!cancelled) setReady(true);
+    };
+
+    const onInteraction = () => enable();
 
     if (typeof window.requestIdleCallback === "function") {
       const id = window.requestIdleCallback(enable, { timeout: 3500 });
-      return () => window.cancelIdleCallback(id);
+      window.addEventListener("pointerdown", onInteraction, { once: true, passive: true });
+      window.addEventListener("keydown", onInteraction, { once: true });
+
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(id);
+        window.removeEventListener("pointerdown", onInteraction);
+        window.removeEventListener("keydown", onInteraction);
+      };
     }
 
     const timer = window.setTimeout(enable, 2000);
-    return () => window.clearTimeout(timer);
+    window.addEventListener("pointerdown", onInteraction, { once: true, passive: true });
+    window.addEventListener("keydown", onInteraction, { once: true });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("pointerdown", onInteraction);
+      window.removeEventListener("keydown", onInteraction);
+    };
   }, []);
 
   if (!ready) return null;

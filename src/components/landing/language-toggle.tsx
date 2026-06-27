@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import {
-  LOCALE_COOKIE,
   localizedMarketingPath,
   stripLocalePrefix,
+  writeLocaleCookie,
 } from "@/lib/seo/locale";
 
 const HEADER_LANG_SHORT: Record<MarketingLocale, string> = {
@@ -34,7 +34,7 @@ export function LanguageToggle({
     const { pathname: basePath } = stripLocalePrefix(pathname);
     const nextPath = localizedMarketingPath(basePath, code);
     setLocale(code);
-    document.cookie = `${LOCALE_COOKIE}=${code};path=/;max-age=31536000;SameSite=Lax`;
+    writeLocaleCookie(code);
     router.push(nextPath);
   };
 

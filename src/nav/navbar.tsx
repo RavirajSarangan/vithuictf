@@ -23,7 +23,6 @@ export interface MarketingNavbarProps {
   sheetLogo?: ReactNode;
   loginHref: string;
   registerHref: string;
-  mobileBadge?: string;
   extraActions?: ReactNode;
   announcement?: MarketingAnnouncement | null;
 }
@@ -58,20 +57,20 @@ export function MarketingNavbar({
   sheetLogo,
   loginHref,
   registerHref,
-  mobileBadge: _mobileBadge,
   extraActions,
   announcement,
 }: MarketingNavbarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
 
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    if (mobileOpen) setMobileOpen(false);
+  }
   const headerRef = useMarketingHeaderOffsetSync(pathname);
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   return (
     <AuthProvider deferred>

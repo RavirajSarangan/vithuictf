@@ -126,21 +126,29 @@ export async function getActiveMarketingAnnouncement(): Promise<MarketingAnnounc
 
 const getActiveMarketingAnnouncementCached = cache(async (): Promise<MarketingAnnouncement | null> => {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("marketing_announcements")
-      .select("*")
-      .order("priority", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const result = await Promise.race([
+      (async () => {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+          .from("marketing_announcements")
+          .select("*")
+          .order("priority", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-    if (error) {
-      console.error("getActiveMarketingAnnouncement failed:", error.message);
-      return null;
-    }
+        if (error) {
+          console.error("getActiveMarketingAnnouncement failed:", error.message);
+          return null;
+        }
 
-    return data ? mapMarketingAnnouncement(data) : null;
+        return data ? mapMarketingAnnouncement(data) : null;
+      })(),
+      new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), FETCH_TIMEOUT_MS);
+      }),
+    ]);
+    return result;
   } catch (error) {
     console.error("getActiveMarketingAnnouncement failed:", error);
     return null;

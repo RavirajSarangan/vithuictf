@@ -31,3 +31,8 @@ export function localizedMarketingPath(path: string, locale: MarketingLocale): s
 }
 
 export const LOCALE_COOKIE = "icvf-marketing-locale";
+
+export function writeLocaleCookie(locale: MarketingLocale): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=31536000;SameSite=Lax`;
+}

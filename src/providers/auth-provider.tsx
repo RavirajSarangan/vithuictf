@@ -74,8 +74,18 @@ export function AuthProvider({
 
     const init = () => {
       void (async () => {
-        await loadProfile();
-        if (!cancelled) setLoading(false);
+        try {
+          await Promise.race([
+            loadProfile(),
+            new Promise<void>((_, reject) => {
+              window.setTimeout(() => reject(new Error("auth profile timeout")), 8_000);
+            }),
+          ]);
+        } catch {
+          if (!cancelled) setUser(null);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
       })();
     };
 
