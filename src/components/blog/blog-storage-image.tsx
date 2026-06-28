@@ -8,6 +8,7 @@ interface BlogStorageImageProps {
   priority?: boolean;
   className?: string;
   sizes?: string;
+  onError?: () => void;
 }
 
 /** Blog images from Supabase are already optimized WebP — skip Next.js optimizer. */
@@ -18,6 +19,7 @@ export function BlogStorageImage({
   priority,
   className,
   sizes,
+  onError,
 }: BlogStorageImageProps) {
   return (
     <Image
@@ -28,6 +30,7 @@ export function BlogStorageImage({
       className={className}
       sizes={sizes}
       unoptimized={isStorageUrl(src)}
+      onError={onError}
     />
   );
 }

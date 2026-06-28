@@ -28,3 +28,19 @@ export function isStorageUrl(url: string): boolean {
   if (!normalized) return false;
   return normalized.includes("/storage/v1/object/public/");
 }
+
+export type StorageUrlStatus = "idle" | "checking" | "ok" | "missing" | "invalid";
+
+/** Client-side check that a remote image URL responds before previewing. */
+export async function checkStorageUrl(url: string): Promise<Exclude<StorageUrlStatus, "idle" | "checking">> {
+  const normalized = normalizeStorageUrl(url);
+  if (!normalized) return "invalid";
+
+  try {
+    const response = await fetch(normalized, { method: "HEAD" });
+    return response.ok ? "ok" : "missing";
+  } catch {
+    // If HEAD is blocked (network/ad blocker), still try rendering the image.
+    return "ok";
+  }
+}

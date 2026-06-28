@@ -8,8 +8,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { validateRasterImageFile } from "@/lib/images/validate-raster-image";
 import { BLOG_COVER_HEIGHT, BLOG_COVER_WIDTH } from "@/lib/images/admin-image-constants";
-import { isStorageUrl, normalizeStorageUrl } from "@/lib/storage/public-url";
-import { ExternalLink, ImageOff } from "lucide-react";
+import {
+  checkStorageUrl,
+  isStorageUrl,
+  normalizeStorageUrl,
+  type StorageUrlStatus,
+} from "@/lib/storage/public-url";
+import { ExternalLink, ImageOff, Loader2 } from "lucide-react";
 
 interface AdminImageUploadProps {
   label: string;
@@ -35,8 +40,11 @@ export function AdminImageUpload({
   previewAspect = "auto",
 }: AdminImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const retryCountRef = useRef(0);
   const [uploading, setUploading] = useState(false);
   const [previewError, setPreviewError] = useState(false);
+  const [urlStatus, setUrlStatus] = useState<StorageUrlStatus>("idle");
+  const [previewSrc, setPreviewSrc] = useState("");
 
   const resolvedPreviewAspect =
     previewAspect === "auto" && variant === "cover" ? "16/9" : previewAspect;
@@ -44,7 +52,26 @@ export function AdminImageUpload({
   const normalizedValue = normalizeStorageUrl(value);
 
   useEffect(() => {
+    retryCountRef.current = 0;
     setPreviewError(false);
+
+    if (!normalizedValue) {
+      setUrlStatus("idle");
+      setPreviewSrc("");
+      return;
+    }
+
+    setPreviewSrc(normalizedValue);
+    setUrlStatus("checking");
+
+    let cancelled = false;
+    void checkStorageUrl(normalizedValue).then((status) => {
+      if (!cancelled) setUrlStatus(status);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [normalizedValue]);
 
   const handleUpload = async (file: File) => {
@@ -85,10 +112,23 @@ export function AdminImageUpload({
     }
   };
 
+  const handlePreviewError = () => {
+    if (retryCountRef.current < 1 && normalizedValue) {
+      retryCountRef.current += 1;
+      setPreviewError(false);
+      setPreviewSrc(`${normalizedValue}${normalizedValue.includes("?") ? "&" : "?"}v=${Date.now()}`);
+      return;
+    }
+    setPreviewError(true);
+  };
+
   const defaultHint =
     variant === "cover"
       ? `Recommended ${BLOG_COVER_WIDTH}×${BLOG_COVER_HEIGHT}px (16:9). Images are auto-cropped and optimized.`
       : undefined;
+
+  const showPreviewError =
+    previewError || urlStatus === "missing" || urlStatus === "invalid";
 
   return (
     <div className="space-y-3">
@@ -108,20 +148,33 @@ export function AdminImageUpload({
             resolvedPreviewAspect === "auto" && "min-h-40 w-full"
           )}
         >
-          {!previewError ? (
+          {urlStatus === "checking" && !previewError ? (
+            <div className="flex min-h-40 items-center justify-center text-muted-foreground">
+              <Loader2 className="size-6 animate-spin" />
+            </div>
+          ) : null}
+
+          {!showPreviewError && previewSrc && urlStatus === "ok" ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              key={normalizedValue}
-              src={normalizedValue}
+              key={previewSrc}
+              src={previewSrc}
               alt="Uploaded preview"
-              className="absolute inset-0 h-full w-full object-cover"
-              onError={() => setPreviewError(true)}
-              onLoad={() => setPreviewError(false)}
+              className="h-full w-full object-cover"
+              onError={handlePreviewError}
             />
-          ) : (
+          ) : null}
+
+          {showPreviewError ? (
             <div className="flex min-h-40 flex-col items-center justify-center gap-2 p-4 text-center text-sm text-muted-foreground">
               <ImageOff className="size-8 opacity-60" />
-              <p>Preview could not load this image URL.</p>
+              <p>
+                {urlStatus === "missing"
+                  ? "This image file was not found in storage. Re-upload the cover image."
+                  : urlStatus === "invalid"
+                    ? "This URL is invalid or blocked. Re-upload or paste a full https URL."
+                    : "Preview could not load this image URL."}
+              </p>
               <a
                 href={normalizedValue}
                 target="_blank"
@@ -132,13 +185,14 @@ export function AdminImageUpload({
                 <ExternalLink className="size-3.5" />
               </a>
             </div>
-          )}
+          ) : null}
         </div>
       ) : null}
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input
           value={value}
+          title={value}
           onChange={(e) => onChange(normalizeStorageUrl(e.target.value) || e.target.value.trim())}
           placeholder="https://..."
           className="min-w-0 flex-1 font-mono text-xs sm:text-sm"
