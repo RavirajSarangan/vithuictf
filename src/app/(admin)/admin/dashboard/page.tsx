@@ -1,42 +1,68 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useAdminRevenueTrend, useAdminStats } from "@/hooks/use-data";
-import { AdminDashboardSectionCards } from "@/components/admin/dashboard/section-cards";
-import { PageHeader } from "@/components/shared/page-header";
+import { useAdminDashboardOverview } from "@/hooks/use-admin-dashboard";
+import { useAdminRevenueTrend } from "@/hooks/use-data";
+import { DashboardActivityFeed } from "@/components/admin/dashboard/dashboard-activity-feed";
+import { DashboardChartsRow } from "@/components/admin/dashboard/dashboard-charts-row";
+import { DashboardDataTabs } from "@/components/admin/dashboard/dashboard-data-tabs";
+import { DashboardHero } from "@/components/admin/dashboard/dashboard-hero";
+import { DashboardKpiGrid } from "@/components/admin/dashboard/dashboard-kpi-grid";
+import { DashboardQuickActions } from "@/components/admin/dashboard/dashboard-quick-actions";
+import { DashboardSuperAdminPanel } from "@/components/admin/dashboard/dashboard-super-admin-panel";
+import { DashboardUpcomingSessions } from "@/components/admin/dashboard/dashboard-upcoming-sessions";
+import { TeacherDashboard } from "@/components/admin/dashboard/teacher-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
-import dashboardData from "@/components/admin/dashboard/data.json";
-
-const AdminDashboardDataTable = dynamic(
-  () =>
-    import("@/components/admin/dashboard/data-table").then((mod) => mod.AdminDashboardDataTable),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-[420px] rounded-xl" />,
-  }
-);
-
-const AdminDashboardRevenueChart = dynamic(
-  () =>
-    import("@/components/admin/dashboard/chart-area-interactive").then(
-      (mod) => mod.AdminDashboardRevenueChart
-    ),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-[340px] rounded-xl" />,
-  }
-);
+import { useAuth } from "@/providers/auth-provider";
 
 export default function AdminDashboard() {
-  const stats = useAdminStats();
+  const { user, loading: authLoading } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
+  const overview = useAdminDashboardOverview(isSuperAdmin);
   const revenueTrend = useAdminRevenueTrend();
+
+  if (authLoading) {
+    return (
+      <div className="admin-dashboard flex flex-col gap-4 md:gap-6">
+        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-10 w-full max-w-xl" />
+        <Skeleton className="h-40 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (user?.role === "teacher") {
+    return <TeacherDashboard />;
+  }
+
+  const role = user?.role ?? "admin";
 
   return (
     <div className="admin-dashboard @container/main flex flex-col gap-4 md:gap-6">
-      <PageHeader title="Dashboard" description="Overview of institute metrics" />
-      <AdminDashboardSectionCards stats={stats} />
-      <AdminDashboardRevenueChart data={revenueTrend} />
-      <AdminDashboardDataTable data={dashboardData} />
+      <DashboardHero role={role} displayName={user?.displayName} />
+      <DashboardQuickActions role={role} />
+      <DashboardKpiGrid stats={overview.stats} loading={overview.loading} />
+      <DashboardChartsRow
+        revenueTrend={revenueTrend}
+        enrollmentData={overview.enrollmentData}
+        paymentStatus={overview.paymentStatus}
+        loading={overview.loading}
+      />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <DashboardActivityFeed items={overview.activity} loading={overview.loading} />
+        <DashboardUpcomingSessions
+          sessions={overview.upcomingSessions}
+          loading={overview.loading}
+        />
+      </div>
+      <DashboardDataTabs
+        students={overview.recentStudents}
+        payments={overview.recentPayments}
+        inquiries={overview.recentInquiries}
+        loading={overview.loading}
+      />
+      {isSuperAdmin ? (
+        <DashboardSuperAdminPanel stats={overview.superAdmin} loading={overview.loading} />
+      ) : null}
     </div>
   );
 }

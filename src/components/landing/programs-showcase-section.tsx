@@ -17,6 +17,7 @@ import {
   MarketingSectionCta,
   MarketingSectionIntro,
 } from "@/components/landing/marketing-layout";
+import { CourseCard } from "@/components/courses/course-card";
 import { MotionStagger, MotionStaggerItem } from "@/components/shared/motion-section";
 import { useClassPrograms, useCourses } from "@/hooks/use-data";
 import { useMarketingText } from "@/hooks/use-marketing-text";
@@ -38,6 +39,10 @@ export function ProgramsShowcaseSection() {
     id: course.id,
     title: course.name,
     description: course.description ?? "",
+    coverImageUrl: course.coverImageUrl,
+    category: course.category,
+    durationMonths: course.durationMonths,
+    teacherName: course.teacherName,
     duration: course.durationMonths ? `${course.durationMonths} ${t("programs.months")}` : "—",
   }));
 
@@ -78,10 +83,14 @@ export function ProgramsShowcaseSection() {
           <MotionStagger className="grid gap-5 md:grid-cols-2 lg:grid-cols-3" stagger={0.05}>
             {courseItems.map((course, i) => (
               <MotionStaggerItem key={course.id}>
-                <MarketingNumberedCard
+                <CourseCard
                   index={i + 1}
                   title={course.title}
                   description={course.description}
+                  coverImageUrl={course.coverImageUrl}
+                  category={course.category}
+                  durationMonths={course.durationMonths}
+                  href="/register"
                   footer={
                     <div className="flex items-center justify-between border-t border-icvf-border pt-4">
                       <span className="flex items-center gap-1.5 text-xs text-icvf-text-light">

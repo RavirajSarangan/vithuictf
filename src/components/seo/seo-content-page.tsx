@@ -10,10 +10,19 @@ interface SeoContentPageProps {
   intro: string;
   content: ProgramContent;
   breadcrumbs: { name: string; path: string }[];
+  relatedLinks?: { label: string; path: string }[];
   children?: React.ReactNode;
 }
 
-export function SeoContentPage({ locale, h1, intro, content, breadcrumbs, children }: SeoContentPageProps) {
+export function SeoContentPage({
+  locale,
+  h1,
+  intro,
+  content,
+  breadcrumbs,
+  relatedLinks,
+  children,
+}: SeoContentPageProps) {
   const homePrefix = locale === "en" ? "" : `/${locale}`;
 
   return (
@@ -56,6 +65,26 @@ export function SeoContentPage({ locale, h1, intro, content, breadcrumbs, childr
         </div>
 
         {children}
+
+        {relatedLinks && relatedLinks.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="text-xl font-semibold text-icvf-navy">
+              {locale === "ta" ? "தொடர்புடைய பக்கங்கள்" : locale === "si" ? "සම්බන්ධ පිටු" : "Related pages"}
+            </h2>
+            <ul className="mt-4 flex flex-wrap gap-3">
+              {relatedLinks.map((link) => (
+                <li key={link.path}>
+                  <Link
+                    href={`${homePrefix}${link.path}`}
+                    className="rounded-full border border-icvf-border bg-white px-4 py-2 text-sm font-medium text-icvf-navy transition-colors hover:border-icvf-accent/40"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <div className="mt-12 flex flex-wrap gap-4">
           <ButtonLink href="/register" variant="icvf" size="lg">

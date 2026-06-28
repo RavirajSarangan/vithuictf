@@ -119,7 +119,8 @@ export function BrandLogo({
         src={src}
         alt={alt}
         decoding="async"
-        fetchPriority={priority ? "high" : undefined}
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "low"}
         className={cn(imageClassName, "absolute inset-0")}
         style={imageStyle}
       />
@@ -138,7 +139,8 @@ export function BrandLogo({
         src={src}
         alt={alt}
         decoding="async"
-        fetchPriority={priority ? "high" : undefined}
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "low"}
         className={imageClassName}
         style={imageStyle}
       />

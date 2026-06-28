@@ -11,7 +11,7 @@ import {
 import { canFinishOnboarding, countCompletedPortalSteps } from "@/lib/onboarding/student-steps";
 
 export function useStudentOnboarding() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, initialized } = useAuth();
   const student = useStudentData();
   const [stepsOverride, setStepsOverride] = useState<Record<string, boolean> | null>(null);
   const [completedAtOverride, setCompletedAtOverride] = useState<string | null | undefined>(undefined);
@@ -24,7 +24,7 @@ export function useStudentOnboarding() {
     completedAtOverride !== undefined
       ? completedAtOverride
       : (student?.onboardingCompletedAt ?? null);
-  const hydrated = !authLoading && (!user || student !== undefined);
+  const hydrated = initialized && (!user || student !== undefined);
 
   const isComplete = Boolean(completedAt);
 

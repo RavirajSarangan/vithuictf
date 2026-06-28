@@ -1,6 +1,24 @@
 import { BRAND } from "@/lib/constants";
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://ictf.lk").replace(/\/$/, "");
+/** Canonical public site URL — must match the primary domain (www) in production. */
+function resolveSiteUrl(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+
+  if (process.env.VERCEL_ENV === "production") {
+    const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+    if (productionHost) {
+      const host = productionHost.replace(/^https?:\/\//, "").replace(/\/$/, "");
+      if (!host.endsWith(".vercel.app")) {
+        return `https://${host}`;
+      }
+    }
+  }
+
+  return "https://www.ictf.lk";
+}
+
+export const SITE_URL = resolveSiteUrl();
 
 export const SEO_LOCALES = ["en-LK", "ta-LK", "si-LK"] as const;
 export type SeoLocale = (typeof SEO_LOCALES)[number];

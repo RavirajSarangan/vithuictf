@@ -13,6 +13,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
+  serverExternalPackages: ["sharp", "@napi-rs/canvas"],
   turbopack: {
     root: projectRoot,
   },
@@ -24,8 +25,18 @@ const nextConfig: NextConfig = {
       "@remixicon/react",
       "framer-motion",
       "@radix-ui/react-navigation-menu",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
       "cmdk",
       "@tanstack/react-table",
+      "sonner",
+      "react-hook-form",
+      "@hookform/resolvers",
+      "zod",
+      "@tiptap/react",
+      "@tiptap/starter-kit",
     ],
   },
   images: supabaseUrl

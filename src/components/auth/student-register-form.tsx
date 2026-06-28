@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GraduationCap, School } from "lucide-react";
@@ -30,6 +30,11 @@ import {
   type RegisterStudentInput,
   type StudyTrack,
 } from "@/lib/validation/register-student";
+import {
+  getRegistrationCourses,
+  isCourseEligibleForStudyTrack,
+  pickDefaultRegistrationCourse,
+} from "@/lib/registration/course-options";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -98,7 +103,31 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
   const { t } = useMarketingText();
   const courses = useCourses();
 
-  const selectedCourse = courses.find((course) => course.id === courseId);
+  const registrationCourses = useMemo(
+    () => getRegistrationCourses(courses, studyTrack),
+    [courses, studyTrack]
+  );
+
+  const selectedCourse =
+    registrationCourses.find((course) => course.id === courseId) ??
+    courses.find((course) => course.id === courseId);
+
+  useEffect(() => {
+    const defaultCourse = pickDefaultRegistrationCourse(
+      courses,
+      studyTrack,
+      studyTrack === "grade" ? (ictGrade as IctGrade) || undefined : undefined
+    );
+    if (!defaultCourse) {
+      setCourseId("");
+      return;
+    }
+    setCourseId((current) =>
+      current && isCourseEligibleForStudyTrack(current, courses, studyTrack)
+        ? current
+        : defaultCourse.id
+    );
+  }, [courses, studyTrack, ictGrade]);
 
   useEffect(() => {
     void getRegistrationBackendStatus()
@@ -164,6 +193,11 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
     const validationError = validateRegisterStudent(input);
     if (validationError) {
       toast.error(validationError);
+      return;
+    }
+
+    if (!isCourseEligibleForStudyTrack(courseId, courses, studyTrack)) {
+      toast.error(t("auth.registerCourseMismatch"));
       return;
     }
 
@@ -341,18 +375,35 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
 
         <div className="flex flex-col gap-2">
           <RequiredLabel htmlFor={`${idPrefix}-course`}>{t("auth.course")}</RequiredLabel>
-          <Select value={courseId || null} onValueChange={(value) => setCourseId(value ?? "")}>
-            <SelectTrigger id={`${idPrefix}-course`} className={authSelectTriggerClassName}>
-              <SelectValue placeholder={t("auth.selectCourse")} />
-            </SelectTrigger>
-            <SelectContent>
-              {courses.map((course) => (
-                <SelectItem key={course.id} value={course.id}>
-                  {course.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {registrationCourses.length === 0 ? (
+            <p className="rounded-xl border border-amber-500/30 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {t("auth.registerNoCoursesForTrack")}
+            </p>
+          ) : registrationCourses.length === 1 && selectedCourse ? (
+            <div
+              id={`${idPrefix}-course`}
+              className="rounded-xl border border-icvf-border bg-icvf-surface/60 px-4 py-3"
+            >
+              <p className="text-sm font-semibold text-icvf-navy">{selectedCourse.name}</p>
+              <p className="mt-1 text-xs text-icvf-text-light">{t("auth.registerCourseAuto")}</p>
+            </div>
+          ) : (
+            <Select value={courseId || null} onValueChange={(value) => setCourseId(value ?? "")}>
+              <SelectTrigger id={`${idPrefix}-course`} className={authSelectTriggerClassName}>
+                <SelectValue placeholder={t("auth.selectCourse")} />
+              </SelectTrigger>
+              <SelectContent>
+                {registrationCourses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <p className="text-xs leading-relaxed text-icvf-text-light">
+            {t("auth.registerCourseMultiNote")}
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -396,7 +447,7 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
           type="submit"
           variant="icvf"
           className="h-12 w-full rounded-xl text-base font-semibold"
-          disabled={loading || missingServiceRole || usernameStatus === "taken"}
+          disabled={loading || missingServiceRole || usernameStatus === "taken" || registrationCourses.length === 0}
         >
           {loading ? t("auth.registering") : t("auth.createAccount")}
         </Button>

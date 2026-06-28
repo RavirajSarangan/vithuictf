@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Globe, Monitor, Radio, Video } from "lucide-react";
+import { HeroFounderIslandMap } from "@/components/landing/hero-founder-island-map";
 import { HeroDecor } from "@/components/landing/hero-decor";
 import { MarketingSessionActionsWithAuth } from "@/components/landing/marketing-session-actions-auth";
 import { HeroIctFeatureCards, HeroIctTopicPills } from "@/components/landing/hero-ict-features";
@@ -10,12 +11,13 @@ import {
   HeroMobileLearningChips,
   HeroMobileProofStrip,
 } from "@/components/landing/hero-mobile-highlights";
-import { HeroFounderIslandMap } from "@/components/landing/hero-founder-island-map";
+
 import { MarketingContainer } from "@/components/landing/marketing-layout";
 import { scrollToMarketingSection } from "@/lib/marketing-scroll";
 import { resultsHighlights } from "@/lib/data/results-content";
 import { trustPills } from "@/lib/data/marketing-content";
 import { useHomeAbout } from "@/hooks/use-data";
+import { useMarqueeInView } from "@/hooks/use-marquee-in-view";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,7 @@ type ResultHighlight = (typeof resultsHighlights)[number];
 
 function HeroTrustBar() {
   const { field } = useMarketingText();
+  const { ref, inView } = useMarqueeInView<HTMLDivElement>();
 
   const items = trustPills.map((pill, i) => ({
     icon: heroTrustIcons[i % heroTrustIcons.length],
@@ -37,7 +40,11 @@ function HeroTrustBar() {
   const track = [...loop, ...loop];
 
   return (
-    <div className="hero-trust-bar w-full bg-[#0a1628] py-3.5 sm:py-4">
+    <div
+      ref={ref}
+      data-marquee-in-view={inView ? "true" : "false"}
+      className="hero-trust-bar w-full bg-[#0a1628] py-3.5 sm:py-4"
+    >
       <div className="marketing-marquee-track">
         <div
           className="marketing-marquee-fade-left bg-gradient-to-r from-[#0a1628] to-transparent"

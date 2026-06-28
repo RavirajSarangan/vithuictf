@@ -36,14 +36,23 @@ import type {
 import { useAuth } from "@/providers/auth-provider";
 
 export function useStudentData() {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const [student, setStudent] = useState<Student | null | undefined>(undefined);
   const [loadedForUserId, setLoadedForUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!initialized) return;
+
+    if (!user) {
+      setStudent(undefined);
+      setLoadedForUserId(null);
+      return;
+    }
 
     let cancelled = false;
+    setStudent(undefined);
+    setLoadedForUserId(null);
+
     const supabase = createClient();
     supabase
       .from("students")
@@ -60,8 +69,9 @@ export function useStudentData() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, initialized]);
 
+  if (!initialized) return undefined;
   if (!user) return null;
   if (loadedForUserId !== user.id) return undefined;
   return student;
@@ -217,12 +227,23 @@ export function useActivities(studentId?: string) {
 
 
 export function useParentData() {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const [parent, setParent] = useState<Parent | null>(null);
   const [children, setChildren] = useState<Student[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!initialized) return;
+
+    if (!user) {
+      setParent(null);
+      setChildren([]);
+      setLoaded(true);
+      return;
+    }
+
+    let cancelled = false;
+    setLoaded(false);
 
     const supabase = createClient();
     supabase
@@ -231,7 +252,13 @@ export function useParentData() {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(async ({ data: p }) => {
-        if (!p) return;
+        if (cancelled) return;
+        if (!p) {
+          setParent(null);
+          setChildren([]);
+          setLoaded(true);
+          return;
+        }
         const { data: links } = await supabase
           .from("parent_student_links")
           .select("student_id")
@@ -240,12 +267,19 @@ export function useParentData() {
         const { data: students } = ids.length
           ? await supabase.from("students").select("*").in("id", ids)
           : { data: [] };
-        setParent(mapParent(p, ids));
-        setChildren((students ?? []).map(mapStudent));
+        if (!cancelled) {
+          setParent(mapParent(p, ids));
+          setChildren((students ?? []).map(mapStudent));
+          setLoaded(true);
+        }
       });
-  }, [user]);
 
-  return { parent, children };
+    return () => {
+      cancelled = true;
+    };
+  }, [user, initialized]);
+
+  return { parent, children, loading: !initialized || !loaded };
 }
 
 

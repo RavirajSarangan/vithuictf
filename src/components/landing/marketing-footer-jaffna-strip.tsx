@@ -34,10 +34,10 @@ export function MarketingFooterJaffnaStrip() {
             fill
             className={cn(
               "object-cover object-bottom",
-              !reduceMotion && "marketing-footer-jaffna-pan"
+              !reduceMotion && "sm:marketing-footer-jaffna-pan"
             )}
-            sizes="100vw"
-            quality={90}
+            sizes="(max-width: 768px) 100vw, 1200px"
+            quality={75}
           />
         </div>
 

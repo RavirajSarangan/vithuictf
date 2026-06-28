@@ -193,6 +193,9 @@ export function useAdminTeachers() {
   return { data, refresh };
 }
 
+/** Alias for admin staff management UI */
+export const useAdminStaff = useAdminTeachers;
+
 
 export function useAdminParents() {
   const [data, setData] = useState<Parent[]>([]);

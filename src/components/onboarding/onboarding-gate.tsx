@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { StudentPageLoading } from "@/components/student/portal/student-portal-states";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentOnboarding } from "@/hooks/use-student-onboarding";
 import { ROUTE_TO_ONBOARDING_STEP } from "@/lib/onboarding/student-steps";
@@ -17,6 +18,21 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
   const isOnboardingRoute = pathname === "/onboarding";
   const stepForRoute = ROUTE_TO_ONBOARDING_STEP[pathname];
 
+  const touring =
+    typeof window !== "undefined" && sessionStorage.getItem(ONBOARDING_TOUR_KEY) === "1";
+
+  const pendingOnboardingRedirect =
+    !loading &&
+    !!user &&
+    user.role === "student" &&
+    hydrated &&
+    !isComplete &&
+    !isOnboardingRoute &&
+    !touring;
+
+  const pendingDashboardRedirect =
+    !loading && !!user && user.role === "student" && hydrated && isComplete && isOnboardingRoute;
+
   useEffect(() => {
     if (stepForRoute && hydrated && !isComplete) {
       void markStep(stepForRoute, true);
@@ -24,19 +40,19 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
   }, [stepForRoute, hydrated, isComplete, markStep]);
 
   useEffect(() => {
-    if (loading || !user || user.role !== "student" || !hydrated) return;
-
-    const touring = sessionStorage.getItem(ONBOARDING_TOUR_KEY) === "1";
-
-    if (!isComplete && !isOnboardingRoute && !touring) {
+    if (pendingOnboardingRedirect) {
       router.replace("/onboarding");
       return;
     }
 
-    if (isComplete && isOnboardingRoute) {
+    if (pendingDashboardRedirect) {
       router.replace("/dashboard");
     }
-  }, [loading, user, hydrated, isComplete, isOnboardingRoute, router, pathname]);
+  }, [pendingOnboardingRedirect, pendingDashboardRedirect, router]);
+
+  if (pendingOnboardingRedirect || pendingDashboardRedirect) {
+    return <StudentPageLoading rows={2} />;
+  }
 
   return <>{children}</>;
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useParentData, useStudentResults } from "@/hooks/use-data";
+import { StudentPageLoading } from "@/components/student/portal/student-portal-states";
 import { StatCard } from "@/components/shared/stat-card";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,17 +10,18 @@ import { Progress } from "@/components/ui/progress";
 import { TrendingUp, BookOpen, Trophy } from "lucide-react";
 
 export default function ParentDashboard() {
-  const { children } = useParentData();
+  const { children, loading } = useParentData();
   const [selectedId, setSelectedId] = useState(children[0]?.id ?? "");
   const child = children.find((c) => c.id === selectedId) ?? children[0];
   const { results } = useStudentResults(child?.id);
 
+  if (loading) return <StudentPageLoading rows={2} />;
   if (!child) return <p>No linked children found.</p>;
 
   return (
     <div className="flex flex-col gap-6">
       <Select value={selectedId} onValueChange={(v) => v && setSelectedId(v)}>
-        <SelectTrigger className="w-64"><SelectValue placeholder="Select child" /></SelectTrigger>
+        <SelectTrigger className="w-full sm:w-64"><SelectValue placeholder="Select child" /></SelectTrigger>
         <SelectContent>
           {children.map((c) => (
             <SelectItem key={c.id} value={c.id}>{c.displayName}</SelectItem>

@@ -15,8 +15,23 @@ export function revalidateStudentPortalPaths() {
   ] as const;
 
   for (const path of paths) {
-    revalidatePath(path);
+    try {
+      revalidatePath(path);
+    } catch {
+      // Cache refresh must not fail the mutation that triggered it.
+    }
   }
+}
+
+/** Admin course catalog mutations. */
+export function revalidateCoursePaths() {
+  try {
+    revalidatePath("/admin/courses");
+    revalidatePath("/");
+  } catch {
+    // Ignore revalidation failures.
+  }
+  revalidateStudentPortalPaths();
 }
 
 /** Marketing pages that embed platform-managed content. */

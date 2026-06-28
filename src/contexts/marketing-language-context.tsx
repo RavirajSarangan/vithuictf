@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useState,
   useSyncExternalStore,
 } from "react";
 import { usePathname } from "next/navigation";
@@ -61,8 +62,19 @@ export function MarketingLanguageProvider({
 }) {
   const pathname = usePathname();
   const pathLocale = getMarketingLocaleFromPath(pathname);
+  const [hydrated, setHydrated] = useState(false);
   const storedLocale = useSyncExternalStore(subscribeLocale, getLocaleSnapshot, () => initialLocale);
-  const locale = pathLocale !== "en" ? pathLocale : storedLocale || initialLocale;
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  const locale =
+    pathLocale !== "en"
+      ? pathLocale
+      : hydrated
+        ? storedLocale || initialLocale
+        : initialLocale;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, locale);

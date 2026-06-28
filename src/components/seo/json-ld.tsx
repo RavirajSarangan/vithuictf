@@ -153,22 +153,42 @@ export function CourseJsonLd({
   locale?: MarketingLocale;
 }) {
   const localizedCoursePath = localizedPath(path, locale);
+  const registerUrl = absoluteUrl(localizedPath("/register", locale));
   const data: JsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
+    "@id": `${absoluteUrl(localizedCoursePath)}#course`,
     name,
     description,
     url: absoluteUrl(localizedCoursePath),
-    provider: { "@id": `${SITE_URL}/#organization` },
+    provider: {
+      "@type": "Organization",
+      name: BRAND.fullName,
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl(BRAND.logo),
+      },
+      sameAs: socialSameAs(),
+    },
     educationalLevel,
-    inLanguage: ["en", "ta", "si"],
+    inLanguage: localeToHreflang(locale),
+    courseMode: "blended",
     offers: {
       "@type": "Offer",
       priceCurrency: "LKR",
       availability: "https://schema.org/InStock",
-      url: absoluteUrl("/register"),
+      url: registerUrl,
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        priceCurrency: "LKR",
+        description: "Course fees and payment plans are shared during registration at ictf.lk/register.",
+      },
     },
-    areaServed: "Sri Lanka",
+    areaServed: {
+      "@type": "Country",
+      name: "Sri Lanka",
+    },
   };
   return <JsonLdScript data={data} />;
 }

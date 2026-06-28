@@ -5,7 +5,11 @@ import { getPublishedBlogSlugs } from "@/lib/blog/queries";
 
 const LOCALES = ["", "/ta", "/si"] as const;
 
+/** Paths that exist in English only — no /ta or /si alternates in sitemap. */
+const ENGLISH_ONLY_PATHS = new Set(["/blog"]);
+
 function withLocales(path: string): string[] {
+  if (ENGLISH_ONLY_PATHS.has(path)) return [path];
   return LOCALES.map((prefix) => `${prefix}${path}`);
 }
 
@@ -14,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     "/",
     "/blog",
+    "/pass-papers",
     "/network/paper-centers",
     "/about/founder",
     ...PROGRAM_PAGES.map((p) => p.path),

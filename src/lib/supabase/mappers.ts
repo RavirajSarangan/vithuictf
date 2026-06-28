@@ -1,20 +1,39 @@
 import type {
   Achievement,
   ActivityItem,
+  BatchEnrollment,
   BlogPostStatus,
   Certificate,
+  ClassSession,
+  ClassSessionStatus,
   ContactInquiry,
+  ContentManager,
+  ExamPaperBatch,
+  ExamPaperSubmission,
+  PaperCenterStaff,
   Course,
+  CourseBatch,
   Exam,
   FAQ,
   LeaderboardEntry,
   Notification,
   Parent,
+  PassPaperExamType,
+  PassPaperFolder,
+  PassPaperItem,
+  PassPaperLayout,
+  PassPaperMedium,
   Payment,
   PlatformSettings,
   Resource,
   Result,
   SiteStats,
+  SocialContentEntry,
+  SocialContentType,
+  SocialFollowerMetric,
+  SocialPerformance,
+  SocialPlatform,
+  SocialTrackingWeek,
   Student,
   StudentSocialLinks,
   SuccessStory,
@@ -84,6 +103,9 @@ export function mapStudent(row: StudentRow): Student {
     cardPublic: row.card_public ?? false,
     onboardingCompletedAt: row.onboarding_completed_at ?? null,
     onboardingSteps: parsedSteps,
+    active: (row as StudentRow & { active?: boolean }).active ?? true,
+    disabledAt: (row as StudentRow & { disabled_at?: string | null }).disabled_at ?? null,
+    createdAt: (row as StudentRow & { created_at?: string | null }).created_at ?? undefined,
   };
 }
 
@@ -99,6 +121,7 @@ export function mapCourse(row: Database["public"]["Tables"]["courses"]["Row"]): 
     category: row.category || undefined,
     durationMonths: row.duration_months ?? undefined,
     slug: row.slug ?? undefined,
+    coverImageUrl: row.cover_image_url || undefined,
   };
 }
 
@@ -149,15 +172,16 @@ export function mapNotification(row: NotificationRow): Notification {
 }
 
 export function mapTeacher(row: Database["public"]["Tables"]["teachers"]["Row"]): Teacher {
-  const extended = row as Database["public"]["Tables"]["teachers"]["Row"] & { course_ids?: string[] };
   return {
     id: row.id,
     userId: row.user_id,
     displayName: row.display_name,
     email: row.email,
+    staffUsername: row.staff_username ?? undefined,
     subjects: row.subjects,
     certified: row.certified,
-    courseIds: extended.course_ids ?? [],
+    courseIds: row.course_ids ?? [],
+    active: row.active ?? true,
   };
 }
 
@@ -184,15 +208,31 @@ export function mapPayment(row: Database["public"]["Tables"]["payments"]["Row"])
 }
 
 export function mapCertificate(row: Database["public"]["Tables"]["certificates"]["Row"]): Certificate {
-  const extended = row as Database["public"]["Tables"]["certificates"]["Row"] & { verify_code?: string };
+  const extended = row as Database["public"]["Tables"]["certificates"]["Row"] & {
+    verify_code?: string;
+    certificate_number?: string;
+    recipient_email?: string;
+    recipient_phone?: string;
+    delivery_status?: string;
+    image_path?: string;
+    batch_id?: string;
+    student_id?: string | null;
+    course_id?: string | null;
+  };
   return {
     id: row.id,
-    studentId: row.student_id,
+    studentId: extended.student_id ?? "",
     studentName: row.student_name,
-    courseId: row.course_id,
+    courseId: extended.course_id ?? "",
     courseName: row.course_name,
     issuedAt: row.issued_at,
     verifyCode: extended.verify_code,
+    certificateNumber: extended.certificate_number,
+    recipientEmail: extended.recipient_email,
+    recipientPhone: extended.recipient_phone,
+    deliveryStatus: (extended.delivery_status ?? "pending") as Certificate["deliveryStatus"],
+    imagePath: extended.image_path,
+    batchId: extended.batch_id ?? undefined,
   };
 }
 
@@ -332,6 +372,7 @@ export function mapPaperCenter(row: Database["public"]["Tables"]["paper_centers"
   return {
     id: row.id,
     name: row.name,
+    slug: row.slug ?? row.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
     district: row.district,
     address: row.address,
     mapUrl: row.map_url,
@@ -567,5 +608,325 @@ export function mapCalendarSession(
     teacherName: row.teacher_name,
     room: row.room,
     mode: row.mode as "physical" | "online",
+  };
+}
+
+export function mapContentManager(row: {
+  id: string;
+  user_id: string;
+  display_name: string;
+  email: string;
+  active: boolean;
+  created_at: string;
+}): ContentManager {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    displayName: row.display_name,
+    email: row.email,
+    active: row.active,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapPaperCenterStaff(row: {
+  id: string;
+  user_id: string;
+  paper_center_id: string;
+  display_name: string;
+  staff_username: string;
+  email: string;
+  active: boolean;
+  created_at: string;
+  paper_centers?: { name: string; district?: string; address?: string; slug?: string } | null;
+}): PaperCenterStaff {
+  const center = row.paper_centers;
+  const place = center ? [center.district, center.address].filter(Boolean).join(" · ") : undefined;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    paperCenterId: row.paper_center_id,
+    paperCenterName: center?.name,
+    centerSlug: center?.slug,
+    place,
+    displayName: row.display_name,
+    staffUsername: row.staff_username,
+    email: row.email,
+    active: row.active,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapExamPaperBatch(row: {
+  id: string;
+  staff_id: string;
+  paper_center_id: string;
+  staff_name: string;
+  center_name: string;
+  place: string;
+  exam_year: number | null;
+  medium: string | null;
+  exam_type: string;
+  notes: string;
+  paper_count: number;
+  created_at: string;
+}): ExamPaperBatch {
+  return {
+    id: row.id,
+    staffId: row.staff_id,
+    paperCenterId: row.paper_center_id,
+    staffName: row.staff_name,
+    centerName: row.center_name,
+    place: row.place,
+    examYear: row.exam_year,
+    medium: row.medium as ExamPaperBatch["medium"],
+    examType: row.exam_type as ExamPaperBatch["examType"],
+    notes: row.notes,
+    paperCount: row.paper_count,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapExamPaperSubmission(row: {
+  id: string;
+  batch_id: string;
+  student_name: string;
+  student_index: string;
+  storage_path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  created_at: string;
+}): ExamPaperSubmission {
+  return {
+    id: row.id,
+    batchId: row.batch_id,
+    studentName: row.student_name,
+    studentIndex: row.student_index,
+    storagePath: row.storage_path,
+    fileName: row.file_name,
+    fileSize: row.file_size,
+    mimeType: row.mime_type,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapSocialPlatform(row: {
+  id: string;
+  slug: string;
+  name: string;
+  sort_order: number;
+}): SocialPlatform {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    sortOrder: row.sort_order,
+  };
+}
+
+export function mapSocialContentType(row: {
+  id: string;
+  slug: string;
+  name: string;
+  sort_order: number;
+}): SocialContentType {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    sortOrder: row.sort_order,
+  };
+}
+
+export function mapSocialTrackingWeek(row: {
+  id: string;
+  week_start: string;
+  created_at: string;
+}): SocialTrackingWeek {
+  return {
+    id: row.id,
+    weekStart: row.week_start,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapSocialContentEntry(row: {
+  id: string;
+  week_id: string;
+  content_type_id: string;
+  day_of_week: number;
+  posted: boolean;
+  post_count?: number;
+  updated_by: string | null;
+  updated_at: string;
+  social_content_types?: { slug: string } | null;
+}): SocialContentEntry {
+  const postCount = row.post_count ?? (row.posted ? 1 : 0);
+  return {
+    id: row.id,
+    weekId: row.week_id,
+    contentTypeId: row.content_type_id,
+    contentTypeSlug: row.social_content_types?.slug,
+    dayOfWeek: row.day_of_week,
+    posted: row.posted || postCount > 0,
+    postCount,
+    updatedBy: row.updated_by ?? undefined,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapSocialFollowerMetric(row: {
+  id: string;
+  week_id: string;
+  platform_id: string;
+  previous_count: number;
+  current_count: number;
+  performance: SocialPerformance | null;
+  updated_by: string | null;
+  updated_at: string;
+  social_platforms?: { slug: string; name: string } | null;
+}): SocialFollowerMetric {
+  return {
+    id: row.id,
+    weekId: row.week_id,
+    platformId: row.platform_id,
+    platformSlug: row.social_platforms?.slug,
+    platformName: row.social_platforms?.name,
+    previousCount: row.previous_count,
+    currentCount: row.current_count,
+    performance: row.performance,
+    updatedBy: row.updated_by ?? undefined,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapCourseBatch(row: {
+  id: string;
+  course_id: string;
+  name: string;
+  batch_code: string;
+  start_date: string;
+  end_date: string;
+  start_time: string;
+  end_time: string;
+  class_days: string[];
+  total_classes: number;
+  active: boolean;
+  created_by: string | null;
+  created_at: string;
+  courses?: { name: string; cover_image_url?: string } | null;
+}): CourseBatch {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    courseName: row.courses?.name,
+    courseCoverImageUrl: row.courses?.cover_image_url || undefined,
+    name: row.name,
+    batchCode: row.batch_code,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    classDays: row.class_days ?? [],
+    totalClasses: row.total_classes,
+    active: row.active,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapBatchEnrollment(row: {
+  id: string;
+  batch_id: string;
+  student_id: string;
+  enrollment_code: string;
+  joined_at: string;
+  active: boolean;
+  students?: { display_name: string; email: string } | null;
+}): BatchEnrollment {
+  return {
+    id: row.id,
+    batchId: row.batch_id,
+    studentId: row.student_id,
+    enrollmentCode: row.enrollment_code,
+    joinedAt: row.joined_at,
+    active: row.active,
+    studentName: row.students?.display_name,
+    studentEmail: row.students?.email,
+  };
+}
+
+export function mapClassSession(row: {
+  id: string;
+  batch_id: string;
+  session_number: number;
+  scheduled_date: string;
+  start_time: string;
+  end_time: string;
+  status: ClassSessionStatus;
+}): ClassSession {
+  return {
+    id: row.id,
+    batchId: row.batch_id,
+    sessionNumber: row.session_number,
+    scheduledDate: row.scheduled_date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    status: row.status,
+  };
+}
+
+export function mapPassPaperFolder(row: {
+  id: string;
+  parent_id: string | null;
+  title: string;
+  slug: string;
+  description: string;
+  icon_key: string;
+  accent_color: string;
+  layout: PassPaperLayout;
+  sort_order: number;
+  published: boolean;
+  created_at: string;
+}): PassPaperFolder {
+  return {
+    id: row.id,
+    parentId: row.parent_id,
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    iconKey: row.icon_key,
+    accentColor: row.accent_color,
+    layout: row.layout,
+    sortOrder: row.sort_order,
+    published: row.published,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapPassPaperItem(row: {
+  id: string;
+  folder_id: string;
+  title: string;
+  drive_url: string;
+  year: number | null;
+  medium: PassPaperMedium | null;
+  exam_type: PassPaperExamType;
+  sort_order: number;
+  published: boolean;
+  created_at: string;
+}): PassPaperItem {
+  return {
+    id: row.id,
+    folderId: row.folder_id,
+    title: row.title,
+    driveUrl: row.drive_url,
+    year: row.year,
+    medium: row.medium,
+    examType: row.exam_type,
+    sortOrder: row.sort_order,
+    published: row.published,
+    createdAt: row.created_at,
   };
 }

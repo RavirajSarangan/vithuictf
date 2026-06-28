@@ -13,26 +13,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { BRAND } from "@/lib/constants";
-import { EMAIL_PATTERN, isLoginErrorCode } from "@/lib/auth/login-errors";
+import { isLoginErrorCode } from "@/lib/auth/login-errors";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const loginInputClassName = authFieldClassName;
 
-type LoginMode = "studentId" | "email";
-
-const loginModeOptions: { id: LoginMode; labelKey: "auth.studentId" | "auth.staffAdminLogin"; icon: typeof GraduationCap }[] = [
-  { id: "studentId", labelKey: "auth.studentId", icon: GraduationCap },
-  { id: "email", labelKey: "auth.staffAdminLogin", icon: ShieldCheck },
-];
+type PublicLoginTab = "studentId" | "staffLink";
 
 export function StudentLoginForm() {
-  const [loginMode, setLoginMode] = useState<LoginMode>("studentId");
+  const [activeTab, setActiveTab] = useState<PublicLoginTab>("studentId");
   const [studentId, setStudentId] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signInAsStaff, signInWithStudentId } = useAuth();
+  const { signInWithStudentId } = useAuth();
   const router = useRouter();
   const { t } = useMarketingText();
 
@@ -40,19 +34,8 @@ export function StudentLoginForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (loginMode === "email") {
-        const normalizedEmail = email.trim().toLowerCase();
-        if (!EMAIL_PATTERN.test(normalizedEmail)) {
-          toast.error(t("auth.invalidEmail"));
-          return;
-        }
-      }
-
-      const user =
-        loginMode === "email"
-          ? await signInAsStaff(email.trim().toLowerCase(), password)
-          : await signInWithStudentId(studentId, password);
-      router.push(getRoleRedirect(user.role));
+      const user = await signInWithStudentId(studentId, password);
+      router.replace(getRoleRedirect(user.role));
       toast.success(t("auth.loginSuccess"));
     } catch (err) {
       if (err instanceof Error && isLoginErrorCode(err.message)) {
@@ -60,7 +43,15 @@ export function StudentLoginForm() {
           INVALID_EMAIL: "auth.invalidEmail",
           STUDENT_ID_INVALID: "auth.studentIdInvalid",
           STUDENT_ID_NOT_FOUND: "auth.studentIdNotFound",
+          STAFF_USERNAME_INVALID: "auth.staffUsernameInvalid",
+          STAFF_USERNAME_NOT_FOUND: "auth.staffUsernameNotFound",
+          STAFF_EMAIL_MISMATCH: "auth.staffEmailMismatch",
+          STAFF_PORTAL_ONLY: "auth.staffPortalOnly",
+          ADMIN_PORTAL_ONLY: "auth.adminPortalOnly",
+          ADMIN_USE_ADMIN_LOGIN: "auth.adminUseAdminLogin",
           STAFF_EMAIL_ONLY: "auth.staffEmailOnly",
+          CONTENT_TEAM_ONLY: "auth.contentTeamOnly",
+          PAPER_CENTER_ONLY: "auth.paperCenterOnly",
           STUDENT_ID_ONLY: "auth.studentIdOnly",
         } as const;
         toast.error(t(keyMap[err.message]));
@@ -77,7 +68,7 @@ export function StudentLoginForm() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-icvf-navy sm:text-3xl">{t("auth.welcomeBack")}</h1>
         <p className="mt-2 text-sm text-icvf-text-light sm:text-base">
-          {loginMode === "email" ? t("auth.signInSubStaff") : t("auth.signInSub")}
+          {activeTab === "studentId" ? t("auth.signInSub") : t("auth.signInSubStaffLink")}
         </p>
       </div>
 
@@ -86,15 +77,20 @@ export function StudentLoginForm() {
         role="tablist"
         aria-label={t("auth.signInHeading")}
       >
-        {loginModeOptions.map(({ id, labelKey, icon: Icon }) => {
-          const active = loginMode === id;
+        {(
+          [
+            { id: "studentId" as const, labelKey: "auth.studentId" as const, icon: GraduationCap },
+            { id: "staffLink" as const, labelKey: "auth.staffPortalLogin" as const, icon: ShieldCheck },
+          ] as const
+        ).map(({ id, labelKey, icon: Icon }) => {
+          const active = activeTab === id;
           return (
             <button
               key={id}
               type="button"
               role="tab"
               aria-selected={active}
-              onClick={() => setLoginMode(id)}
+              onClick={() => setActiveTab(id)}
               className={cn(
                 "flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200",
                 active
@@ -109,8 +105,8 @@ export function StudentLoginForm() {
         })}
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {loginMode === "studentId" ? (
+      {activeTab === "studentId" ? (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <Label htmlFor="studentId" className="text-sm font-semibold text-icvf-navy">
               {t("auth.studentId")}
@@ -135,44 +131,37 @@ export function StudentLoginForm() {
               </a>
             </p>
           </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email" className="text-sm font-semibold text-icvf-navy">
-              {t("auth.email")}
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              inputMode="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={loginInputClassName}
-              placeholder={t("auth.emailPlaceholder")}
-              autoComplete="email"
-              required
-            />
-          </div>
-        )}
 
-        <PasswordField
-          id="password"
-          label={t("auth.password")}
-          value={password}
-          onChange={setPassword}
-          required
-          inputClassName={cn(loginInputClassName, "pr-11")}
-          placeholder={t("auth.passwordPlaceholder")}
-        />
+          <PasswordField
+            id="password"
+            label={t("auth.password")}
+            value={password}
+            onChange={setPassword}
+            required
+            inputClassName={cn(loginInputClassName, "pr-11")}
+            placeholder={t("auth.passwordPlaceholder")}
+          />
 
-        <Button
-          type="submit"
-          variant="icvf"
-          className="mt-1 h-12 w-full rounded-xl text-base font-semibold"
-          disabled={loading}
-        >
-          {loading ? t("auth.signingIn") : t("auth.signIn")}
-        </Button>
-      </form>
+          <Button
+            type="submit"
+            variant="icvf"
+            className="mt-1 h-12 w-full rounded-xl text-base font-semibold"
+            disabled={loading}
+          >
+            {loading ? t("auth.signingIn") : t("auth.signIn")}
+          </Button>
+        </form>
+      ) : (
+        <div className="flex flex-col gap-5 rounded-2xl border border-icvf-border bg-slate-50/80 p-6">
+          <p className="text-sm leading-relaxed text-icvf-text-light">{t("auth.staffDedicatedLoginHelp")}</p>
+          <Link
+            href="/login/staff"
+            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-icvf-accent text-base font-semibold text-white transition-colors hover:bg-icvf-accent-hover"
+          >
+            {t("auth.continueToStaffLogin")}
+          </Link>
+        </div>
+      )}
 
       <p className="mt-5 text-center">
         <a
@@ -183,24 +172,14 @@ export function StudentLoginForm() {
         </a>
       </p>
 
-      {loginMode === "studentId" ? (
+      {activeTab === "studentId" ? (
         <p className="mt-8 text-center text-sm text-icvf-text-light">
           {t("auth.noAccount")}{" "}
           <Link href="/register" className="font-semibold text-icvf-navy hover:text-icvf-accent hover:underline">
             {t("auth.createAccount")}
           </Link>
         </p>
-      ) : (
-        <p className="mt-8 text-center text-sm text-icvf-text-light">
-          {t("auth.needHelp")}{" "}
-          <a
-            href={`mailto:${BRAND.contact.email}?subject=Staff%20access%20request`}
-            className="font-semibold text-icvf-navy hover:text-icvf-accent hover:underline"
-          >
-            {BRAND.contact.email}
-          </a>
-        </p>
-      )}
+      ) : null}
 
       <SecurityComplianceBadges
         variant="login"

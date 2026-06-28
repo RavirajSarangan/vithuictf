@@ -11,6 +11,8 @@ export type MarketingUiKey =
   | "nav.faq"
   | "nav.contact"
   | "nav.blog"
+  | "nav.passPapers"
+  | "nav.passPapersFreeDownload"
   | "nav.register"
   | "nav.institute"
   | "btn.login"
@@ -277,6 +279,10 @@ export type MarketingUiKey =
   | "auth.usernameTaken"
   | "auth.indexTaken"
   | "auth.selectCourse"
+  | "auth.registerCourseAuto"
+  | "auth.registerCourseMultiNote"
+  | "auth.registerNoCoursesForTrack"
+  | "auth.registerCourseMismatch"
   | "auth.usernameAvailable"
   | "auth.registerSuccess"
   | "auth.registerFailed"
@@ -287,6 +293,23 @@ export type MarketingUiKey =
   | "auth.welcomeBack"
   | "auth.loginWithEmail"
   | "auth.staffAdminLogin"
+  | "auth.staffPortalLogin"
+  | "auth.adminPortalLogin"
+  | "auth.staffUsername"
+  | "auth.staffUsernamePlaceholder"
+  | "auth.optionalForAdmins"
+  | "auth.staffUsernameInvalid"
+  | "auth.staffUsernameNotFound"
+  | "auth.staffEmailMismatch"
+  | "auth.staffPortalOnly"
+  | "auth.adminPortalOnly"
+  | "auth.adminUseAdminLogin"
+  | "auth.signInSubStaffLink"
+  | "auth.signInSubStaffPortal"
+  | "auth.signInSubAdminPortal"
+  | "auth.adminLoginPrompt"
+  | "auth.staffDedicatedLoginHelp"
+  | "auth.continueToStaffLogin"
   | "auth.contentTeamLogin"
   | "auth.socialTrackingLogin"
   | "auth.signInSubStaff"
@@ -298,6 +321,7 @@ export type MarketingUiKey =
   | "auth.studentIdInvalid"
   | "auth.staffEmailOnly"
   | "auth.contentTeamOnly"
+  | "auth.paperCenterOnly"
   | "auth.studentIdOnly"
   | "auth.studentId"
   | "auth.studentIdPlaceholder"
@@ -352,6 +376,12 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "nav.faq": { en: "FAQ", ta: "கேள்விகள்" },
   "nav.contact": { en: "Contact", ta: "தொடர்பு" },
   "nav.blog": { en: "Blog", ta: "வலைப்பதிவு", si: "Blog" },
+  "nav.passPapers": { en: "Pass Papers", ta: "கடந்த வினாத்தாள்கள்", si: "Pass Papers" },
+  "nav.passPapersFreeDownload": {
+    en: "Free Download",
+    ta: "இலவச பதிவிறக்கம்",
+    si: "Free Download",
+  },
   "nav.register": { en: "Register", ta: "பதிவு" },
   "nav.institute": { en: "Institute", ta: "நிறுவனம்" },
   "btn.login": { en: "Login", ta: "உள்நுழை" },
@@ -801,6 +831,22 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.usernameTaken": { en: "This username is already taken", ta: "இந்த பயனர் பெயர் ஏற்கனவே பயன்பாட்டில் உள்ளது" },
   "auth.indexTaken": { en: "This index number is already registered", ta: "இந்த அட்டவணை எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது" },
   "auth.selectCourse": { en: "Select your course", ta: "உங்கள் பாடநெறியைத் தேர்ந்தெடுக்கவும்" },
+  "auth.registerCourseAuto": {
+    en: "Your course is set from the study program you chose above.",
+    ta: "மேலே தேர்ந்தெடுத்த படிப்பு நிரலின் அடிப்படையில் உங்கள் பாடநெறி தானாக அமைக்கப்படும்.",
+  },
+  "auth.registerCourseMultiNote": {
+    en: "Starting another program later? Keep the same login — staff can add more courses to your account.",
+    ta: "பிறகு வேறு நிரலில் சேர வேண்டுமா? அதே உள்நுழைவைப் பயன்படுத்துங்கள் — ஊழியர்கள் உங்கள் கணக்கில் மேலும் பாடங்களைச் சேர்க்கலாம்.",
+  },
+  "auth.registerNoCoursesForTrack": {
+    en: "No courses are open for this study program yet. Please contact ICTF to register.",
+    ta: "இந்த படிப்பு நிரலுக்கு இன்னும் பாடங்கள் திறக்கப்படவில்லை. பதிவு செய்ய ICTF-ஐ தொடர்பு கொள்ளவும்.",
+  },
+  "auth.registerCourseMismatch": {
+    en: "Selected course does not match your study program. Please choose again.",
+    ta: "தேர்ந்தெடுத்த பாடம் உங்கள் படிப்பு நிரலுடன் பொருந்தவில்லை. மீண்டும் தேர்ந்தெடுக்கவும்.",
+  },
   "auth.usernameAvailable": { en: "Username is available", ta: "பயனர் பெயர் கிடைக்கிறது" },
   "auth.registerSuccess": {
     en: "Account created! Check your email for your index number and login details.",
@@ -814,6 +860,56 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "auth.welcomeBack": { en: "Welcome back", ta: "மீண்டும் வரவேற்கிறோம்" },
   "auth.loginWithEmail": { en: "Email", ta: "மின்னஞ்சல்" },
   "auth.staffAdminLogin": { en: "Staff", ta: "Staff" },
+  "auth.staffPortalLogin": { en: "Staff Portal", ta: "Staff Portal" },
+  "auth.adminPortalLogin": { en: "Admin Portal", ta: "Admin Portal" },
+  "auth.staffUsername": { en: "Staff username", ta: "Staff username" },
+  "auth.staffUsernamePlaceholder": { en: "Enter your staff username", ta: "உங்கள் staff username-ஐ உள்ளிடவும்" },
+  "auth.optionalForAdmins": { en: "optional for admins", ta: "நிர்வாகிகளுக்கு விரும்பினால்" },
+  "auth.signInSubStaffLink": {
+    en: "Staff sign-in uses a private link from your administrator.",
+    ta: "Staff உள்நுழைவு நிர்வாகியின் தனிப்பட்ட இணைப்பைப் பயன்படுத்துகிறது.",
+  },
+  "auth.signInSubStaffPortal": {
+    en: "Teachers: staff username, email, and password. Administrators: email and password only.",
+    ta: "ஆசிரியர்கள்: staff username, மின்னஞ்சல் மற்றும் கடவுச்சொல். நிர்வாகிகள்: மின்னஞ்சல் மற்றும் கடவுச்சொல் மட்டும்.",
+  },
+  "auth.signInSubAdminPortal": {
+    en: "Administrator email sign-in only.",
+    ta: "நிர்வாகி மின்னஞ்சல் உள்நுழைவு மட்டும்.",
+  },
+  "auth.adminLoginPrompt": {
+    en: "Administrator?",
+    ta: "நிர்வாகியா?",
+  },
+  "auth.staffDedicatedLoginHelp": {
+    en: "Staff members must use the dedicated staff login page. Ask your administrator for the link if you do not have it.",
+    ta: "Staff உறுப்பினர்கள் தனிப்பட்ட staff login பக்கத்தைப் பயன்படுத்த வேண்டும். இணைப்பு இல்லை என்றால் நிர்வாகியிடம் கேளுங்கள்.",
+  },
+  "auth.continueToStaffLogin": { en: "Continue to staff login", ta: "Staff login-க்கு தொடரவும்" },
+  "auth.staffUsernameInvalid": {
+    en: "Enter a valid staff username (3–20 letters, numbers, or underscores).",
+    ta: "சரியான staff username-ஐ உள்ளிடவும் (3–20 எழுத்துகள், எண்கள் அல்லது underscore).",
+  },
+  "auth.staffUsernameNotFound": {
+    en: "Staff username not found. Contact your administrator if you need access.",
+    ta: "Staff username கிடைக்கவில்லை. அணுகல் தேவைப்பட்டால் நிர்வாகியைத் தொடர்பு கொள்ளுங்கள்.",
+  },
+  "auth.staffEmailMismatch": {
+    en: "Email does not match this staff username.",
+    ta: "மின்னஞ்சல் இந்த staff username-உடன் பொருந்தவில்லை.",
+  },
+  "auth.staffPortalOnly": {
+    en: "Use the Staff Portal login page with your staff username, email, and password.",
+    ta: "Staff username, மின்னஞ்சல் மற்றும் கடவுச்சொல்லுடன் Staff Portal login பக்கத்தைப் பயன்படுத்துங்கள்.",
+  },
+  "auth.adminPortalOnly": {
+    en: "This account is not an administrator. Use the correct login link for your role.",
+    ta: "இந்த கணக்கு நிர்வாகி அல்ல. உங்கள் பாத்திரத்திற்கான சரியான login இணைப்பைப் பயன்படுத்துங்கள்.",
+  },
+  "auth.adminUseAdminLogin": {
+    en: "Administrators must use the admin login page (email and password only). Redirecting you now…",
+    ta: "நிர்வாகிகள் admin login பக்கத்தைப் பயன்படுத்த வேண்டும் (மின்னஞ்சல் மற்றும் கடவுச்சொல் மட்டும்). இப்போது அங்கே அனுப்பப்படுகிறீர்கள்…",
+  },
   "auth.contentTeamLogin": { en: "Content", ta: "Content" },
   "auth.socialTrackingLogin": { en: "Social Tracking", ta: "Social Tracking" },
   "auth.signInSubStaff": {
@@ -845,16 +941,20 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     ta: "சரியான மாணவர் அடையாளத்தை உள்ளிடவும்.",
   },
   "auth.staffEmailOnly": {
-    en: "This email is not a staff account. Use Student ID or Social Tracking for other logins.",
-    ta: "இந்த மின்னஞ்சல் staff கணக்கு அல்ல. மற்ற உள்நுழைவுகளுக்கு Student ID அல்லது Social Tracking-ஐப் பயன்படுத்துங்கள்.",
+    en: "This email is not a staff account. Use Student ID on the main login page or contact admin.",
+    ta: "இந்த மின்னஞ்சல் staff கணக்கு அல்ல. முதன்மை உள்நுழைவில் Student ID-ஐப் பயன்படுத்துங்கள் அல்லது நிர்வாகியைத் தொடர்பு கொள்ளுங்கள்.",
   },
   "auth.contentTeamOnly": {
-    en: "This email is not assigned for social tracking. Use the Social Tracking tab or contact an administrator.",
-    ta: "இந்த மின்னஞ்சல் social tracking-க்கு ஒதுக்கப்படவில்லை. Social Tracking tab-ஐப் பயன்படுத்துங்கள் அல்லது நிர்வாகியைத் தொடர்பு கொள்ளுங்கள்.",
+    en: "This email is not assigned for social tracking. Use the social tracking login link from your admin or contact them for access.",
+    ta: "இந்த மின்னஞ்சல் social tracking-க்கு ஒதுக்கப்படவில்லை. நிர்வாகியிடமிருந்து social tracking உள்நுழைவு இணைப்பைப் பயன்படுத்துங்கள்.",
+  },
+  "auth.paperCenterOnly": {
+    en: "Use the paper center login portal for exam paper uploads.",
+    ta: "தேர்வுத் தாள் பதிவேற்றத்திற்கு paper center உள்நுழைவைப் பயன்படுத்துங்கள்.",
   },
   "auth.studentIdOnly": {
-    en: "Students must sign in with Student ID. Use the Admin tab for administrator email login.",
-    ta: "மாணவர்கள் மாணவர் அடையாளத்துடன் மட்டும் உள்நுழைய வேண்டும். நிர்வாக மின்னஞ்சலுக்கு நிர்வாகி தாவலைப் பயன்படுத்துங்கள்.",
+    en: "Students must sign in with Student ID on the main login page.",
+    ta: "மாணவர்கள் முதன்மை உள்நுழைவில் மாணவர் அடையாளத்துடன் மட்டும் உள்நுழைய வேண்டும்.",
   },
   "auth.studentId": { en: "Student ID", ta: "மாணவர் அடையாளம்" },
   "auth.studentIdPlaceholder": { en: "Enter your Student ID", ta: "உங்கள் மாணவர் அடையாளத்தை உள்ளிடவும்" },
@@ -891,7 +991,10 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     en: "Create your account and get instant access to islandwide online ICT education.",
     ta: "உங்கள் கணக்கை உருவாக்கி, தீவு முழுவதும் ஆன்லைன் ICT கல்விக்கு உடனடி அணுகலைப் பெறுங்கள்.",
   },
-  "auth.registerBenefit1": { en: "Access all enrolled batch content instantly", ta: "பதிவு செய்த பாச்ச் உள்ளடக்கத்தை உடனடியாக அணுகுங்கள்" },
+  "auth.registerBenefit1": {
+    en: "Auto-enrolled in your class batch — attendance and portal ready from day one",
+    ta: "உங்கள் வகுப்பு பாச்சில் தானாகப் பதிவு — முதல் நாளிலிருந்தே வருகை மற்றும் தளம் தயார்",
+  },
   "auth.registerBenefit2": { en: "Join live interactive ICT sessions", ta: "நேரடி ஊடாடும் ICT வகுப்புகளில் சேருங்கள்" },
   "auth.registerBenefit3": { en: "Get AI-powered study help anytime", ta: "எந்நேரமும் AI படிப்பு உதவியைப் பெறுங்கள்" },
   "auth.registerBenefit4": { en: "Download study materials and notes", ta: "படிப்பு பொருட்கள் மற்றும் குறிப்புகளைப் பதிவிறக்குங்கள்" },

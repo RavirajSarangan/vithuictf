@@ -23,6 +23,8 @@ interface CommandPaletteProps {
 const studentCommands = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Calendar", href: "/calendar" },
+  { label: "Pass Papers", href: "/pass-papers" },
+  { label: "Attendance", href: "/attendance" },
   { label: "Results", href: "/results" },
   { label: "Resources", href: "/resources" },
   { label: "Achievements", href: "/achievements" },
@@ -34,6 +36,8 @@ const studentCommands = [
 const parentCommands = [
   { label: "Dashboard", href: "/parent/dashboard" },
   { label: "Calendar", href: "/parent/calendar" },
+  { label: "Pass Papers", href: "/parent/pass-papers" },
+  { label: "Attendance", href: "/parent/attendance" },
   { label: "Performance", href: "/parent/performance" },
   { label: "Notifications", href: "/parent/notifications" },
 ];

@@ -32,6 +32,7 @@ export {
   useAdminStudents,
   useAdminCourses,
   useAdminTeachers,
+  useAdminStaff,
   useAdminParents,
   useAdminPayments,
   useAdminResources,
@@ -48,3 +49,8 @@ export {
   useAdminRevenueTrend,
   useContactInquiries,
 } from "./use-admin-data";
+
+export { useSocialTracking, useContentManagers } from "./use-social-tracking";
+export { useTeacherDashboardStats, useTeacherDashboardData } from "./use-teacher-dashboard";
+export { useAdminDashboardOverview } from "./use-admin-dashboard";
+export { usePeopleRoster } from "./use-people-roster";

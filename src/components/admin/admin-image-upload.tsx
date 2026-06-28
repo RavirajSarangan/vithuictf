@@ -11,19 +11,34 @@ interface AdminImageUploadProps {
   value: string;
   folder?: string;
   onChange: (url: string) => void;
+  uploadAction?: (formData: FormData) => Promise<string>;
+  requireSquare?: boolean;
+  hint?: string;
 }
 
-export function AdminImageUpload({ label, value, folder = "home", onChange }: AdminImageUploadProps) {
+export function AdminImageUpload({
+  label,
+  value,
+  folder = "home",
+  onChange,
+  uploadAction = uploadAdminAsset,
+  requireSquare = false,
+  hint,
+}: AdminImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
+      if (requireSquare) {
+        const { validateSquareImageFile } = await import("@/lib/images/validate-square-image");
+        await validateSquareImageFile(file);
+      }
       const formData = new FormData();
       formData.set("file", file);
       formData.set("folder", folder);
-      const url = await uploadAdminAsset(formData);
+      const url = await uploadAction(formData);
       onChange(url);
       toast.success("Image uploaded");
     } catch (error) {
@@ -36,6 +51,13 @@ export function AdminImageUpload({ label, value, folder = "home", onChange }: Ad
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">{label}</label>
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {value ? (
+        <div className="relative size-24 overflow-hidden rounded-lg border bg-muted/30">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt="" className="size-full object-cover" />
+        </div>
+      ) : null}
       <div className="flex gap-2">
         <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://..." />
         <input

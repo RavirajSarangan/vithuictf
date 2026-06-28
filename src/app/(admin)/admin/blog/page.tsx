@@ -224,6 +224,25 @@ export default function AdminBlogPage() {
     }
   };
 
+  const categorySelectItems = useMemo(() => {
+    const items: { value: string; label: string }[] = [
+      { value: "none", label: "No category" },
+      ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
+    ];
+
+    if (
+      postForm.categoryId &&
+      !categories.some((category) => category.id === postForm.categoryId)
+    ) {
+      items.push({
+        value: postForm.categoryId,
+        label: editingPost?.categoryName ?? "Removed category",
+      });
+    }
+
+    return items;
+  }, [categories, postForm.categoryId, editingPost?.categoryName]);
+
   const postColumns = useMemo(
     () => [
       {
@@ -394,9 +413,10 @@ export default function AdminBlogPage() {
             />
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <Label>Category</Label>
                 <Select
+                  items={categorySelectItems}
                   value={postForm.categoryId || "none"}
                   onValueChange={(value) =>
                     setPostForm((f) => ({
@@ -405,27 +425,28 @@ export default function AdminBlogPage() {
                     }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No category</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
+                    {categorySelectItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <Label htmlFor="post-tags">Tags</Label>
                 <Input
                   id="post-tags"
+                  className="w-full"
                   value={postForm.tags}
                   onChange={(e) => setPostForm((f) => ({ ...f, tags: e.target.value }))}
                   placeholder="ict, exam tips, zoom"
                 />
+                <p className="text-xs text-muted-foreground">Separate tags with commas.</p>
               </div>
             </div>
 

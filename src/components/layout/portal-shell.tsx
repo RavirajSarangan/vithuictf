@@ -38,15 +38,17 @@ interface PortalShellProps {
   navItems: NavItem[];
   variant?: "student" | "parent" | "admin";
   title?: string;
+  homeHref?: string;
+  headerSlot?: React.ReactNode;
 }
 
 function getMobileNavItems(variant: "student" | "parent" | "admin", navItems: NavItem[]) {
   const preferred =
     variant === "student"
-      ? ["/dashboard", "/calendar", "/results", "/resources"]
+      ? ["/dashboard", "/calendar", "/pass-papers", "/attendance", "/resources"]
       : variant === "parent"
-        ? ["/parent/dashboard", "/parent/calendar", "/parent/performance", "/parent/notifications"]
-        : ["/admin/dashboard", "/admin/calendar", "/admin/students", "/admin/courses"];
+        ? ["/parent/dashboard", "/parent/calendar", "/parent/pass-papers", "/parent/attendance"]
+        : ["/admin/dashboard", "/academics/dashboard", "/admin/students", "/admin/pass-papers"];
 
   return preferred
     .map((href) => navItems.find((item) => item.href === href))
@@ -66,14 +68,17 @@ function getInitials(name?: string | null): string {
 function PortalSidebar({
   navItems,
   variant,
+  homeHref,
 }: {
   navItems: NavItem[];
   variant: "student" | "parent" | "admin";
+  homeHref?: string;
 }) {
   const pathname = usePathname();
-  const { signOut, user } = useAuth();
+  const { signOut, user, initialized } = useAuth();
   const brandHref =
-    variant === "student" ? "/" : variant === "parent" ? "/parent/dashboard" : "/admin/dashboard";
+    homeHref ??
+    (variant === "student" ? "/" : variant === "parent" ? "/parent/dashboard" : "/admin/dashboard");
 
   return (
     <Sidebar className="border-r border-white/10 bg-icvf-navy [&_[data-sidebar=sidebar]]:bg-icvf-navy">
@@ -118,13 +123,25 @@ function PortalSidebar({
 
       <SidebarFooter className="border-t border-white/10 p-4">
         <div className="mb-3 flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-icvf-accent text-xs font-bold text-white">
-            {getInitials(user?.displayName)}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{user?.displayName}</p>
-            <p className="truncate text-xs text-white/50">{user?.email}</p>
-          </div>
+          {!initialized || !user ? (
+            <>
+              <div className="size-9 shrink-0 animate-pulse rounded-full bg-white/15" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-3.5 w-24 animate-pulse rounded bg-white/15" />
+                <div className="h-3 w-32 animate-pulse rounded bg-white/10" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-icvf-accent text-xs font-bold text-white">
+                {getInitials(user.displayName)}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{user.displayName}</p>
+                <p className="truncate text-xs text-white/50">{user.email}</p>
+              </div>
+            </>
+          )}
         </div>
         <Button
           variant="outline"
@@ -192,7 +209,14 @@ function MobileBottomNav({
   );
 }
 
-export function PortalShell({ children, navItems, variant = "student", title }: PortalShellProps) {
+export function PortalShell({
+  children,
+  navItems,
+  variant = "student",
+  title,
+  homeHref,
+  headerSlot,
+}: PortalShellProps) {
   const pathname = usePathname();
   const mobileNavItems = getMobileNavItems(variant, navItems);
 
@@ -207,7 +231,7 @@ export function PortalShell({ children, navItems, variant = "student", title }: 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <PortalSidebar navItems={navItems} variant={variant} />
+        <PortalSidebar navItems={navItems} variant={variant} homeHref={homeHref} />
         <SidebarInset className="flex flex-1 flex-col bg-icvf-surface">
           <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-icvf-border bg-white/95 px-4 backdrop-blur md:px-6">
             <div className="flex items-center gap-2">
@@ -215,6 +239,7 @@ export function PortalShell({ children, navItems, variant = "student", title }: 
               <h1 className="text-lg font-semibold text-icvf-navy">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-2">
+              {headerSlot}
               <LazyCommandPalette variant={variant} />
               <NotificationCenter />
               <ThemeToggle />

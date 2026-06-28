@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import { LanguageToggle } from "@/components/landing/language-toggle";
 import { MarketingSectionLink } from "@/components/shared/marketing-section-link";
+import { NavFreeDownloadBadge } from "@/components/shared/nav-free-download-badge";
 import {
   Accordion,
   AccordionContent,
@@ -100,6 +101,20 @@ export function MobileNavSheet({
             <MarketingSectionLink hash="#about" onClick={close} className={mobileNavLinkClass}>
               {t("nav.about")}
             </MarketingSectionLink>
+            <Link
+              href="/pass-papers"
+              onClick={close}
+              className={cn(
+                mobileNavLinkClass,
+                "flex w-full items-center gap-2",
+                (pathname === "/pass-papers" || pathname.startsWith("/pass-papers/")) &&
+                  "font-semibold text-icvf-navy-dark"
+              )}
+              aria-current={pathname.startsWith("/pass-papers") ? "page" : undefined}
+            >
+              {t("nav.passPapers")}
+              <NavFreeDownloadBadge />
+            </Link>
             <Link
               href="/blog"
               onClick={close}

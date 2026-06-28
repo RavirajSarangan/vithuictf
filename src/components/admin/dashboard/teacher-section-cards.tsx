@@ -11,31 +11,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  BookOpenIcon,
-  CreditCardIcon,
-  GraduationCapIcon,
-  UsersIcon,
-} from "lucide-react";
+import type { TeacherDashboardStats } from "@/hooks/use-teacher-dashboard";
+import { BarChart3Icon, BookOpenIcon, CalendarDaysIcon, UsersIcon } from "lucide-react";
 
-type AdminStats = {
-  totalStudents: number;
-  totalTeachers: number;
-  totalRevenue: number;
-  totalCourses: number;
-};
-
-interface AdminDashboardSectionCardsProps {
-  stats: AdminStats | null;
+interface TeacherSectionCardsProps {
+  stats: TeacherDashboardStats;
 }
 
 const cardGridClassName =
   "grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4";
 
-export function AdminDashboardSectionCards({ stats }: AdminDashboardSectionCardsProps) {
-  if (!stats) {
+export function TeacherSectionCards({ stats }: TeacherSectionCardsProps) {
+  if (stats.loading) {
     return (
-      <div className={`${cardGridClassName}`}>
+      <div className={cardGridClassName}>
         {Array.from({ length: 4 }).map((_, index) => (
           <Skeleton key={index} className="h-40 rounded-xl" />
         ))}
@@ -45,32 +34,32 @@ export function AdminDashboardSectionCards({ stats }: AdminDashboardSectionCards
 
   const cards = [
     {
-      title: "Total Students",
-      value: stats.totalStudents.toLocaleString(),
+      title: "My Students",
+      value: stats.myStudents.toLocaleString(),
       href: "/admin/students",
-      hint: "View and manage enrolled students",
+      hint: "Students in your assigned courses",
       icon: UsersIcon,
     },
     {
-      title: "Total Teachers",
-      value: stats.totalTeachers.toLocaleString(),
-      href: "/admin/teachers",
-      hint: "View teaching staff roster",
-      icon: GraduationCapIcon,
-    },
-    {
-      title: "Total Revenue",
-      value: `Rs. ${stats.totalRevenue.toLocaleString()}`,
-      href: "/admin/payments",
-      hint: "Track institute fee collections",
-      icon: CreditCardIcon,
-    },
-    {
-      title: "Total Courses",
-      value: stats.totalCourses.toLocaleString(),
+      title: "My Courses",
+      value: stats.myCourses.toLocaleString(),
       href: "/admin/courses",
-      hint: "Manage active course catalog",
+      hint: "Courses you are assigned to",
       icon: BookOpenIcon,
+    },
+    {
+      title: "Recent Results",
+      value: stats.recentResults.toLocaleString(),
+      href: "/admin/results",
+      hint: "Results recorded in the last 7 days",
+      icon: BarChart3Icon,
+    },
+    {
+      title: "Upcoming Events",
+      value: stats.upcomingEvents.toLocaleString(),
+      href: "/admin/calendar",
+      hint: "Scheduled calendar sessions",
+      icon: CalendarDaysIcon,
     },
   ] as const;
 
@@ -84,13 +73,13 @@ export function AdminDashboardSectionCards({ stats }: AdminDashboardSectionCards
               {card.value}
             </CardTitle>
             <CardAction>
-              <Badge variant="outline">Live</Badge>
+              <Badge variant="outline">Your scope</Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
               <card.icon className="size-4 text-icvf-accent" />
-              Institute metric
+              Teaching workspace
             </div>
             <Link href={card.href} className="text-muted-foreground hover:text-foreground">
               {card.hint}

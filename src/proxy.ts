@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { needsAuthSession as shouldRefreshAuthSession } from "@/lib/auth-session-paths";
 import { getComingSoonPath, isPortalRouteBlocked } from "@/lib/portal-access";
 import { getBlockedMarketingRedirect } from "@/lib/marketing-page-access";
 import {
@@ -19,6 +20,7 @@ const studentRoutes: Record<string, UserRole[]> = {
   "/results": ["student"],
   "/resources": ["student"],
   "/calendar": ["student"],
+  "/attendance": ["student"],
   "/achievements": ["student"],
   "/leaderboard": ["student"],
   "/profile-card": ["student"],
@@ -26,32 +28,15 @@ const studentRoutes: Record<string, UserRole[]> = {
   "/settings": ["student"],
 };
 
-const AUTH_SESSION_PREFIXES = [
-  "/login",
-  "/register",
-  "/dashboard",
-  "/onboarding",
-  "/results",
-  "/resources",
-  "/calendar",
-  "/achievements",
-  "/leaderboard",
-  "/profile-card",
-  "/ai-assistant",
-  "/settings",
-  "/admin",
-  "/parent",
-];
+const AUTH_EXCLUDED_MATCHER =
+  "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)";
 
 function hasSupabaseAuthCookie(request: NextRequest): boolean {
   return request.cookies.getAll().some((cookie) => cookie.name.includes("-auth-token"));
 }
 
 function needsAuthSession(pathname: string, request: NextRequest): boolean {
-  if (AUTH_SESSION_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
-    return true;
-  }
-  return hasSupabaseAuthCookie(request);
+  return shouldRefreshAuthSession(pathname, hasSupabaseAuthCookie(request));
 }
 
 function redirectForRole(role: UserRole, request: NextRequest): NextResponse {
@@ -59,13 +44,31 @@ function redirectForRole(role: UserRole, request: NextRequest): NextResponse {
   if (comingSoon) {
     return NextResponse.redirect(new URL(comingSoon, request.url));
   }
-  if (role === "admin" || role === "teacher") {
+  if (role === "teacher") {
+    return NextResponse.redirect(new URL("/academics/dashboard", request.url));
+  }
+  if (role === "admin" || role === "super_admin") {
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  }
+  if (role === "content_manager") {
+    return NextResponse.redirect(new URL("/staff/tracking", request.url));
+  }
+  if (role === "paper_center_staff") {
+    return NextResponse.redirect(new URL("/paper-center/dashboard", request.url));
   }
   if (role === "parent") {
     return NextResponse.redirect(new URL("/parent/dashboard", request.url));
   }
   return NextResponse.redirect(new URL("/dashboard", request.url));
+}
+
+function loginPathForRoute(pathname: string): string {
+  if (pathname.startsWith("/admin")) return "/login/admin";
+  if (pathname.startsWith("/academics")) return "/login/staff";
+  if (pathname.startsWith("/staff")) return "/login/social-tracking";
+  if (pathname.startsWith("/paper-center")) return "/login/paper-center";
+  if (pathname.startsWith("/parent")) return "/login";
+  return "/login";
 }
 
 function nextWithPathname(request: NextRequest, pathname: string): NextResponse {
@@ -80,6 +83,10 @@ export async function proxy(request: NextRequest) {
 
   if (isSiteGateWebhookPath(pathname)) {
     return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/api/")) {
+    return nextWithPathname(request, pathname);
   }
 
   const blockedMarketing = getBlockedMarketingRedirect(pathname);
@@ -140,9 +147,40 @@ export async function proxy(request: NextRequest) {
 
   if (pathname.startsWith("/admin")) {
     if (!session) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(new URL(loginPathForRoute(pathname), request.url));
     }
-    if (session.role !== "admin" && session.role !== "teacher") {
+    if (
+      session.role !== "admin" &&
+      session.role !== "super_admin" &&
+      session.role !== "teacher"
+    ) {
+      return redirectForRole(session.role, request);
+    }
+  }
+
+  if (pathname.startsWith("/academics")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login/staff", request.url));
+    }
+    if (!["super_admin", "admin", "teacher"].includes(session.role)) {
+      return redirectForRole(session.role, request);
+    }
+  }
+
+  if (pathname.startsWith("/staff")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login/social-tracking", request.url));
+    }
+    if (session.role !== "content_manager") {
+      return redirectForRole(session.role, request);
+    }
+  }
+
+  if (pathname.startsWith("/paper-center")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login/paper-center", request.url));
+    }
+    if (session.role !== "paper_center_staff") {
       return redirectForRole(session.role, request);
     }
   }
@@ -160,6 +198,13 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    {
+      source:
+        "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
   ],
 };

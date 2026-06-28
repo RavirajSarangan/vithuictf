@@ -1,7 +1,7 @@
 import type { SitePublicMode, UserRole } from "@/types";
 
 const SITE_GATE_WEBHOOK_PATHS = ["/api/stripe/webhook"] as const;
-const SITE_MODE_CACHE_TTL_MS = 5_000;
+const SITE_MODE_CACHE_TTL_MS = 60_000;
 
 let siteModeCache: { value: SitePublicMode; expiresAt: number } | null = null;
 
@@ -27,13 +27,21 @@ export function parseSitePublicMode(value: string | null | undefined): SitePubli
 }
 
 export function shouldBypassSiteGate(role: UserRole | null | undefined): boolean {
-  return role === "admin" || role === "teacher";
+  return (
+    role === "admin" ||
+    role === "super_admin" ||
+    role === "teacher" ||
+    role === "content_manager" ||
+    role === "paper_center_staff"
+  );
 }
 
 /** Paths reachable by the public while the site is gated (admin bypasses the gate entirely). */
 export function isSiteGatePublicExemptPath(pathname: string, mode: SitePublicMode): boolean {
   if (pathname === "/login" || pathname.startsWith("/login/")) return true;
   if (pathname.startsWith("/admin")) return true;
+  if (pathname.startsWith("/staff")) return true;
+  if (pathname.startsWith("/paper-center")) return true;
   if (mode === "coming_soon" && (pathname === "/coming-soon" || pathname.startsWith("/coming-soon/"))) {
     return true;
   }
@@ -65,7 +73,7 @@ async function fetchSitePublicModeFromApi(): Promise<SitePublicMode> {
           apikey: key,
           Authorization: `Bearer ${key}`,
         },
-        next: { revalidate: 0 },
+        next: { revalidate: 60, tags: ["site-public-mode"] },
       }
     );
 

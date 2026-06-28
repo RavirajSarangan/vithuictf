@@ -11,7 +11,6 @@ import {
 } from "react";
 import { MarketingSessionActions } from "@/components/landing/marketing-session-actions";
 import { applyMarketingScrollPadding } from "@/lib/marketing-scroll";
-import { AuthProvider } from "@/providers/auth-provider";
 import { cn } from "@/lib/utils";
 import { MobileNavSheet } from "@/nav/mobile-nav-sheet";
 import { NavMenu } from "@/nav/nav-menu";
@@ -61,19 +60,20 @@ export function MarketingNavbar({
   announcement,
 }: MarketingNavbarProps) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [lastPathname, setLastPathname] = useState(pathname);
+  const [mobileMenu, setMobileMenu] = useState({ open: false, path: "" });
+  const mobileOpen = mobileMenu.open && mobileMenu.path === pathname;
 
-  if (pathname !== lastPathname) {
-    setLastPathname(pathname);
-    if (mobileOpen) setMobileOpen(false);
-  }
+  const setMobileOpen = useCallback(
+    (open: boolean) => setMobileMenu({ open, path: pathname }),
+    [pathname]
+  );
+
   const headerRef = useMarketingHeaderOffsetSync(pathname);
 
-  const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), [setMobileOpen]);
 
   return (
-    <AuthProvider deferred>
+    <>
       <header
         ref={headerRef}
         data-marketing-header
@@ -169,7 +169,7 @@ export function MarketingNavbar({
         loginHref={loginHref}
         registerHref={registerHref}
       />
-    </AuthProvider>
+    </>
   );
 }
 

@@ -4,8 +4,8 @@ import { Inter } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { AppProviders } from "@/providers/app-providers";
 import { ThemeColorMeta } from "@/components/layout/theme-color-meta";
-import { IcvfSiteCursorLazy } from "@/components/shared/icvf-site-cursor-lazy";
 import { DeferredAnalytics } from "@/components/shared/deferred-analytics";
 import { LegacyPwaDispose } from "@/components/shared/legacy-pwa-dispose";
 import { BRAND } from "@/lib/constants";
@@ -61,7 +61,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang={lang}
       suppressHydrationWarning
-      data-scroll-behavior="smooth"
       className={`${inter.variable} h-full`}
     >
       <head>
@@ -79,9 +78,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Script>
         <ThemeProvider>
           <ThemeColorMeta />
-          <IcvfSiteCursorLazy />
           <TooltipProvider>
-            {children}
+            <AppProviders>
+              {children}
+            </AppProviders>
             <DeferredAnalytics />
             <LegacyPwaDispose />
             <Toaster richColors position="top-right" />

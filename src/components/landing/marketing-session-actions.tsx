@@ -79,11 +79,28 @@ export function MarketingSessionActions({
     if (variant === "hero") {
       return (
         <div className={cn("hero-cta-section", className)} aria-hidden>
-          <div className="hero-cta-row min-h-[3.25rem] opacity-0 sm:min-h-14" />
+          <div className="hero-cta-row flex flex-col gap-3 sm:flex-row">
+            <div className="hero-cta-btn min-h-[3.25rem] w-full animate-pulse rounded-full bg-icvf-navy/10 sm:min-h-14 lg:min-w-[11.25rem]" />
+            <div className="hero-cta-btn min-h-[3.25rem] w-full animate-pulse rounded-full bg-icvf-navy/5 sm:min-h-14 lg:min-w-[11.25rem]" />
+          </div>
         </div>
       );
     }
-    return null;
+    if (variant === "nav-desktop-register" || variant === "nav-mobile-register") {
+      return (
+        <div
+          className={cn(
+            "h-9 animate-pulse rounded-full bg-white/10",
+            variant === "nav-mobile-register" ? "w-20" : "w-24"
+          )}
+          aria-hidden
+        />
+      );
+    }
+    if (variant === "nav-desktop-login") {
+      return <div className="h-9 w-14 animate-pulse rounded-full bg-white/10" aria-hidden />;
+    }
+    return <div className="h-10 w-full animate-pulse rounded-xl bg-white/5" aria-hidden />;
   }
 
   if (user) {

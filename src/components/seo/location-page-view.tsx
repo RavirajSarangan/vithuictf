@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { BreadcrumbJsonLd, LocalBusinessJsonLd } from "@/components/seo/json-ld";
 import { SeoContentPage } from "@/components/seo/seo-content-page";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
@@ -12,7 +11,7 @@ import {
   getLocationSeo,
 } from "@/lib/seo/keywords";
 import { SRI_LANKA_DISTRICT_COORDS } from "@/lib/data/sri-lanka-map-projection";
-import { getMarketingHomeData } from "@/lib/marketing-data";
+import { getPaperCentersOnly } from "@/lib/marketing-data";
 import type { ProgramContent } from "@/lib/seo/program-content";
 
 export function generateStaticParams() {
@@ -49,6 +48,21 @@ function buildLocationContent(slug: LocationSlug, locale: MarketingLocale): Prog
               : "Register at ictf.lk/register or WhatsApp +94 77 459 1161 with your name, grade, and district.",
         ],
       },
+      {
+        heading:
+          locale === "ta"
+            ? "ICTF நிரல்கள்"
+            : locale === "si"
+              ? "ICTF වැඩසටහන්"
+              : "ICTF programs for your district",
+        paragraphs: [
+          locale === "ta"
+            ? `${name} மாவட்ட மாணவர்கள் O/L ICT, A/L ICT மற்றும் ஆன்லைன் Zoom வகுப்புகளுக்கு ICTF-ல் பதிவு செய்யலாம். வகுப்புகள் நேரடி Zoom, பதிவுகள் மற்றும் ICTF மாணவர் தளத்துடன் வழங்கப்படுகின்றன.`
+            : locale === "si"
+              ? `${name} දිස්ත්‍රික්කයේ ශිෂ්‍යයින්ට O/L ICT, A/L ICT සහ අන්තර්ජාල Zoom පන්ති සඳහා ICTF හි ලියාපදිංචි විය හැක. පන්ති සජීවී Zoom, පටිගත කිරීම් සහ ICTF ශිෂ්‍ය ද්වාරය හරහා ලබා දෙයි.`
+              : `Students in ${name} district can enroll in ICTF O/L ICT, A/L ICT, and online Zoom programs. Classes include live Zoom sessions, recordings, past paper support at nearby paper centers, and full access to the ICTF Student Portal.`,
+        ],
+      },
     ],
     cta: locale === "ta" ? "இப்போது பதிவு செய்யுங்கள்" : locale === "si" ? "දැන් ලියාපදිංචි වන්න" : "Register now",
   };
@@ -78,10 +92,35 @@ export async function LocationPageView({
   const seo = getLocationSeo(slug);
   const content = buildLocationContent(slug, locale);
   const coords = SRI_LANKA_DISTRICT_COORDS[slug];
-  const marketing = await getMarketingHomeData();
-  const districtCenters = marketing.paperCenters.filter(
+  const marketing = await getPaperCentersOnly();
+  const districtCenters = marketing.filter(
     (c) => c.district.toLowerCase() === slug && c.isActive
   );
+
+  const relatedLinks =
+    locale === "ta"
+      ? [
+          { label: "O/L ICT வகுப்புகள்", path: "/programs/ol-ict" },
+          { label: "A/L ICT நிறுவனம்", path: "/programs/al-ict" },
+          { label: "ஆன்லைன் Zoom வகுப்புகள்", path: "/programs/online-zoom" },
+          { label: "பேப்பர் மையங்கள்", path: "/network/paper-centers" },
+          { label: "ICT வலைப்பதிவு", path: "/blog" },
+        ]
+      : locale === "si"
+        ? [
+            { label: "O/L ICT පන්ති", path: "/programs/ol-ict" },
+            { label: "A/L ICT ආයතනය", path: "/programs/al-ict" },
+            { label: "අන්තර්ජාල Zoom පන්ති", path: "/programs/online-zoom" },
+            { label: "ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන", path: "/network/paper-centers" },
+            { label: "ICT බ්ලොග්", path: "/blog" },
+          ]
+        : [
+            { label: "O/L ICT classes", path: "/programs/ol-ict" },
+            { label: "A/L ICT institute", path: "/programs/al-ict" },
+            { label: "Online Zoom classes", path: "/programs/online-zoom" },
+            { label: "Paper centers network", path: "/network/paper-centers" },
+            { label: "ICT blog", path: "/blog" },
+          ];
 
   return (
     <>
@@ -104,6 +143,7 @@ export async function LocationPageView({
         h1={seo.h1[locale]}
         intro={content.intro}
         content={content}
+        relatedLinks={relatedLinks}
         breadcrumbs={[
           { name: "Home", path: "/" },
           { name: "Network", path: "/network/paper-centers" },
@@ -125,11 +165,6 @@ export async function LocationPageView({
             </ul>
           </section>
         ) : null}
-        <p className="mt-6 text-sm">
-          <Link href="/programs/online-zoom" className="text-icvf-navy underline">
-            {locale === "ta" ? "ஆன்லைன் Zoom வகுப்புகள்" : locale === "si" ? "අන්තර්ජාල Zoom පන්ති" : "Online Zoom classes"}
-          </Link>
-        </p>
       </SeoContentPage>
     </>
   );

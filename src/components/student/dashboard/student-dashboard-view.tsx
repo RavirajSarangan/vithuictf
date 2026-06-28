@@ -35,6 +35,7 @@ import {
 import { formatMinutes, formatTime12, sessionsForToday } from "@/lib/calendar/utils";
 import { formatStudentRank, hasAssignedRank } from "@/lib/student-rank";
 import { cn } from "@/lib/utils";
+import { useActiveCourseId, useActiveCourseName } from "@/contexts/student-course-context";
 import type { ActivityItem, Exam, Result, Student } from "@/types";
 
 const QUICK_ACTIONS = [
@@ -132,7 +133,13 @@ function DashboardSkeleton() {
   );
 }
 
-function HeroBanner({ student }: { student: Student }) {
+function HeroBanner({
+  student,
+  courseName,
+}: {
+  student: Student;
+  courseName: string;
+}) {
   const firstName = student.displayName.split(" ")[0] ?? student.displayName;
   const initials = student.displayName
     .split(" ")
@@ -162,7 +169,7 @@ function HeroBanner({ student }: { student: Student }) {
               </h1>
               <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
                 <Badge className="max-w-full truncate border-0 bg-white/15 text-white">
-                  {student.courseName}
+                  {courseName}
                 </Badge>
                 <Badge variant="outline" className="border-white/25 bg-transparent text-white">
                   {student.studentId}
@@ -331,13 +338,15 @@ function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
 export function StudentDashboardView() {
   const student = useStudentData();
   const studentId = student?.id;
-  const courseId = student?.courseId;
+  const activeCourseId = useActiveCourseId(student?.courseId);
+  const activeCourseName = useActiveCourseName(student?.courseName);
+  const courseId = activeCourseId;
 
   const { results } = useStudentResults(studentId);
   const { achievements } = useAchievements(studentId);
   const { activities } = useActivities(studentId);
   const { exams } = useExams();
-  const { data: calendarSessions } = useCalendarSessions(courseId);
+  const { data: calendarSessions } = useCalendarSessions(courseId ?? undefined);
 
   const todayClasses = useMemo(
     () => sessionsForToday(calendarSessions),
@@ -377,7 +386,7 @@ export function StudentDashboardView() {
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 pb-2 sm:gap-6">
-      <HeroBanner student={student} />
+      <HeroBanner student={student} courseName={activeCourseName ?? student.courseName} />
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         {QUICK_ACTIONS.map((action) => {
@@ -445,8 +454,8 @@ export function StudentDashboardView() {
             </div>
             <p className="text-xs text-icvf-text-light">
               {hasAssignedRank(student.rank)
-                ? `Rank ${formatStudentRank(student.rank)} · ${student.courseName}`
-                : student.courseName}
+                ? `Rank ${formatStudentRank(student.rank)} · ${activeCourseName ?? student.courseName}`
+                : activeCourseName ?? student.courseName}
             </p>
           </div>
         </SectionCard>

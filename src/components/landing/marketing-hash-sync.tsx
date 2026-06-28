@@ -2,42 +2,15 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import {
-  applyMarketingScrollPadding,
-  scrollToMarketingHashOnLoad,
-} from "@/lib/marketing-scroll";
+import { scrollToMarketingHashOnLoad } from "@/lib/marketing-scroll";
 
-/** Ensures /#section links scroll correctly after navigation or refresh. */
+/** Scrolls to /#section after navigation or refresh. Header offset is synced by the marketing navbar. */
 export function MarketingHashSync() {
   const pathname = usePathname();
 
   useEffect(() => {
-    applyMarketingScrollPadding();
-
-    const header = document.querySelector<HTMLElement>("[data-marketing-header]");
-    const onResize = () => applyMarketingScrollPadding();
-    window.addEventListener("resize", onResize);
-
-    const observer =
-      header && typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(onResize)
-        : null;
-    if (header && observer) {
-      observer.observe(header);
-    }
-
-    requestAnimationFrame(() => applyMarketingScrollPadding());
-
-    return () => {
-      window.removeEventListener("resize", onResize);
-      observer?.disconnect();
-      document.documentElement.style.scrollPaddingTop = "";
-      document.documentElement.style.removeProperty("--marketing-header-offset");
-    };
-  }, []);
-
-  useEffect(() => {
-    if (pathname !== "/") return;
+    const isMarketingHome = pathname === "/" || pathname === "/ta" || pathname === "/si";
+    if (!isMarketingHome) return;
 
     const hash = window.location.hash;
     if (!hash) return;

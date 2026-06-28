@@ -217,30 +217,147 @@ export type Database = {
           },
         ]
       }
-      certificates: {
+      certificate_batches: {
         Row: {
-          course_id: string
-          course_name: string
+          created_at: string
+          created_by: string | null
+          error_log: Json
           id: string
-          issued_at: string
-          student_id: string
-          student_name: string
+          issue_date: string
+          name: string
+          status: string
+          success_count: number
+          template_id: string | null
+          total_count: number
         }
         Insert: {
-          course_id: string
-          course_name: string
+          created_at?: string
+          created_by?: string | null
+          error_log?: Json
           id?: string
-          issued_at?: string
-          student_id: string
-          student_name: string
+          issue_date?: string
+          name: string
+          status?: string
+          success_count?: number
+          template_id?: string | null
+          total_count?: number
         }
         Update: {
-          course_id?: string
-          course_name?: string
+          created_at?: string
+          created_by?: string | null
+          error_log?: Json
           id?: string
+          issue_date?: string
+          name?: string
+          status?: string
+          success_count?: number
+          template_id?: string | null
+          total_count?: number
+        }
+        Relationships: []
+      }
+      certificate_sequences: {
+        Row: {
+          last_number: number
+          prefix: string
+        }
+        Insert: {
+          last_number?: number
+          prefix: string
+        }
+        Update: {
+          last_number?: number
+          prefix?: string
+        }
+        Relationships: []
+      }
+      certificate_templates: {
+        Row: {
+          created_at: string
+          field_config: Json
+          id: string
+          id_padding: number
+          id_prefix: string
+          image_url: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          field_config?: Json
+          id?: string
+          id_padding?: number
+          id_prefix?: string
+          image_url: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          field_config?: Json
+          id?: string
+          id_padding?: number
+          id_prefix?: string
+          image_url?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      certificates: {
+        Row: {
+          batch_id: string | null
+          certificate_number: string | null
+          course_id: string | null
+          course_name: string
+          delivered_at: string | null
+          delivery_status: string
+          email_sent_at: string | null
+          id: string
+          image_path: string | null
+          issued_at: string
+          recipient_email: string | null
+          recipient_phone: string | null
+          student_id: string | null
+          student_name: string
+          verify_code: string | null
+        }
+        Insert: {
+          batch_id?: string | null
+          certificate_number?: string | null
+          course_id?: string | null
+          course_name: string
+          delivered_at?: string | null
+          delivery_status?: string
+          email_sent_at?: string | null
+          id?: string
+          image_path?: string | null
           issued_at?: string
-          student_id?: string
+          recipient_email?: string | null
+          recipient_phone?: string | null
+          student_id?: string | null
+          student_name: string
+          verify_code?: string | null
+        }
+        Update: {
+          batch_id?: string | null
+          certificate_number?: string | null
+          course_id?: string | null
+          course_name?: string
+          delivered_at?: string | null
+          delivery_status?: string
+          email_sent_at?: string | null
+          id?: string
+          image_path?: string | null
+          issued_at?: string
+          recipient_email?: string | null
+          recipient_phone?: string | null
+          student_id?: string | null
           student_name?: string
+          verify_code?: string | null
         }
         Relationships: [
           {
@@ -343,6 +460,7 @@ export type Database = {
       courses: {
         Row: {
           category: string
+          cover_image_url: string
           created_at: string
           description: string
           duration_months: number | null
@@ -356,6 +474,7 @@ export type Database = {
         }
         Insert: {
           category?: string
+          cover_image_url?: string
           created_at?: string
           description?: string
           duration_months?: number | null
@@ -369,6 +488,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          cover_image_url?: string
           created_at?: string
           description?: string
           duration_months?: number | null
@@ -700,6 +820,7 @@ export type Database = {
           map_x: number | null
           map_y: number | null
           name: string
+          slug: string
           sort_order: number
         }
         Insert: {
@@ -712,6 +833,7 @@ export type Database = {
           map_x?: number | null
           map_y?: number | null
           name: string
+          slug?: string
           sort_order?: number
         }
         Update: {
@@ -724,6 +846,7 @@ export type Database = {
           map_x?: number | null
           map_y?: number | null
           name?: string
+          slug?: string
           sort_order?: number
         }
         Relationships: []
@@ -1022,6 +1145,8 @@ export type Database = {
           student_id: string
           user_id: string
           username: string | null
+          active: boolean
+          disabled_at: string | null
         }
         Insert: {
           bio?: string
@@ -1049,6 +1174,8 @@ export type Database = {
           student_id: string
           user_id: string
           username?: string | null
+          active?: boolean
+          disabled_at?: string | null
         }
         Update: {
           bio?: string
@@ -1076,6 +1203,8 @@ export type Database = {
           student_id?: string
           user_id?: string
           username?: string | null
+          active?: boolean
+          disabled_at?: string | null
         }
         Relationships: [
           {
@@ -1153,26 +1282,35 @@ export type Database = {
       }
       teachers: {
         Row: {
+          active: boolean | null
           certified: boolean
+          course_ids: string[] | null
           display_name: string
           email: string
           id: string
+          staff_username: string | null
           subjects: string[]
           user_id: string
         }
         Insert: {
+          active?: boolean | null
           certified?: boolean
+          course_ids?: string[] | null
           display_name: string
           email: string
           id?: string
+          staff_username?: string | null
           subjects?: string[]
           user_id: string
         }
         Update: {
+          active?: boolean | null
           certified?: boolean
+          course_ids?: string[] | null
           display_name?: string
           email?: string
           id?: string
+          staff_username?: string | null
           subjects?: string[]
           user_id?: string
         }
@@ -1186,6 +1324,219 @@ export type Database = {
           },
         ]
       }
+      course_batches: {
+        Row: {
+          id: string
+          course_id: string
+          name: string
+          batch_code: string
+          start_date: string
+          end_date: string
+          start_time: string
+          end_time: string
+          class_days: string[]
+          total_classes: number
+          active: boolean
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          name: string
+          batch_code: string
+          start_date: string
+          end_date: string
+          start_time?: string
+          end_time?: string
+          class_days?: string[]
+          total_classes?: number
+          active?: boolean
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          course_id?: string
+          name?: string
+          batch_code?: string
+          start_date?: string
+          end_date?: string
+          start_time?: string
+          end_time?: string
+          class_days?: string[]
+          total_classes?: number
+          active?: boolean
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      batch_enrollments: {
+        Row: {
+          id: string
+          batch_id: string
+          student_id: string
+          enrollment_code: string
+          joined_at: string
+          active: boolean
+        }
+        Insert: {
+          id?: string
+          batch_id: string
+          student_id: string
+          enrollment_code: string
+          joined_at?: string
+          active?: boolean
+        }
+        Update: {
+          id?: string
+          batch_id?: string
+          student_id?: string
+          enrollment_code?: string
+          joined_at?: string
+          active?: boolean
+        }
+        Relationships: []
+      }
+      class_sessions: {
+        Row: {
+          id: string
+          batch_id: string
+          session_number: number
+          scheduled_date: string
+          start_time: string
+          end_time: string
+          status: Database["public"]["Enums"]["class_session_status"]
+        }
+        Insert: {
+          id?: string
+          batch_id: string
+          session_number: number
+          scheduled_date: string
+          start_time: string
+          end_time: string
+          status?: Database["public"]["Enums"]["class_session_status"]
+        }
+        Update: {
+          id?: string
+          batch_id?: string
+          session_number?: number
+          scheduled_date?: string
+          start_time?: string
+          end_time?: string
+          status?: Database["public"]["Enums"]["class_session_status"]
+        }
+        Relationships: []
+      }
+      attendance_records: {
+        Row: {
+          id: string
+          session_id: string
+          student_id: string
+          status: Database["public"]["Enums"]["attendance_status"]
+          marked_by: string | null
+          marked_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          student_id: string
+          status: Database["public"]["Enums"]["attendance_status"]
+          marked_by?: string | null
+          marked_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          student_id?: string
+          status?: Database["public"]["Enums"]["attendance_status"]
+          marked_by?: string | null
+          marked_at?: string
+        }
+        Relationships: []
+      }
+      pass_paper_folders: {
+        Row: {
+          id: string
+          parent_id: string | null
+          title: string
+          slug: string
+          description: string
+          icon_key: string
+          accent_color: string
+          layout: Database["public"]["Enums"]["pass_paper_layout"]
+          sort_order: number
+          published: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          parent_id?: string | null
+          title: string
+          slug: string
+          description?: string
+          icon_key?: string
+          accent_color?: string
+          layout?: Database["public"]["Enums"]["pass_paper_layout"]
+          sort_order?: number
+          published?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          parent_id?: string | null
+          title?: string
+          slug?: string
+          description?: string
+          icon_key?: string
+          accent_color?: string
+          layout?: Database["public"]["Enums"]["pass_paper_layout"]
+          sort_order?: number
+          published?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      pass_paper_items: {
+        Row: {
+          id: string
+          folder_id: string
+          title: string
+          drive_url: string
+          year: number | null
+          medium: Database["public"]["Enums"]["pass_paper_medium"] | null
+          exam_type: Database["public"]["Enums"]["pass_paper_exam_type"]
+          sort_order: number
+          published: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          folder_id: string
+          title: string
+          drive_url: string
+          year?: number | null
+          medium?: Database["public"]["Enums"]["pass_paper_medium"] | null
+          exam_type?: Database["public"]["Enums"]["pass_paper_exam_type"]
+          sort_order?: number
+          published?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          folder_id?: string
+          title?: string
+          drive_url?: string
+          year?: number | null
+          medium?: Database["public"]["Enums"]["pass_paper_medium"] | null
+          exam_type?: Database["public"]["Enums"]["pass_paper_exam_type"]
+          sort_order?: number
+          published?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1196,8 +1547,13 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       is_parent_of: { Args: { p_student_id: string }; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
+      next_certificate_number: {
+        Args: { p_padding?: number; p_prefix: string }
+        Returns: string
+      }
       own_student_id: { Args: never; Returns: string }
       student_enrolled_course_id: { Args: never; Returns: string }
     }
@@ -1212,9 +1568,14 @@ export type Database = {
         | "assignments"
         | "study_guides"
       resource_type: "pdf" | "video"
+      attendance_status: "present" | "absent" | "late"
+      class_session_status: "scheduled" | "completed" | "cancelled"
+      pass_paper_layout: "grid" | "list" | "folder"
+      pass_paper_medium: "sinhala" | "tamil" | "english"
+      pass_paper_exam_type: "ol" | "al" | "scholarship" | "other"
       session_mode: "physical" | "online"
       session_type: "recurring" | "one_off"
-      user_role: "student" | "parent" | "teacher" | "admin"
+      user_role: "student" | "parent" | "teacher" | "admin" | "super_admin" | "content_manager" | "paper_center_staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1805,7 +2166,7 @@ export const Constants = {
       resource_type: ["pdf", "video"],
       session_mode: ["physical", "online"],
       session_type: ["recurring", "one_off"],
-      user_role: ["student", "parent", "teacher", "admin"],
+      user_role: ["student", "parent", "teacher", "admin", "super_admin", "content_manager", "paper_center_staff"],
     },
   },
   storage: {

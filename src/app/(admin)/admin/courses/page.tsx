@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { addCourse, deleteCourse, updateCourse } from "@/lib/actions/admin";
+import { addCourse, deleteCourse, updateCourse, uploadCourseImage } from "@/lib/actions/admin";
 import { useAdminCourses } from "@/hooks/use-data";
 import { AdminTable } from "@/components/admin/admin-table";
+import { AdminImageUpload } from "@/components/admin/admin-image-upload";
+import { CourseThumbnail } from "@/components/courses/course-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -36,7 +38,8 @@ const courseSchema = z.object({
   description: z.string().min(10, "Description is required"),
   durationMonths: z.number().min(1).max(36),
   level: z.enum(["OL", "AL", "University", "Professional"]),
-  teacherName: z.string().min(2, "Teacher name is required"),
+  teacherName: z.string().min(2, "Staff name is required"),
+  coverImageUrl: z.union([z.string().url(), z.literal("")]).optional(),
 });
 
 type CourseFormValues = z.infer<typeof courseSchema>;
@@ -54,7 +57,7 @@ export default function AdminCoursesPage() {
   const { data, refresh } = useAdminCourses();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<CourseFormValues>({
@@ -66,6 +69,7 @@ export default function AdminCoursesPage() {
       durationMonths: 12,
       level: "Professional",
       teacherName: "Vithoosan Sivanathan",
+      coverImageUrl: "",
     },
   });
 
@@ -78,6 +82,7 @@ export default function AdminCoursesPage() {
       durationMonths: 12,
       level: "Professional",
       teacherName: "Vithoosan Sivanathan",
+      coverImageUrl: "",
     });
     setOpen(true);
   };
@@ -91,6 +96,7 @@ export default function AdminCoursesPage() {
       durationMonths: course.durationMonths ?? 12,
       level: course.level,
       teacherName: course.teacherName,
+      coverImageUrl: course.coverImageUrl ?? "",
     });
     setOpen(true);
   };
@@ -105,34 +111,47 @@ export default function AdminCoursesPage() {
         durationMonths: values.durationMonths,
         level: values.level as CourseLevel,
         teacherName: values.teacherName,
+        coverImageUrl: values.coverImageUrl ?? "",
       };
 
       if (editing) {
-        await updateCourse(editing.id, payload);
+        const result = await updateCourse(editing.id, payload);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
         toast.success("Course updated");
       } else {
-        await addCourse(payload);
+        const result = await addCourse(payload);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
         toast.success("Course added");
       }
       refresh();
       setOpen(false);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to save course");
+    } catch {
+      toast.error("Failed to save course");
     } finally {
       setSubmitting(false);
     }
   };
 
   const confirmDelete = async () => {
-    if (!deleteId) return;
+    if (!deleteTarget) return;
     try {
-      await deleteCourse(deleteId);
+      const result = await deleteCourse(deleteTarget.id);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
       refresh();
       toast.success("Course deleted");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+    } catch {
+      toast.error("Delete failed");
     } finally {
-      setDeleteId(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -163,6 +182,13 @@ export default function AdminCoursesPage() {
       ) : (
         <AdminTable
           columns={[
+            {
+              key: "coverImageUrl",
+              label: "",
+              render: (row) => (
+                <CourseThumbnail title={row.name} coverImageUrl={row.coverImageUrl} className="size-10" />
+              ),
+            },
             { key: "name", label: "Name" },
             {
               key: "category",
@@ -178,11 +204,11 @@ export default function AdminCoursesPage() {
               label: "Duration",
               render: (row) => (row.durationMonths ? `${row.durationMonths} Months` : "—"),
             },
-            { key: "teacherName", label: "Teacher" },
+            { key: "teacherName", label: "Staff" },
             { key: "studentCount", label: "Students" },
           ]}
           data={data}
-          onDelete={(id) => setDeleteId(id)}
+          onDelete={(id) => setDeleteTarget(data.find((course) => course.id === id) ?? null)}
           onView={(row) => openEdit(row)}
         />
       )}
@@ -267,10 +293,30 @@ export default function AdminCoursesPage() {
               />
               <FormField
                 control={form.control}
+                name="coverImageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <AdminImageUpload
+                        label="Course image"
+                        folder="courses"
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        uploadAction={uploadCourseImage}
+                        requireSquare
+                        hint="Best: 1024×1024 px square (WebP or JPEG, under 500 KB)."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="teacherName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Teacher</FormLabel>
+                    <FormLabel>Staff name</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -296,12 +342,14 @@ export default function AdminCoursesPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete course?</AlertDialogTitle>
+            <AlertDialogTitle>Delete {deleteTarget?.name ?? "course"}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Courses with enrolled students cannot be deleted.
+              {deleteTarget && deleteTarget.studentCount > 0
+                ? `This will remove the course from the catalog and unenroll ${deleteTarget.studentCount} student${deleteTarget.studentCount === 1 ? "" : "s"}. Related batches, resources, and attendance records for this course will also be removed.`
+                : "This will permanently remove the course from the catalog."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

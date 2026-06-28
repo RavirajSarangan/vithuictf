@@ -1,5 +1,5 @@
-import { StudentPageLoading } from "@/components/student/portal/student-portal-states";
+import { PortalShellLoading } from "@/components/layout/portal-shell-loading";
 
 export default function AdminRouteLoading() {
-  return <StudentPageLoading rows={4} />;
+  return <PortalShellLoading rows={3} />;
 }

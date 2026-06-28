@@ -201,7 +201,7 @@
     overflow-x: hidden;
   }
   html {
-    @apply font-sans scroll-smooth;
+    @apply font-sans;
     scroll-padding-top: var(--marketing-header-offset, 5.5rem);
     -webkit-text-size-adjust: 100%;
   }
@@ -452,6 +452,12 @@
 .hero-trust-marquee {
   animation: marquee 18s linear infinite;
   will-change: transform;
+}
+
+[data-marquee-in-view="false"] .hero-trust-marquee,
+[data-marquee-in-view="false"] .footer-ict-marquee,
+[data-marquee-in-view="false"] .hero-learning-chips-marquee {
+  animation-play-state: paused;
 }
 
 .hero-learning-chips-marquee {
@@ -1379,11 +1385,9 @@ body:has([data-slot=sheet-content].marketing-mobile-sheet) [data-slot=sheet-over
 
 @keyframes fadeInUp {
   from {
-    opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(10px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }

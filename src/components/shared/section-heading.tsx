@@ -11,6 +11,8 @@ export interface SectionHeadingProps {
   light?: boolean;
   titleId?: string;
   className?: string;
+  /** Use h1 for standalone index pages (e.g. blog); default h2 for section headings. */
+  as?: "h1" | "h2";
 }
 
 export function SectionHeading({
@@ -23,6 +25,7 @@ export function SectionHeading({
   light = true,
   titleId,
   className,
+  as: Heading = "h2",
 }: SectionHeadingProps) {
   return (
     <div className={cn("mb-12", align === "center" && "text-center", className)}>
@@ -31,7 +34,7 @@ export function SectionHeading({
           {badge}
         </CanvasEyebrow>
       ) : null}
-      <h2
+      <Heading
         id={titleId}
         className={cn(
           "text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]",
@@ -45,7 +48,7 @@ export function SectionHeading({
             <span className="text-icvf-accent">{accent}</span>
           </>
         ) : null}
-      </h2>
+      </Heading>
       {subtitle ? (
         <p
           className={cn(

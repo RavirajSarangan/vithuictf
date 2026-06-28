@@ -19,12 +19,20 @@ import { cn } from "@/lib/utils";
 
 const FooterTechDecor = dynamic(
   () => import("@/components/landing/marketing-footer-tech-decor").then((m) => m.FooterTechDecor),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <div className="pointer-events-none absolute inset-0" aria-hidden />,
+  }
 );
 
 const FooterIctMarquee = dynamic(
   () => import("@/components/landing/marketing-footer-ict-marquee").then((m) => m.FooterIctMarquee),
-  { ssr: false, loading: () => null }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-12 w-full border-y border-white/8 bg-black/10" aria-hidden />
+    ),
+  }
 );
 
 const FOOTER_PORTAL_COMING_SOON = {

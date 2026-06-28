@@ -6,14 +6,17 @@ import {
   StudentPageHeader,
   StudentPageLoading,
 } from "@/components/student/portal/student-portal-states";
+import { useActiveCourseId, useActiveCourseName } from "@/contexts/student-course-context";
 import { useStudentData } from "@/hooks/use-data";
 import { useCalendarMinutesSummary, useCalendarSessions, useSubjectCategories } from "@/hooks/use-calendar";
 
 export default function StudentCalendarPage() {
   const student = useStudentData();
+  const activeCourseId = useActiveCourseId(student?.courseId);
+  const activeCourseName = useActiveCourseName(student?.courseName);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const { data: categories, isLoading: categoriesLoading } = useSubjectCategories();
-  const { data: sessions, isLoading: sessionsLoading } = useCalendarSessions(student?.courseId, categoryFilter);
+  const { data: sessions, isLoading: sessionsLoading } = useCalendarSessions(activeCourseId ?? undefined, categoryFilter);
   const summary = useCalendarMinutesSummary(sessions, categories, categoryFilter);
 
   if (student === undefined || categoriesLoading || sessionsLoading) {
@@ -25,9 +28,9 @@ export default function StudentCalendarPage() {
       <StudentPageHeader
         title="Calendar"
         description={
-          student?.courseName
-            ? `Class schedule and sessions for ${student.courseName}.`
-            : "View your weekly class schedule and today’s sessions."
+          activeCourseName
+            ? `Class schedule and sessions for ${activeCourseName}.`
+            : "View your weekly class schedule and today's sessions."
         }
       />
       <CalendarBoard

@@ -38,11 +38,12 @@ export function buildLanguageAlternates(
   if (alternateLocales.length === 1) {
     const only = alternateLocales[0] ?? "en";
     const hreflang = localeToHreflang(only);
+    const pageUrl = absoluteUrl(localizedPath(path, only));
     return {
       canonical,
       languages: {
-        [hreflang]: absoluteUrl(localizedPath(path, only)),
-        "x-default": absoluteUrl(path),
+        [hreflang]: pageUrl,
+        "x-default": pageUrl,
       },
     };
   }

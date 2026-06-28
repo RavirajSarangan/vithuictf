@@ -61,6 +61,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
       <BlogIndexJsonLd postCount={total} locale="en" />
       <MarketingSection tone="light">
       <MarketingSectionIntro
+        as="h1"
         badge="ICTF Blog"
         title="ICT tips, exam guidance &"
         accent="institute updates"

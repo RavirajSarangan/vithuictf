@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { BookOpen, GraduationCap, MapPin, Video } from "lucide-react";
 import { useMemo, type ComponentProps, type ReactNode } from "react";
 import { MarketingSectionLink } from "@/components/shared/marketing-section-link";
+import { NavFreeDownloadBadge } from "@/components/shared/nav-free-download-badge";
 import {
   NavGridCard,
   NavigationMenu,
@@ -42,6 +43,7 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
   const { t } = useMarketingText();
   const pathname = usePathname();
   const blogActive = pathname === "/blog" || pathname.startsWith("/blog/");
+  const passPapersActive = pathname === "/pass-papers" || pathname.startsWith("/pass-papers/");
 
   const programLinks = useMemo<NavItemType[]>(
     () => [
@@ -96,6 +98,23 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
             <MarketingSectionNavLink hash="#about">{t("nav.about")}</MarketingSectionNavLink>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <NavigationMenuLink asChild>
+            <Link
+              href="/pass-papers"
+              className={cn(
+                navLinkClass,
+                "inline-flex items-center gap-1.5",
+                passPapersActive && "font-semibold text-white"
+              )}
+              aria-current={passPapersActive ? "page" : undefined}
+            >
+              {t("nav.passPapers")}
+              <NavFreeDownloadBadge />
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
 

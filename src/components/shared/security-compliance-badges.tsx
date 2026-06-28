@@ -75,7 +75,7 @@ export function SecurityComplianceBadges({
             key={badge.src}
             badge={badge}
             className={badgeHeight}
-            loading={variant === "marketing" ? "lazy" : undefined}
+            loading="lazy"
           />
         ))}
       </div>

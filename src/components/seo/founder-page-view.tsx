@@ -6,7 +6,7 @@ import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { FOUNDER_SEO } from "@/lib/seo/keywords";
 import { FOUNDER } from "@/lib/seo/site";
-import { getMarketingHomeData } from "@/lib/marketing-data";
+import { getHomeAboutOnly } from "@/lib/marketing-data";
 import type { ProgramContent } from "@/lib/seo/program-content";
 import { PersonJsonLd } from "@/components/seo/json-ld";
 import Image from "next/image";
@@ -50,8 +50,7 @@ export function createFounderMetadata(locale: MarketingLocale): Metadata {
 }
 
 export async function FounderPageView({ locale }: { locale: MarketingLocale }) {
-  const marketing = await getMarketingHomeData();
-  const about = marketing.homeAbout;
+  const about = await getHomeAboutOnly();
   const content = founderContent(locale, about?.bio ?? "", about?.credentials ?? "");
 
   return (

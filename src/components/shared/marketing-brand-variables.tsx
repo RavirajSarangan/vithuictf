@@ -1,6 +1,6 @@
 import { brandLogoSettingsToRootCss, DEFAULT_BRAND_LOGO_SETTINGS } from "@/lib/brand-logo-settings";
 import { getPlatformSettings } from "@/lib/platform-settings-server";
-import { BrandLogoCssSync } from "@/components/shared/brand-logo-css-sync";
+import { MarketingBrandLogoSync } from "@/components/shared/marketing-brand-logo-sync";
 
 /** Injects admin-managed nav/footer logo CSS variables on :root. */
 export async function MarketingBrandVariables() {
@@ -18,7 +18,7 @@ export async function MarketingBrandVariables() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: css }} />
-      <BrandLogoCssSync initialSettings={brandLogo} />
+      <MarketingBrandLogoSync initialSettings={brandLogo} />
     </>
   );
 }

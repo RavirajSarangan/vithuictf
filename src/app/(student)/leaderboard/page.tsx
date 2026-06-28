@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useStudentData, useLeaderboard } from "@/hooks/use-data";
+import { useActiveCourseId, useActiveCourseName } from "@/contexts/student-course-context";
 import { GlassCard } from "@/components/shared/glass-card";
 import {
   StudentEmptyState,
@@ -16,7 +17,9 @@ import { cn } from "@/lib/utils";
 
 export default function LeaderboardPage() {
   const student = useStudentData();
-  const { entries, isLoading: entriesLoading } = useLeaderboard(student?.courseId);
+  const activeCourseId = useActiveCourseId(student?.courseId);
+  const activeCourseName = useActiveCourseName(student?.courseName);
+  const { entries, isLoading: entriesLoading } = useLeaderboard(activeCourseId ?? undefined);
   const sortedEntries = useMemo(
     () => [...entries].sort((a, b) => a.rank - b.rank),
     [entries]
@@ -32,8 +35,8 @@ export default function LeaderboardPage() {
       <StudentPageHeader
         title="Leaderboard"
         description={
-          student?.courseName
-            ? `Top performers in ${student.courseName}.`
+          activeCourseName
+            ? `Top performers in ${activeCourseName}.`
             : "See how students rank in your course."
         }
       />

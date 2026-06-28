@@ -1,5 +1,5 @@
 "use client";
-import { type HTMLAttributes, useState } from "react";
+import { type HTMLAttributes, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
@@ -51,6 +51,13 @@ export function Banner({
   });
   const globalKey = id ? `nd-banner-${id}` : null;
 
+  useEffect(() => {
+    if (!globalKey) return;
+    if (localStorage.getItem(globalKey) === "true") {
+      document.documentElement.classList.add(globalKey);
+    }
+  }, [globalKey]);
+
   if (!open) return null;
 
   return (
@@ -78,14 +85,6 @@ export function Banner({
       {globalKey ? (
         <style>{`.${globalKey} #${id} { display: none; }`}</style>
       ) : null}
-      {globalKey ? (
-        <span
-          style={{ display: "none" }}
-          dangerouslySetInnerHTML={{
-            __html: `<script>if (typeof window !== 'undefined' && localStorage.getItem('${globalKey}') === 'true') document.documentElement.classList.add('${globalKey}');</script>`,
-          }}
-        />
-      ) : null}
 
       {variant === "rainbow"
         ? flow({
@@ -101,6 +100,7 @@ export function Banner({
             setOpen(false);
             if (globalKey) {
               localStorage.setItem(globalKey, "true");
+              document.documentElement.classList.add(globalKey);
               window.dispatchEvent(new Event("banner-status-changed"));
             }
           }}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { CanvasSection, LightPremiumCard } from "@/components/canvas";
 import { BRAND } from "@/lib/constants";
@@ -28,17 +29,39 @@ export default async function VerifyCertificatePage({
     student_name: string;
     course_name: string;
     issued_at: string;
+    certificate_number: string | null;
+    verify_code: string | null;
+    image_path: string | null;
   } | null = null;
+
+  let imageUrl: string | null = null;
 
   if (isAdminClientConfigured()) {
     const admin = createAdminClient();
-    const { data } = await admin
+    const { data: byNumber } = await admin
       .from("certificates")
-      .select("student_name, course_name, issued_at")
-      .eq("verify_code", code)
+      .select("student_name, course_name, issued_at, certificate_number, verify_code, image_path")
+      .eq("certificate_number", code)
       .maybeSingle();
-    cert = data;
+
+    if (byNumber) {
+      cert = byNumber;
+    } else {
+      const { data: byVerify } = await admin
+        .from("certificates")
+        .select("student_name, course_name, issued_at, certificate_number, verify_code, image_path")
+        .eq("verify_code", code)
+        .maybeSingle();
+      cert = byVerify;
+    }
+
+    if (cert?.image_path) {
+      const { data: signed } = await admin.storage.from("certificates").createSignedUrl(cert.image_path, 3600);
+      imageUrl = signed?.signedUrl ?? null;
+    }
   }
+
+  const displayId = cert?.certificate_number ?? cert?.verify_code ?? code;
 
   return (
     <div className="min-h-screen bg-icvf-surface px-4 py-24">
@@ -55,7 +78,18 @@ export default async function VerifyCertificatePage({
               <p className="mt-2 text-sm text-icvf-text-light">
                 Issued {new Date(cert.issued_at).toLocaleDateString()}
               </p>
-              <p className="mt-4 font-mono text-xs text-icvf-text-light">Code: {code}</p>
+              <p className="mt-4 font-mono text-xs text-icvf-text-light">Certificate ID: {displayId}</p>
+              {imageUrl ? (
+                <div className="relative mt-6 aspect-[1.414/1] overflow-hidden rounded-lg border">
+                  <Image
+                    src={imageUrl}
+                    alt={`Certificate for ${cert.student_name}`}
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              ) : null}
             </LightPremiumCard>
           ) : (
             <LightPremiumCard className="mt-8 p-8">

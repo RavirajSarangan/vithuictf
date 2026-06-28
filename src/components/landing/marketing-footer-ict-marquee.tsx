@@ -4,11 +4,13 @@ import { Globe, Monitor, Radio, Trophy, Video } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { trustPills } from "@/lib/data/marketing-content";
 import { useMarketingText } from "@/hooks/use-marketing-text";
+import { useMarqueeInView } from "@/hooks/use-marquee-in-view";
 
 const MARQUEE_ICONS: LucideIcon[] = [Video, Globe, Monitor, Radio, Trophy, Video];
 
 export function FooterIctMarquee() {
   const { field, t } = useMarketingText();
+  const { ref, inView } = useMarqueeInView<HTMLDivElement>();
 
   const items = [
     ...trustPills.map((pill) => field(pill, "label")),
@@ -21,6 +23,8 @@ export function FooterIctMarquee() {
 
   return (
     <div
+      ref={ref}
+      data-marquee-in-view={inView ? "true" : "false"}
       className="footer-ict-marquee-bleed marketing-full-bleed relative z-10 mt-10 w-full border-y border-white/8 bg-black/20 py-3"
       aria-hidden
     >

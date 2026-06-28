@@ -147,6 +147,44 @@ export function buildStudentCredentialsCard(options: {
   </table>`;
 }
 
+export function buildStaffCredentialsCard(options: {
+  staffUsername: string;
+  email: string;
+  password: string;
+  passwordLabel?: string;
+}): string {
+  const passwordLabel = options.passwordLabel ?? "Account password";
+
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 8px;border-collapse:separate;border-spacing:0;">
+    <tr>
+      <td style="padding:20px 22px;border:2px solid ${ACCENT};border-radius:16px;background:linear-gradient(180deg,#fff9ed 0%,#ffffff 100%);">
+        <p style="margin:0 0 14px;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:${NAVY};">Your login credentials</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:0 0 12px;">
+              <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:${MUTED};">Staff username</p>
+              <p style="margin:0;font-size:18px;line-height:1.3;font-weight:800;color:${NAVY};font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">${escapeHtml(options.staffUsername)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 0;border-top:1px solid #f1e4c8;">
+              <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:${MUTED};">Login email</p>
+              <p style="margin:0;font-size:15px;line-height:1.4;font-weight:700;color:${NAVY};">${escapeHtml(options.email)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 0 0;border-top:1px solid #f1e4c8;">
+              <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:${MUTED};">${escapeHtml(passwordLabel)}</p>
+              <p style="margin:0;font-size:18px;line-height:1.35;font-weight:800;color:${NAVY_DARK};font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">${escapeHtml(options.password)}</p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:${MUTED};">Use staff username, email, and this password on the staff login page.</p>
+      </td>
+    </tr>
+  </table>`;
+}
+
 export function buildPortalFeaturesGrid(
   features: Array<{ title: string; description: string }>
 ): string {

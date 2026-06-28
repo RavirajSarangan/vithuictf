@@ -5,7 +5,7 @@ import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import { absoluteUrl } from "@/lib/seo/site";
 import { LOCATION_SLUGS, formatDistrictName } from "@/lib/seo/keywords";
 import { localizedPath } from "@/lib/seo/metadata";
-import { getMarketingHomeData } from "@/lib/marketing-data";
+import { getPaperCentersOnly } from "@/lib/marketing-data";
 import { ButtonLink } from "@/components/shared/button-link";
 
 const COPY = {
@@ -43,8 +43,7 @@ const COPY = {
 
 export async function PaperCentersPageView({ locale }: { locale: MarketingLocale }) {
   const copy = COPY[locale];
-  const marketing = await getMarketingHomeData();
-  const centers = marketing.paperCenters.filter((c) => c.isActive);
+  const centers = (await getPaperCentersOnly()).filter((c) => c.isActive);
   const path = "/network/paper-centers";
 
   return (

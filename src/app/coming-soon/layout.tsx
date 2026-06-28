@@ -3,15 +3,13 @@ import { MarketingHeader } from "@/components/landing/marketing-header";
 import { MarketingFooter } from "@/components/landing/marketing-footer";
 import { MarketingBrandVariables } from "@/components/shared/marketing-brand-variables";
 import { MarketingLanguageProvider } from "@/contexts/marketing-language-context";
-import { AuthLayoutProvider } from "@/providers/auth-layout-provider";
 import { getMarketingLocaleFromCookies } from "@/lib/seo/marketing-locale-server";
 
 export default async function ComingSoonLayout({ children }: { children: React.ReactNode }) {
   const initialLocale = await getMarketingLocaleFromCookies();
 
   return (
-    <AuthLayoutProvider>
-      <MarketingLanguageProvider initialLocale={initialLocale}>
+    <MarketingLanguageProvider initialLocale={initialLocale}>
       <MarketingBrandVariables />
       <MarketingHashSync />
       <MarketingHeader />
@@ -20,6 +18,5 @@ export default async function ComingSoonLayout({ children }: { children: React.R
       </main>
       <MarketingFooter />
     </MarketingLanguageProvider>
-    </AuthLayoutProvider>
   );
 }

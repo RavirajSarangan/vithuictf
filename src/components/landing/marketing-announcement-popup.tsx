@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -221,18 +221,40 @@ export function MarketingAnnouncementPopup({
   previewOpen,
   onPreviewOpenChange,
 }: MarketingAnnouncementPopupProps) {
+  const [ready, setReady] = useState(preview);
   const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (preview || !announcement || announcement.displayStyle === "banner") return;
+
+    const storageKey = `icvf_ann_${announcement.id}`;
+    if (sessionStorage.getItem(storageKey) === "1") {
+      setDismissed(true);
+      return;
+    }
+
+    const openWhenIdle = () => setReady(true);
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(openWhenIdle, { timeout: 3000 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timerId = window.setTimeout(openWhenIdle, 800);
+    return () => window.clearTimeout(timerId);
+  }, [announcement, preview]);
 
   if (!announcement) return null;
   if (announcement.displayStyle === "banner") return null;
 
-  const isOpen = preview ? (previewOpen ?? false) : !dismissed;
+  const isOpen = preview ? (previewOpen ?? false) : ready && !dismissed;
   const handleOpenChange = (next: boolean) => {
     if (preview) {
       onPreviewOpenChange?.(next);
       return;
     }
-    if (!next) setDismissed(true);
+    if (!next) {
+      sessionStorage.setItem(`icvf_ann_${announcement.id}`, "1");
+      setDismissed(true);
+    }
   };
 
   const style = announcement.displayStyle;
@@ -249,14 +271,14 @@ export function MarketingAnnouncementPopup({
       >
         {style === "image_hero" && hasImage ? (
           <>
-            <AnnouncementImage announcement={announcement} className="max-h-56 sm:max-h-72" priority />
+            <AnnouncementImage announcement={announcement} className="max-h-56 sm:max-h-72" />
             <AnnouncementBody announcement={announcement} />
           </>
         ) : style === "promo" ? (
           <div className="overflow-hidden rounded-2xl">
             {hasImage && (
               <div className="relative">
-                <AnnouncementImage announcement={announcement} className="max-h-48" priority />
+                <AnnouncementImage announcement={announcement} className="max-h-48" />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-icvf-navy-dark/40 to-transparent" />
               </div>
             )}
@@ -272,7 +294,7 @@ export function MarketingAnnouncementPopup({
         ) : (
           <div className="overflow-hidden rounded-2xl">
             {hasImage && (
-              <AnnouncementImage announcement={announcement} className="max-h-52" priority />
+              <AnnouncementImage announcement={announcement} className="max-h-52" />
             )}
             <AnnouncementBody announcement={announcement} />
           </div>

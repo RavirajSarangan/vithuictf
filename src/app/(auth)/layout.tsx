@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { MarketingLanguageProvider } from "@/contexts/marketing-language-context";
-import { AuthLayoutProvider } from "@/providers/auth-layout-provider";
 import { AuthLayoutChrome } from "@/components/auth/auth-layout-chrome";
 import { MarketingBrandVariables } from "@/components/shared/marketing-brand-variables";
 import { getMarketingLocaleFromCookies } from "@/lib/seo/marketing-locale-server";
@@ -12,11 +11,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   const initialLocale = await getMarketingLocaleFromCookies();
 
   return (
-    <AuthLayoutProvider>
-      <MarketingLanguageProvider initialLocale={initialLocale}>
-        <MarketingBrandVariables />
-        <AuthLayoutChrome>{children}</AuthLayoutChrome>
-      </MarketingLanguageProvider>
-    </AuthLayoutProvider>
+    <MarketingLanguageProvider initialLocale={initialLocale}>
+      <MarketingBrandVariables />
+      <AuthLayoutChrome>{children}</AuthLayoutChrome>
+    </MarketingLanguageProvider>
   );
 }

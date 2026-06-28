@@ -17,6 +17,12 @@ import {
   buildWelcomeStudentEmailText,
   type WelcomeStudentEmailData,
 } from "@/lib/email/templates/welcome-student";
+import {
+  buildWelcomeStaffEmailHtml,
+  buildWelcomeStaffEmailSubject,
+  buildWelcomeStaffEmailText,
+  type WelcomeStaffEmailData,
+} from "@/lib/email/templates/welcome-staff";
 
 export async function sendStudentWelcomeEmail(
   data: Omit<WelcomeStudentEmailData, "loginUrl">
@@ -35,6 +41,29 @@ export async function sendStudentWelcomeEmail(
     subject: buildWelcomeStudentEmailSubject(data.studentId),
     html: buildWelcomeStudentEmailHtml(payload),
     text: buildWelcomeStudentEmailText(payload),
+    replyTo: config.replyTo,
+  });
+
+  return { emailSent: result.emailSent, error: result.error };
+}
+
+export async function sendStaffWelcomeEmail(
+  data: Omit<WelcomeStaffEmailData, "loginUrl">
+): Promise<{ emailSent: boolean; error?: string }> {
+  const config = getResendConfig();
+  const loginUrl = `${config?.appUrl ?? "https://www.ictf.lk"}/login/staff`;
+  const payload: WelcomeStaffEmailData = { ...data, loginUrl };
+
+  if (!config) {
+    console.info("[email] Resend not configured. Staff welcome email for:", data.email);
+    return { emailSent: false, error: "Email service not configured" };
+  }
+
+  const result = await sendEmail({
+    to: data.email,
+    subject: buildWelcomeStaffEmailSubject(data.staffUsername, data.passwordReset),
+    html: buildWelcomeStaffEmailHtml(payload),
+    text: buildWelcomeStaffEmailText(payload),
     replyTo: config.replyTo,
   });
 
