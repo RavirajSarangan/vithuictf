@@ -41,6 +41,7 @@ import {
 import { ExternalLink, FileText, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { slugifyBlogTitle } from "@/lib/blog/slug";
+import { normalizeStorageUrl } from "@/lib/storage/public-url";
 import type { BlogCategory, BlogPost, BlogPostStatus } from "@/types";
 
 const EMPTY_POST_FORM: {
@@ -104,7 +105,7 @@ export default function AdminBlogPage() {
       slug: post.slug,
       excerpt: post.excerpt,
       content: post.content,
-      coverImageUrl: post.coverImageUrl,
+      coverImageUrl: normalizeStorageUrl(post.coverImageUrl),
       categoryId: post.categoryId ?? "",
       tags: post.tags.join(", "),
       seoTitle: post.seoTitle,

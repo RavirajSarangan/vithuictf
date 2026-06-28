@@ -1122,8 +1122,8 @@ export async function uploadAdminAsset(formData: FormData): Promise<string> {
 
   if (error) throw new Error(error.message);
 
-  const { data } = admin.storage.from("admin").getPublicUrl(path);
-  return data.publicUrl;
+  const { buildAdminPublicUrl } = await import("@/lib/storage/public-url");
+  return buildAdminPublicUrl(path);
 }
 
 export async function uploadBlogImage(formData: FormData): Promise<string> {
@@ -1150,8 +1150,8 @@ export async function uploadBlogImage(formData: FormData): Promise<string> {
 
   if (error) throw new Error(error.message);
 
-  const { data } = admin.storage.from("admin").getPublicUrl(path);
-  return data.publicUrl;
+  const { buildAdminPublicUrl } = await import("@/lib/storage/public-url");
+  return buildAdminPublicUrl(path);
 }
 
 const COURSE_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"]);
@@ -1198,8 +1198,8 @@ export async function uploadCourseImage(formData: FormData): Promise<string> {
 
   if (error) throw new Error(error.message);
 
-  const { data } = admin.storage.from("admin").getPublicUrl(path);
-  return data.publicUrl;
+  const { buildAdminPublicUrl } = await import("@/lib/storage/public-url");
+  return buildAdminPublicUrl(path);
 }
 
 const MARKETING_ANNOUNCEMENT_CONTENT_TYPES: MarketingAnnouncementContentType[] = [

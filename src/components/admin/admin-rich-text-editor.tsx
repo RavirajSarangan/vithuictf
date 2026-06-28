@@ -25,6 +25,7 @@ import { uploadBlogImage } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { validateRasterImageFile } from "@/lib/images/validate-raster-image";
+import { normalizeStorageUrl } from "@/lib/storage/public-url";
 import type { Editor } from "@tiptap/react";
 
 interface AdminRichTextEditorProps {
@@ -70,7 +71,9 @@ async function uploadAndInsertImage(editor: Editor, file: File) {
   formData.set("folder", "blog/content");
   formData.set("variant", "content");
 
-  const url = await uploadBlogImage(formData);
+  const url = normalizeStorageUrl(await uploadBlogImage(formData));
+  if (!url) throw new Error("Upload returned an invalid image URL");
+
   const alt = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
   editor.chain().focus().setImage({ src: url, alt }).run();
 }
@@ -135,6 +138,8 @@ export function AdminRichTextEditor({
         HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
       }),
       Image.configure({
+        inline: false,
+        allowBase64: false,
         HTMLAttributes: {
           class:
             "blog-inline-image mx-auto my-10 block h-auto w-full max-w-3xl rounded-xl border border-border/60 shadow-sm",
@@ -146,7 +151,7 @@ export function AdminRichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-base sm:prose-lg max-w-none min-h-[360px] px-4 py-4 focus:outline-none dark:prose-invert prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-blockquote:my-8 prose-blockquote:border-l-4 prose-blockquote:pl-5 prose-li:my-1",
+          "prose prose-base sm:prose-lg max-w-none min-h-[360px] px-4 py-4 focus:outline-none dark:prose-invert prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-blockquote:my-8 prose-blockquote:border-l-4 prose-blockquote:pl-5 prose-li:my-1 prose-img:my-10 prose-img:mx-auto prose-img:block prose-img:h-auto prose-img:w-full prose-img:max-w-3xl prose-img:rounded-xl prose-img:border prose-img:border-border/60 prose-img:shadow-sm",
       },
       handlePaste: (_view, event) => {
         const items = event.clipboardData?.items;
