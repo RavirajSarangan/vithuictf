@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/server";
 import { mapBlogCategory, mapBlogPost } from "@/lib/supabase/mappers";
 import type { BlogCategory, BlogPost } from "@/types";
 
@@ -6,6 +6,10 @@ const POST_SELECT = `
   *,
   blog_categories ( name, slug )
 `;
+
+function blogClient() {
+  return createPublicClient();
+}
 
 function isMissingBlogSchemaError(error: { message?: string; code?: string } | null): boolean {
   if (!error) return false;
@@ -19,7 +23,7 @@ function isMissingBlogSchemaError(error: { message?: string; code?: string } | n
 }
 
 export async function getPublishedBlogCategories(): Promise<BlogCategory[]> {
-  const supabase = await createClient();
+  const supabase = blogClient();
   const { data, error } = await supabase
     .from("blog_categories")
     .select("*")
@@ -45,7 +49,7 @@ export async function getPublishedBlogPosts(options?: {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  const supabase = await createClient();
+  const supabase = blogClient();
 
   let categoryId: string | null = null;
   if (options?.categorySlug) {
@@ -82,7 +86,7 @@ export async function getPublishedBlogPosts(options?: {
 }
 
 export async function getFeaturedBlogPost(): Promise<BlogPost | null> {
-  const supabase = await createClient();
+  const supabase = blogClient();
   const { data, error } = await supabase
     .from("blog_posts")
     .select(POST_SELECT)
@@ -101,7 +105,7 @@ export async function getFeaturedBlogPost(): Promise<BlogPost | null> {
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
-  const supabase = await createClient();
+  const supabase = blogClient();
   const { data, error } = await supabase
     .from("blog_posts")
     .select(POST_SELECT)
@@ -120,7 +124,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 export async function getRelatedBlogPosts(post: BlogPost, limit = 3): Promise<BlogPost[]> {
   if (!post.categoryId) return [];
 
-  const supabase = await createClient();
+  const supabase = blogClient();
   const { data, error } = await supabase
     .from("blog_posts")
     .select(POST_SELECT)
@@ -139,7 +143,7 @@ export async function getRelatedBlogPosts(post: BlogPost, limit = 3): Promise<Bl
 }
 
 export async function getPublishedBlogSlugs(): Promise<string[]> {
-  const supabase = await createClient();
+  const supabase = blogClient();
   const { data, error } = await supabase
     .from("blog_posts")
     .select("slug")

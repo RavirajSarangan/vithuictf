@@ -111,14 +111,16 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
       <MarketingContainer>
         {gridPosts.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-icvf-border bg-white px-6 py-16 text-center shadow-sm">
-            <h2 className="text-xl font-bold text-icvf-navy">No posts yet</h2>
-            <p className="mt-2 text-icvf-text-light">
-              {categorySlug
-                ? "No published posts in this category yet."
-                : "Check back soon for ICT study tips and institute updates."}
-            </p>
-          </div>
+          total === 0 ? (
+            <div className="rounded-3xl border border-dashed border-icvf-border bg-white px-6 py-16 text-center shadow-sm">
+              <h2 className="text-xl font-bold text-icvf-navy">No posts yet</h2>
+              <p className="mt-2 text-icvf-text-light">
+                {categorySlug
+                  ? "No published posts in this category yet."
+                  : "Check back soon for ICT study tips and institute updates."}
+              </p>
+            </div>
+          ) : null
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {gridPosts.map((post) => (
