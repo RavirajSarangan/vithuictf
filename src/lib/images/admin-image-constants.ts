@@ -7,6 +7,12 @@ export const ADMIN_IMAGE_MIME_TYPES = new Set([
 
 export const ADMIN_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
+/** Standard file input accept for raster uploads (converted to WebP on save). */
+export const RASTER_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
+
+/** Course covers allow SVG in addition to raster formats. */
+export const COURSE_IMAGE_ACCEPT = `${RASTER_IMAGE_ACCEPT},image/svg+xml`;
+
 export const BLOG_COVER_WIDTH = 1920;
 export const BLOG_COVER_HEIGHT = 1080;
 export const BLOG_CONTENT_MAX_WIDTH = 1200;

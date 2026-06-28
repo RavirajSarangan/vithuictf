@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { validateRasterImageFile } from "@/lib/images/validate-raster-image";
-import { BLOG_COVER_HEIGHT, BLOG_COVER_WIDTH } from "@/lib/images/admin-image-constants";
+import { BLOG_COVER_HEIGHT, BLOG_COVER_WIDTH, RASTER_IMAGE_ACCEPT } from "@/lib/images/admin-image-constants";
 import {
   checkStorageUrl,
   isStorageUrl,
@@ -124,8 +124,10 @@ export function AdminImageUpload({
 
   const defaultHint =
     variant === "cover"
-      ? `Recommended ${BLOG_COVER_WIDTH}×${BLOG_COVER_HEIGHT}px (16:9). Images are auto-cropped and optimized.`
-      : undefined;
+      ? `Recommended ${BLOG_COVER_WIDTH}×${BLOG_COVER_HEIGHT}px (16:9). JPG/PNG uploads are auto-converted to WebP.`
+      : variant === "content"
+        ? "Inline images are auto-converted to WebP and optimized."
+        : "JPG, PNG, and WebP uploads are auto-converted to WebP for faster loading.";
 
   const showPreviewError =
     previewError || urlStatus === "missing" || urlStatus === "invalid";
@@ -200,7 +202,7 @@ export function AdminImageUpload({
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept={RASTER_IMAGE_ACCEPT}
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];

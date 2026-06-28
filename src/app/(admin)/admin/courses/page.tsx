@@ -214,12 +214,12 @@ export default function AdminCoursesPage() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[min(90dvh,calc(100vh-2rem))] overflow-y-auto overscroll-contain sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Course" : "Add Course"}</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 pb-1">
               <FormField
                 control={form.control}
                 name="name"
@@ -304,7 +304,7 @@ export default function AdminCoursesPage() {
                         onChange={field.onChange}
                         uploadAction={uploadCourseImage}
                         requireSquare
-                        hint="Best: 1024×1024 px square (WebP or JPEG, under 500 KB)."
+                        hint="Square image recommended. JPG/PNG uploads are auto-converted to WebP (1024×1024)."
                       />
                     </FormControl>
                     <FormMessage />

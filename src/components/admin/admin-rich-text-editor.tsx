@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { uploadBlogImage } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RASTER_IMAGE_ACCEPT } from "@/lib/images/admin-image-constants";
 import { validateRasterImageFile } from "@/lib/images/validate-raster-image";
 import { normalizeStorageUrl } from "@/lib/storage/public-url";
 import type { Editor } from "@tiptap/react";
@@ -292,7 +293,7 @@ export function AdminRichTextEditor({
       <input
         ref={fileRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept={RASTER_IMAGE_ACCEPT}
         multiple
         className="hidden"
         onChange={(e) => {

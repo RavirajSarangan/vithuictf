@@ -11,6 +11,7 @@ import {
   uploadCertificateTemplate,
 } from "@/lib/actions/certificates";
 import { DEFAULT_CERTIFICATE_TEMPLATE_PATH } from "@/lib/certificates/field-config";
+import { RASTER_IMAGE_ACCEPT } from "@/lib/images/admin-image-constants";
 import type { CertificateTemplate } from "@/types";
 
 interface CertificateTemplatePanelProps {
@@ -82,7 +83,7 @@ export function CertificateTemplatePanel({ template, onUpdated }: CertificateTem
             <input
               ref={inputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept={RASTER_IMAGE_ACCEPT}
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];

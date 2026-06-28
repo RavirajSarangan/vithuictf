@@ -1103,20 +1103,37 @@ export async function uploadAdminAsset(formData: FormData): Promise<string> {
     throw new Error("No file provided");
   }
 
-  const { resolveImageContentType, assertAdminImageFile } = await import(
+  const { resolveImageContentType, ADMIN_IMAGE_MIME_TYPES } = await import(
     "@/lib/images/admin-image-constants"
   );
   const contentType = resolveImageContentType(file);
-  assertAdminImageFile(file, contentType);
+  const isRasterImage = Boolean(contentType && ADMIN_IMAGE_MIME_TYPES.has(contentType));
 
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+  let buffer: Buffer;
+  let uploadContentType: string;
+  let ext: string;
+
+  if (isRasterImage) {
+    const variantRaw = String(formData.get("variant") ?? "general");
+    const processVariant =
+      variantRaw === "cover" ? "cover" : variantRaw === "content" ? "content" : "general";
+    const { prepareRasterImageUpload } = await import("@/lib/images/process-raster-upload");
+    const processed = await prepareRasterImageUpload(file, processVariant);
+    buffer = processed.buffer;
+    uploadContentType = processed.contentType;
+    ext = processed.ext;
+  } else {
+    buffer = Buffer.from(await file.arrayBuffer());
+    uploadContentType = file.type || "application/octet-stream";
+    ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+  }
+
   const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
   const admin = createAdminClient();
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error } = await admin.storage.from("admin").upload(path, buffer, {
-    contentType: contentType || file.type || "application/octet-stream",
+    contentType: uploadContentType,
     upsert: false,
   });
 
@@ -1138,8 +1155,8 @@ export async function uploadBlogImage(formData: FormData): Promise<string> {
     throw new Error("No image file provided");
   }
 
-  const { prepareBlogImageUpload } = await import("@/lib/images/process-admin-image");
-  const { buffer, contentType, ext } = await prepareBlogImageUpload(file, variant);
+  const { prepareRasterImageUpload } = await import("@/lib/images/process-raster-upload");
+  const { buffer, contentType, ext } = await prepareRasterImageUpload(file, variant);
   const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
   const admin = createAdminClient();
@@ -1154,9 +1171,6 @@ export async function uploadBlogImage(formData: FormData): Promise<string> {
   return buildAdminPublicUrl(path);
 }
 
-const COURSE_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"]);
-const COURSE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
-
 export async function uploadCourseImage(formData: FormData): Promise<string> {
   await requireStaff();
 
@@ -1164,17 +1178,19 @@ export async function uploadCourseImage(formData: FormData): Promise<string> {
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("No file provided");
   }
-  if (!COURSE_IMAGE_MIME_TYPES.has(file.type)) {
+
+  const { COURSE_IMAGE_ACCEPT } = await import("@/lib/images/admin-image-constants");
+  const allowedTypes = new Set(COURSE_IMAGE_ACCEPT.split(",").map((t) => t.trim()));
+  if (!allowedTypes.has(file.type)) {
     throw new Error("Upload a JPEG, PNG, WebP, SVG, or GIF image");
   }
-  if (file.size > COURSE_IMAGE_MAX_BYTES) {
+  if (file.size > 10 * 1024 * 1024) {
     throw new Error("Image must be 10 MB or smaller");
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  if (file.type !== "image/svg+xml") {
+  if (file.type !== "image/svg+xml" && file.type !== "image/gif") {
     const sharp = (await import("sharp")).default;
+    const buffer = Buffer.from(await file.arrayBuffer());
     const metadata = await sharp(buffer).metadata();
     const width = metadata.width ?? 0;
     const height = metadata.height ?? 0;
@@ -1187,12 +1203,31 @@ export async function uploadCourseImage(formData: FormData): Promise<string> {
     }
   }
 
-  const ext = file.name.split(".").pop() ?? "png";
+  const { prepareRasterImageUpload } = await import("@/lib/images/process-raster-upload");
+
+  let buffer: Buffer;
+  let contentType: string;
+  let ext: string;
+
+  if (file.type === "image/svg+xml") {
+    buffer = Buffer.from(await file.arrayBuffer());
+    contentType = file.type;
+    ext = "svg";
+  } else {
+    const processed = await prepareRasterImageUpload(
+      file,
+      file.type === "image/gif" ? "general" : "square"
+    );
+    buffer = processed.buffer;
+    contentType = processed.contentType;
+    ext = processed.ext;
+  }
+
   const path = `courses/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
   const admin = createAdminClient();
   const { error } = await admin.storage.from("admin").upload(path, buffer, {
-    contentType: file.type,
+    contentType,
     upsert: false,
   });
 

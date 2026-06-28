@@ -174,23 +174,24 @@ export async function uploadCertificateTemplate(formData: FormData) {
     return actionFailure(new Error("No file provided"), "No file provided");
   }
 
-  const allowed = ["image/png", "image/jpeg", "image/webp"];
+  const allowed = ["image/png", "image/jpeg", "image/webp", "image/gif"];
   if (!allowed.includes(file.type)) {
-    return actionFailure(new Error("Invalid file type"), "Upload a PNG, JPEG, or WebP image");
+    return actionFailure(new Error("Invalid file type"), "Upload a PNG, JPEG, WebP, or GIF image");
   }
 
+  const { prepareRasterImageUpload } = await import("@/lib/images/process-raster-upload");
+  const { buffer, contentType, ext } = await prepareRasterImageUpload(file, "template");
   const admin = createAdminClient();
-  const ext = file.name.split(".").pop() ?? "png";
   const path = `templates/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error: uploadError } = await admin.storage.from("admin").upload(path, buffer, {
-    contentType: file.type,
+    contentType,
     upsert: false,
   });
   if (uploadError) return actionFailure(uploadError, "Failed to upload template");
 
-  const { data: urlData } = admin.storage.from("admin").getPublicUrl(path);
+  const { buildAdminPublicUrl } = await import("@/lib/storage/public-url");
+  const imageUrl = buildAdminPublicUrl(path);
   const supabase = await createClient();
 
   await supabase.from("certificate_templates").update({ is_active: false }).eq("is_active", true);
@@ -200,7 +201,7 @@ export async function uploadCertificateTemplate(formData: FormData) {
     .from("certificate_templates")
     .insert({
       name,
-      image_url: urlData.publicUrl,
+      image_url: imageUrl,
       field_config: DEFAULT_CERTIFICATE_FIELD_CONFIG,
       is_active: true,
       id_prefix: DEFAULT_CERTIFICATE_ID_PREFIX,

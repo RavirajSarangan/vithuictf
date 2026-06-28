@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
+import { RASTER_IMAGE_ACCEPT } from "@/lib/images/admin-image-constants";
 import type { Student, StudentSocialLinks } from "@/types";
 
 interface ProfileCardEditorProps {
@@ -102,7 +103,7 @@ export function ProfileCardEditor({ student }: ProfileCardEditorProps) {
               <input
                 ref={inputRef}
                 type="file"
-                accept="image/*"
+                accept={RASTER_IMAGE_ACCEPT}
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];

@@ -39,13 +39,13 @@ export async function uploadStudentPhoto(formData: FormData): Promise<string> {
     throw new Error("Image must be under 5MB");
   }
 
-  const ext = file.name.split(".").pop() ?? "jpg";
+  const { prepareRasterImageUpload } = await import("@/lib/images/process-raster-upload");
+  const { buffer, contentType, ext } = await prepareRasterImageUpload(file, "avatar");
   const path = `${userId}/${Date.now()}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   const supabase = await createClient();
   const { error: uploadError } = await supabase.storage.from("avatars").upload(path, buffer, {
-    contentType: file.type,
+    contentType,
     upsert: true,
   });
 
