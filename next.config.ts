@@ -6,6 +6,37 @@ import bundleAnalyzer from "@next/bundle-analyzer";
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
+function buildSupabaseImageRemotePatterns() {
+  const patterns: Array<{
+    protocol: "https";
+    hostname: string;
+    pathname: string;
+    search: string;
+  }> = [
+    {
+      protocol: "https",
+      hostname: "**.supabase.co",
+      pathname: "/storage/v1/object/public/**",
+      search: "",
+    },
+  ];
+
+  if (supabaseUrl) {
+    try {
+      patterns.unshift({
+        protocol: "https",
+        hostname: new URL(supabaseUrl).hostname,
+        pathname: "/storage/v1/object/public/**",
+        search: "",
+      });
+    } catch {
+      // Ignore malformed env; wildcard pattern above still applies.
+    }
+  }
+
+  return patterns;
+}
+
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
@@ -39,22 +70,11 @@ const nextConfig: NextConfig = {
       "@tiptap/starter-kit",
     ],
   },
-  images: supabaseUrl
-    ? {
-        formats: ["image/avif", "image/webp"],
-        qualities: [75, 90],
-        remotePatterns: [
-          {
-            protocol: "https",
-            hostname: new URL(supabaseUrl).hostname,
-            pathname: "/storage/v1/object/public/**",
-          },
-        ],
-      }
-    : {
-        formats: ["image/avif", "image/webp"],
-        qualities: [75, 90],
-      },
+  images: {
+    formats: ["image/avif", "image/webp"],
+    qualities: [75, 90],
+    remotePatterns: buildSupabaseImageRemotePatterns(),
+  },
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
     const immutableStatic = [

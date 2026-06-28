@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import Image from "next/image";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/blog/queries";
 import { BlogPostContent } from "@/components/blog/blog-post-content";
 import { BlogPostCard } from "@/components/blog/blog-post-card";
+import { BlogStorageImage } from "@/components/blog/blog-storage-image";
 import { ArticleJsonLd } from "@/components/seo/json-ld";
 import { MarketingContainer, MarketingSection } from "@/components/landing/marketing-layout";
 
@@ -111,7 +112,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         {post.coverImageUrl && (
           <MarketingContainer className="mt-8 max-w-5xl">
             <div className="relative aspect-[16/9] overflow-hidden rounded-3xl border border-icvf-border shadow-xl">
-              <Image
+              <BlogStorageImage
                 src={post.coverImageUrl}
                 alt={post.title}
                 fill

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { format } from "date-fns";
 import { ArrowRight, Clock } from "lucide-react";
 import type { BlogPost } from "@/types";
 import { MarketingPanel } from "@/components/landing/marketing-layout";
+import { BlogStorageImage } from "@/components/blog/blog-storage-image";
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -24,7 +24,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
           className="relative block min-h-56 overflow-hidden bg-white/5 md:min-h-full"
         >
           {post.coverImageUrl ? (
-            <Image
+            <BlogStorageImage
               src={post.coverImageUrl}
               alt={post.title}
               fill
@@ -76,7 +76,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
     <MarketingPanel className="flex h-full flex-col overflow-hidden p-0 hover:-translate-y-0.5">
       <Link href={`/blog/${post.slug}`} className="relative block aspect-[16/10] overflow-hidden bg-icvf-navy/5">
         {post.coverImageUrl ? (
-          <Image
+          <BlogStorageImage
             src={post.coverImageUrl}
             alt={post.title}
             fill
