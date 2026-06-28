@@ -408,6 +408,8 @@ export default function AdminBlogPage() {
             <AdminImageUpload
               label="Cover image"
               folder="blog"
+              variant="cover"
+              previewAspect="16/9"
               value={postForm.coverImageUrl}
               onChange={(url) => setPostForm((f) => ({ ...f, coverImageUrl: url }))}
             />

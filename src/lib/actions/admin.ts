@@ -1093,19 +1093,58 @@ export async function uploadAdminAsset(formData: FormData): Promise<string> {
 
   const file = formData.get("file");
   const folder = String(formData.get("folder") ?? "home");
+  const variant = formData.get("variant");
+
+  if (variant === "cover" || variant === "content") {
+    return uploadBlogImage(formData);
+  }
 
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("No file provided");
   }
 
-  const ext = file.name.split(".").pop() ?? "bin";
+  const { resolveImageContentType, assertAdminImageFile } = await import(
+    "@/lib/images/admin-image-constants"
+  );
+  const contentType = resolveImageContentType(file);
+  assertAdminImageFile(file, contentType);
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
   const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
   const admin = createAdminClient();
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error } = await admin.storage.from("admin").upload(path, buffer, {
-    contentType: file.type,
+    contentType: contentType || file.type || "application/octet-stream",
+    upsert: false,
+  });
+
+  if (error) throw new Error(error.message);
+
+  const { data } = admin.storage.from("admin").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function uploadBlogImage(formData: FormData): Promise<string> {
+  await requireAdmin();
+
+  const file = formData.get("file");
+  const folder = String(formData.get("folder") ?? "blog");
+  const variantRaw = String(formData.get("variant") ?? "content");
+  const variant = variantRaw === "cover" ? "cover" : "content";
+
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("No image file provided");
+  }
+
+  const { prepareBlogImageUpload } = await import("@/lib/images/process-admin-image");
+  const { buffer, contentType, ext } = await prepareBlogImageUpload(file, variant);
+  const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from("admin").upload(path, buffer, {
+    contentType,
     upsert: false,
   });
 
