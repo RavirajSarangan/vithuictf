@@ -44,10 +44,14 @@ export async function uploadStudentPhoto(formData: FormData): Promise<string> {
   const path = `${userId}/${Date.now()}.${ext}`;
 
   const supabase = await createClient();
-  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, buffer, {
-    contentType,
-    upsert: true,
-  });
+  const { error: uploadError } = await supabase.storage.from("avatars").upload(
+    path,
+    Uint8Array.from(buffer),
+    {
+      contentType,
+      upsert: true,
+    }
+  );
 
   if (uploadError) throw new Error(uploadError.message);
 

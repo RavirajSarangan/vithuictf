@@ -1130,17 +1130,8 @@ export async function uploadAdminAsset(formData: FormData): Promise<string> {
 
   const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
-  const admin = createAdminClient();
-
-  const { error } = await admin.storage.from("admin").upload(path, buffer, {
-    contentType: uploadContentType,
-    upsert: false,
-  });
-
-  if (error) throw new Error(error.message);
-
-  const { buildAdminPublicUrl } = await import("@/lib/storage/public-url");
-  return buildAdminPublicUrl(path);
+  const { uploadAdminStorageObject } = await import("@/lib/storage/upload-admin-object");
+  return uploadAdminStorageObject(path, buffer, uploadContentType);
 }
 
 export async function uploadBlogImage(formData: FormData): Promise<string> {
@@ -1159,16 +1150,8 @@ export async function uploadBlogImage(formData: FormData): Promise<string> {
   const { buffer, contentType, ext } = await prepareRasterImageUpload(file, variant);
   const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
-  const admin = createAdminClient();
-  const { error } = await admin.storage.from("admin").upload(path, buffer, {
-    contentType,
-    upsert: false,
-  });
-
-  if (error) throw new Error(error.message);
-
-  const { buildAdminPublicUrl } = await import("@/lib/storage/public-url");
-  return buildAdminPublicUrl(path);
+  const { uploadAdminStorageObject } = await import("@/lib/storage/upload-admin-object");
+  return uploadAdminStorageObject(path, buffer, contentType);
 }
 
 export async function uploadCourseImage(formData: FormData): Promise<string> {
@@ -1179,19 +1162,23 @@ export async function uploadCourseImage(formData: FormData): Promise<string> {
     throw new Error("No file provided");
   }
 
-  const { COURSE_IMAGE_ACCEPT } = await import("@/lib/images/admin-image-constants");
+  const { COURSE_IMAGE_ACCEPT, resolveImageContentType } = await import(
+    "@/lib/images/admin-image-constants"
+  );
+  const contentType = resolveImageContentType(file) || file.type;
   const allowedTypes = new Set(COURSE_IMAGE_ACCEPT.split(",").map((t) => t.trim()));
-  if (!allowedTypes.has(file.type)) {
+  if (!allowedTypes.has(contentType)) {
     throw new Error("Upload a JPEG, PNG, WebP, SVG, or GIF image");
   }
   if (file.size > 10 * 1024 * 1024) {
     throw new Error("Image must be 10 MB or smaller");
   }
 
-  if (file.type !== "image/svg+xml" && file.type !== "image/gif") {
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+
+  if (contentType !== "image/svg+xml" && contentType !== "image/gif") {
     const sharp = (await import("sharp")).default;
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const metadata = await sharp(buffer).metadata();
+    const metadata = await sharp(inputBuffer).metadata();
     const width = metadata.width ?? 0;
     const height = metadata.height ?? 0;
     if (width <= 0 || height <= 0) {
@@ -1203,38 +1190,31 @@ export async function uploadCourseImage(formData: FormData): Promise<string> {
     }
   }
 
-  const { prepareRasterImageUpload } = await import("@/lib/images/process-raster-upload");
+  const { prepareRasterBufferUpload } = await import("@/lib/images/process-raster-upload");
 
   let buffer: Buffer;
-  let contentType: string;
+  let uploadContentType: string;
   let ext: string;
 
-  if (file.type === "image/svg+xml") {
-    buffer = Buffer.from(await file.arrayBuffer());
-    contentType = file.type;
+  if (contentType === "image/svg+xml") {
+    buffer = inputBuffer;
+    uploadContentType = contentType;
     ext = "svg";
   } else {
-    const processed = await prepareRasterImageUpload(
-      file,
-      file.type === "image/gif" ? "general" : "square"
+    const processed = await prepareRasterBufferUpload(
+      inputBuffer,
+      contentType,
+      contentType === "image/gif" ? "general" : "square"
     );
     buffer = processed.buffer;
-    contentType = processed.contentType;
+    uploadContentType = processed.contentType;
     ext = processed.ext;
   }
 
   const path = `courses/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
-  const admin = createAdminClient();
-  const { error } = await admin.storage.from("admin").upload(path, buffer, {
-    contentType,
-    upsert: false,
-  });
-
-  if (error) throw new Error(error.message);
-
-  const { buildAdminPublicUrl } = await import("@/lib/storage/public-url");
-  return buildAdminPublicUrl(path);
+  const { uploadAdminStorageObject } = await import("@/lib/storage/upload-admin-object");
+  return uploadAdminStorageObject(path, buffer, uploadContentType);
 }
 
 const MARKETING_ANNOUNCEMENT_CONTENT_TYPES: MarketingAnnouncementContentType[] = [

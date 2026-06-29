@@ -181,17 +181,10 @@ export async function uploadCertificateTemplate(formData: FormData) {
 
   const { prepareRasterImageUpload } = await import("@/lib/images/process-raster-upload");
   const { buffer, contentType, ext } = await prepareRasterImageUpload(file, "template");
-  const admin = createAdminClient();
   const path = `templates/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
-  const { error: uploadError } = await admin.storage.from("admin").upload(path, buffer, {
-    contentType,
-    upsert: false,
-  });
-  if (uploadError) return actionFailure(uploadError, "Failed to upload template");
-
-  const { buildAdminPublicUrl } = await import("@/lib/storage/public-url");
-  const imageUrl = buildAdminPublicUrl(path);
+  const { uploadAdminStorageObject } = await import("@/lib/storage/upload-admin-object");
+  const imageUrl = await uploadAdminStorageObject(path, buffer, contentType);
   const supabase = await createClient();
 
   await supabase.from("certificate_templates").update({ is_active: false }).eq("is_active", true);

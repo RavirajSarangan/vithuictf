@@ -6,6 +6,7 @@ import {
   BLOG_COVER_WIDTH,
   resolveImageContentType,
 } from "@/lib/images/admin-image-constants";
+import { assertValidImageBuffer } from "@/lib/storage/upload-admin-object";
 
 export type RasterUploadVariant =
   | "cover"
@@ -26,8 +27,7 @@ export type ProcessedRasterImage = {
   ext: string;
 };
 
-function passthrough(file: File, buffer: Buffer, contentType: string): ProcessedRasterImage {
-  const ext = file.name.split(".").pop()?.toLowerCase() || contentType.split("/")[1] || "bin";
+function passthrough(buffer: Buffer, contentType: string, ext: string): ProcessedRasterImage {
   return { buffer, contentType, ext };
 }
 
@@ -40,7 +40,7 @@ async function toWebpBuffer(
     fit?: "cover" | "inside";
   }
 ): Promise<ProcessedRasterImage> {
-  let pipeline = sharp(input).rotate();
+  let pipeline = sharp(input, { failOn: "error" }).rotate();
 
   if (options?.width || options?.height) {
     pipeline = pipeline.resize(options.width, options.height, {
@@ -50,25 +50,22 @@ async function toWebpBuffer(
     });
   }
 
-  const buffer = await pipeline.webp({ quality }).toBuffer();
+  const buffer = await pipeline.webp({ quality, effort: 4 }).toBuffer();
+  await assertValidImageBuffer(buffer, "Image");
   return { buffer, contentType: "image/webp", ext: "webp" };
 }
 
-export async function prepareRasterImageUpload(
-  file: File,
+async function processBuffer(
+  input: Buffer,
+  contentType: string,
   variant: RasterUploadVariant
 ): Promise<ProcessedRasterImage> {
-  const contentType = resolveImageContentType(file);
-  assertAdminImageFile(file, contentType);
-
-  const input = Buffer.from(await file.arrayBuffer());
-
   if (contentType === "image/gif") {
-    return passthrough(file, input, contentType);
+    return passthrough(input, contentType, "gif");
   }
 
   if (contentType === "image/svg+xml") {
-    return passthrough(file, input, contentType);
+    return passthrough(input, contentType, "svg");
   }
 
   switch (variant) {
@@ -104,6 +101,27 @@ export async function prepareRasterImageUpload(
     default:
       return toWebpBuffer(input, 85, { width: GENERAL_MAX_WIDTH });
   }
+}
+
+export async function prepareRasterImageUpload(
+  file: File,
+  variant: RasterUploadVariant
+): Promise<ProcessedRasterImage> {
+  const contentType = resolveImageContentType(file);
+  assertAdminImageFile(file, contentType);
+  const input = Buffer.from(await file.arrayBuffer());
+  return processBuffer(input, contentType, variant);
+}
+
+export async function prepareRasterBufferUpload(
+  input: Buffer,
+  contentType: string,
+  variant: RasterUploadVariant
+): Promise<ProcessedRasterImage> {
+  if (!contentType) {
+    throw new Error("Upload a JPEG, PNG, WebP, or GIF image");
+  }
+  return processBuffer(input, contentType, variant);
 }
 
 /** @deprecated Use prepareRasterImageUpload */
