@@ -29,3 +29,11 @@ export function buildDriveFolderUrl(folderId: string): string {
 export function buildDriveFileUrl(fileId: string): string {
   return `https://drive.google.com/file/d/${fileId}/view`;
 }
+
+export function buildDrivePreviewUrl(fileId: string): string {
+  return `https://drive.google.com/file/d/${fileId}/preview`;
+}
+
+export function buildDriveDownloadUrl(fileId: string): string {
+  return `https://drive.google.com/uc?export=download&id=${fileId}`;
+}
