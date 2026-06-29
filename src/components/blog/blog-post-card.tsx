@@ -4,6 +4,7 @@ import { ArrowRight, Clock } from "lucide-react";
 import type { BlogPost } from "@/types";
 import { MarketingPanel } from "@/components/landing/marketing-layout";
 import { BlogStorageImage } from "@/components/blog/blog-storage-image";
+import { BlogPostShare } from "@/components/blog/blog-post-share";
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -58,7 +59,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
           {post.excerpt && (
             <p className="mt-3 text-base leading-relaxed text-white/75">{post.excerpt}</p>
           )}
-          <div className="mt-auto pt-5">
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
             <Link
               href={`/blog/${post.slug}`}
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-icvf-accent hover:underline"
@@ -66,6 +67,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
               {readMoreLabel}
               <ArrowRight className="size-4" />
             </Link>
+            <BlogPostShare post={post} variant="dark" />
           </div>
         </div>
       </MarketingPanel>
@@ -114,7 +116,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
           <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-icvf-text-light">{post.excerpt}</p>
         )}
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
           <Link
             href={`/blog/${post.slug}`}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-icvf-accent hover:underline"
@@ -122,6 +124,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
             {readMoreLabel}
             <ArrowRight className="size-4" />
           </Link>
+          <BlogPostShare post={post} />
         </div>
       </div>
     </MarketingPanel>

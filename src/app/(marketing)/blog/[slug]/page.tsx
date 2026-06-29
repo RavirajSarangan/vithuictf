@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,6 +12,7 @@ import {
 } from "@/lib/blog/queries";
 import { BlogPostContent } from "@/components/blog/blog-post-content";
 import { BlogPostCard } from "@/components/blog/blog-post-card";
+import { BlogPostShare } from "@/components/blog/blog-post-share";
 import { BlogStorageImage } from "@/components/blog/blog-storage-image";
 import { ArticleJsonLd } from "@/components/seo/json-ld";
 import { MarketingContainer, MarketingSection } from "@/components/landing/marketing-layout";
@@ -107,6 +107,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           {post.excerpt && (
             <p className="mt-4 text-lg leading-relaxed text-icvf-text-light">{post.excerpt}</p>
           )}
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-icvf-navy">Share this article</span>
+            <BlogPostShare post={post} label="Share article" />
+          </div>
         </MarketingContainer>
 
         {post.coverImageUrl && (
