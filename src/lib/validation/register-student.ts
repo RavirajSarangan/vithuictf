@@ -1,4 +1,8 @@
 import { BRAND } from "@/lib/constants";
+import {
+  normalizeSriLankaWhatsApp,
+  validateSriLankaWhatsApp,
+} from "@/lib/validation/sri-lanka-phone";
 
 export type StudyTrack = "al" | "grade";
 export type IctGrade = "grade_10" | "grade_11";
@@ -9,9 +13,10 @@ export type ExamYear = (typeof EXAM_YEARS)[number];
 export interface RegisterStudentInput {
   displayName: string;
   username: string;
-  nicNumber: string;
+  nicNumber?: string;
   indexNumber?: string;
-  phone?: string;
+  phone: string;
+  schoolName: string;
   studyTrack: StudyTrack;
   examYear?: string;
   ictGrade?: IctGrade;
@@ -79,9 +84,12 @@ export function validateRegisterStudent(input: RegisterStudentInput): string | n
     return "Username needs 3–20 letters, numbers, or underscores";
   }
 
-  const nicNumber = normalizeNic(input.nicNumber);
-  if (!isValidNic(nicNumber)) {
-    return "Enter a valid NIC number (e.g. 123456789V or 200012345678)";
+  const nicRaw = input.nicNumber?.trim() ?? "";
+  if (nicRaw) {
+    const nicNumber = normalizeNic(nicRaw);
+    if (!isValidNic(nicNumber)) {
+      return "Enter a valid NIC number (e.g. 123456789V or 200012345678)";
+    }
   }
 
   if (input.indexNumber?.trim()) {
@@ -91,11 +99,12 @@ export function validateRegisterStudent(input: RegisterStudentInput): string | n
     }
   }
 
-  if (input.phone?.trim()) {
-    const phone = normalizePhone(input.phone);
-    if (phone.length < 9) {
-      return "Enter a valid phone number";
-    }
+  const whatsappError = validateSriLankaWhatsApp(input.phone);
+  if (whatsappError) return whatsappError;
+
+  const schoolName = input.schoolName.trim();
+  if (schoolName.length < 2) {
+    return "Enter your school name";
   }
 
   if (input.studyTrack === "al") {

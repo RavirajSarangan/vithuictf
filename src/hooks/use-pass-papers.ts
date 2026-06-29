@@ -134,12 +134,17 @@ export function usePassPaperBrowse(publishedOnly = true) {
   return { folders: visibleFolders, items: visibleItems, loading };
 }
 
-export function useAllPassPaperItems() {
+export function useAllPassPaperItems(enabled = true) {
   const [items, setItems] = useState<PassPaperItem[]>([]);
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
+    if (!enabled) {
+      setItems([]);
+      return;
+    }
+
     let cancelled = false;
     void (async () => {
       const supabase = createClient();
@@ -150,7 +155,7 @@ export function useAllPassPaperItems() {
     return () => {
       cancelled = true;
     };
-  }, [version]);
+  }, [enabled, version]);
 
   return { items, refresh };
 }

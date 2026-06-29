@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireSuperAdmin } from "@/lib/actions/auth";
+import { actionFailure, type ActionResult } from "@/lib/actions/action-result";
 import { isAllowedDriveHost, isFolderDescendant, getFolderDescendantIds } from "@/lib/pass-papers-utils";
+import { isGoogleDriveConfigured, type DriveSyncReport } from "@/lib/pass-papers/drive-sync-types";
 import type { PassPaperExamType, PassPaperLayout, PassPaperMedium } from "@/types";
 import { mapPassPaperFolder } from "@/lib/supabase/mappers";
 import type { PassPaperFolder } from "@/types";
@@ -211,6 +213,32 @@ export async function publishPassPaperFolderWithDescendants(
   return { updated: ids.length };
 }
 
+export async function publishPassPaperSubtreeComplete(folderId: string, published: boolean) {
+  await requireSuperAdmin();
+  const supabase = await createClient();
+  const folders = await loadAllFolders(supabase);
+  const descendantIds = getFolderDescendantIds(folders, folderId);
+  const folderIds = [folderId, ...descendantIds];
+
+  const { error: folderError } = await supabase
+    .from("pass_paper_folders")
+    .update({ published })
+    .in("id", folderIds);
+
+  if (folderError) throw new Error(folderError.message);
+
+  const { data: itemRows, error: itemError } = await supabase
+    .from("pass_paper_items")
+    .update({ published })
+    .in("folder_id", folderIds)
+    .select("id");
+
+  if (itemError) throw new Error(itemError.message);
+
+  revalidatePassPaperPaths();
+  return { foldersUpdated: folderIds.length, itemsUpdated: itemRows?.length ?? 0 };
+}
+
 export async function publishPassPaperItemsInFolder(folderId: string, published: boolean) {
   await requireSuperAdmin();
   const supabase = await createClient();
@@ -293,4 +321,120 @@ export async function deletePassPaperItem(id: string) {
   const { error } = await supabase.from("pass_paper_items").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePassPaperPaths();
+}
+
+export async function ensurePassPaperExamTemplate(
+  examType: Extract<PassPaperExamType, "al" | "ol">
+) {
+  await requireSuperAdmin();
+  const { ensurePassPaperExamTemplateInternal } = await import("@/lib/pass-papers/exam-template");
+  const supabase = await createClient();
+  const result = await ensurePassPaperExamTemplateInternal(supabase, examType);
+  revalidatePassPaperPaths();
+  return result;
+}
+
+export async function getGoogleDriveImportStatus(): Promise<{ configured: boolean }> {
+  await requireSuperAdmin();
+  return { configured: isGoogleDriveConfigured() };
+}
+
+export async function syncPassPapersFromDrive(options: {
+  rootUrl: string;
+  dryRun?: boolean;
+  publish?: boolean;
+  includeFiles?: boolean;
+  examTypes?: PassPaperExamType[];
+}): Promise<ActionResult<{ report: DriveSyncReport }>> {
+  try {
+    await requireSuperAdmin();
+
+    if (!isGoogleDriveConfigured()) {
+      return {
+        ok: false,
+        error:
+          "Google Drive is not configured on the server. Add GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON (or _JSON_BASE64) in Vercel env vars, then redeploy.",
+      };
+    }
+
+    const { syncPassPapersFromDriveInternal } = await import("@/lib/pass-papers/drive-sync");
+    const supabase = await createClient();
+    const report = await syncPassPapersFromDriveInternal(supabase, options);
+
+    if (!options.dryRun) {
+      revalidatePassPaperPaths();
+    }
+
+    return { ok: true, report };
+  } catch (error) {
+    return actionFailure(error, "Drive import failed");
+  }
+}
+
+export async function fullSyncPassPapersFromDrive(options?: {
+  rootUrl?: string;
+}): Promise<
+  ActionResult<{
+    report: DriveSyncReport;
+    published: { al: { foldersUpdated: number; itemsUpdated: number } | null; ol: { foldersUpdated: number; itemsUpdated: number } | null };
+  }>
+> {
+  try {
+    await requireSuperAdmin();
+
+    if (!isGoogleDriveConfigured()) {
+      return {
+        ok: false,
+        error:
+          "Google Drive is not configured on the server. Add GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON (or _JSON_BASE64) in Vercel env vars, then redeploy.",
+      };
+    }
+
+    const { ensurePassPaperExamTemplateInternal } = await import("@/lib/pass-papers/exam-template");
+    const supabase = await createClient();
+    await ensurePassPaperExamTemplateInternal(supabase, "al");
+    await ensurePassPaperExamTemplateInternal(supabase, "ol");
+
+    const rootUrl = options?.rootUrl?.trim() || process.env.GOOGLE_DRIVE_PASS_PAPERS_ROOT_URL?.trim();
+    const { DEFAULT_DRIVE_ROOT_URL } = await import("@/lib/pass-papers/drive-sync-types");
+
+    const syncResult = await syncPassPapersFromDrive({
+      rootUrl: rootUrl || DEFAULT_DRIVE_ROOT_URL,
+      dryRun: false,
+      publish: true,
+      includeFiles: true,
+      examTypes: ["al", "ol"],
+    });
+
+    if (!syncResult.ok) {
+      return syncResult;
+    }
+
+    const { data: roots, error } = await supabase
+      .from("pass_paper_folders")
+      .select("id, slug")
+      .is("parent_id", null)
+      .in("slug", ["a-l-past-papers", "o-l-past-papers"]);
+
+    if (error) throw new Error(error.message);
+
+    const published: {
+      al: { foldersUpdated: number; itemsUpdated: number } | null;
+      ol: { foldersUpdated: number; itemsUpdated: number } | null;
+    } = { al: null, ol: null };
+
+    for (const root of roots ?? []) {
+      const result = await publishPassPaperSubtreeComplete(root.id, true);
+      if (root.slug === "a-l-past-papers") {
+        published.al = result;
+      } else if (root.slug === "o-l-past-papers") {
+        published.ol = result;
+      }
+    }
+
+    revalidatePassPaperPaths();
+    return { ok: true, report: syncResult.report, published };
+  } catch (error) {
+    return actionFailure(error, "Full Drive sync failed");
+  }
 }

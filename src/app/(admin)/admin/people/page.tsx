@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +43,10 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { PeopleRosterEntry } from "@/types";
+import type { PeopleRosterEntry, PaperCenterGrade } from "@/types";
+import { GradeCheckboxes } from "@/components/paper-centers/grade-checkboxes";
+import { formatPaperCenterGradeLabel } from "@/lib/paper-centers/grades";
+import { validateSriLankaWhatsApp, formatSriLankaWhatsAppDisplay } from "@/lib/validation/sri-lanka-phone";
 import { Clapperboard, FileText, KeyRound, Loader2, Pencil, Plus, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
@@ -124,6 +127,9 @@ const paperCenterSchema = z
       }),
     email: z.string().email("Enter a valid email"),
     paperCenterId: z.string().min(1, "Select a paper center"),
+    staffRole: z.enum(["in_charge", "staff"]),
+    whatsapp: z.string().min(1, "WhatsApp number is required"),
+    grades: z.array(z.enum(["10", "11", "12", "13"])).min(1, "Select at least one grade"),
     password: z.string().optional(),
     confirmPassword: z.string().optional(),
   })
@@ -135,6 +141,10 @@ const paperCenterSchema = z
     }
     if (password !== confirm) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Passwords do not match", path: ["confirmPassword"] });
+    }
+    const whatsappError = validateSriLankaWhatsApp(values.whatsapp);
+    if (whatsappError) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: whatsappError, path: ["whatsapp"] });
     }
   });
 
@@ -234,10 +244,19 @@ function PeoplePageContent() {
       staffUsername: "",
       email: "",
       paperCenterId: "",
+      staffRole: "staff",
+      whatsapp: "",
+      grades: [] as PaperCenterGrade[],
       password: "",
       confirmPassword: "",
     },
   });
+
+  const selectedPaperCenterId = paperCenterForm.watch("paperCenterId");
+  const selectedPaperCenterGrades = useMemo(() => {
+    const center = paperCenters.find((item) => item.id === selectedPaperCenterId);
+    return center?.grades ?? [];
+  }, [paperCenters, selectedPaperCenterId]);
 
   const setTab = (next: PeopleTab) => {
     router.replace(`/admin/people?tab=${next}`);
@@ -372,6 +391,9 @@ function PeoplePageContent() {
         staffUsername: values.staffUsername,
         email: values.email,
         paperCenterId: values.paperCenterId,
+        staffRole: values.staffRole,
+        whatsapp: values.whatsapp,
+        grades: values.grades,
         password: values.password?.trim() || undefined,
       });
       if (!result.ok) {
@@ -568,69 +590,116 @@ function PeoplePageContent() {
     );
   };
 
-  const columns = [
-    { key: "displayName" as const, label: "Name" },
-    { key: "staffUsername" as const, label: "Staff username", render: (row: PeopleRosterEntry) => row.staffUsername ?? "—" },
-    { key: "email" as const, label: "Email" },
-    {
-      key: "paperCenterName" as const,
-      label: "Paper center",
-      render: (row: PeopleRosterEntry) => row.paperCenterName ?? "—",
-    },
-    {
-      key: "role" as const,
-      label: "Role",
-      render: (row: PeopleRosterEntry) => roleBadge(row.role),
-    },
-    {
-      key: "active" as const,
-      label: "Status",
-      render: (row: PeopleRosterEntry) => (
-        <Badge
-          variant={row.active ? "default" : "outline"}
-          className={row.active ? "bg-icvf-accent" : "border-input text-muted-foreground"}
-        >
-          {row.active ? "Active" : "Inactive"}
-        </Badge>
-      ),
-    },
-    {
-      key: "id" as const,
-      label: "Actions",
-      render: (row: PeopleRosterEntry) => (
-        <div className="flex flex-wrap gap-2">
-          {row.role === "teacher" && (
-            <Button type="button" variant="outline" size="sm" onClick={() => openEditStaff(row)}>
-              <Pencil className="mr-1 size-3.5" /> Edit
-            </Button>
-          )}
-          {row.role !== "admin" && row.role !== "super_admin" && (
-            <Button type="button" variant="outline" size="sm" onClick={() => void handleToggleActive(row)}>
-              {row.active ? "Deactivate" : "Activate"}
-            </Button>
-          )}
-          {row.role === "teacher" && manageAdmins && (
-            <Button type="button" variant="outline" size="sm" onClick={() => void handlePromote(row)}>
-              <ShieldCheck className="mr-1 size-3.5" /> Promote
-            </Button>
-          )}
-          {row.role === "admin" && manageAdmins && (
-            <Button type="button" variant="outline" size="sm" onClick={() => void handleDemote(row)}>
-              Demote
-            </Button>
-          )}
-          {(row.role === "teacher" ||
-            row.role === "admin" ||
-            row.role === "content_manager" ||
-            row.role === "paper_center_staff") && (
-            <Button type="button" variant="outline" size="sm" onClick={() => void handleResetPassword(row)}>
-              <KeyRound className="mr-1 size-3.5" /> Reset
-            </Button>
-          )}
-        </div>
-      ),
-    },
-  ];
+  const columns = useMemo(() => {
+    type RosterColumn = {
+      key: keyof PeopleRosterEntry;
+      label: string;
+      render?: (row: PeopleRosterEntry) => ReactNode;
+    };
+
+    const base: RosterColumn[] = [
+      { key: "displayName" as const, label: "Name" },
+      { key: "staffUsername" as const, label: "Staff username", render: (row: PeopleRosterEntry) => row.staffUsername ?? "—" },
+      { key: "email" as const, label: "Email" },
+      {
+        key: "paperCenterName" as const,
+        label: "Paper center",
+        render: (row: PeopleRosterEntry) => row.paperCenterName ?? "—",
+      },
+    ];
+
+    if (tab === "paperCenter") {
+      base.push(
+        {
+          key: "paperCenterStaffRole" as const,
+          label: "Staff role",
+          render: (row: PeopleRosterEntry) =>
+            row.paperCenterStaffRole === "in_charge" ? (
+              <Badge className="bg-icvf-navy">In-charge</Badge>
+            ) : (
+              <Badge variant="secondary">Staff</Badge>
+            ),
+        },
+        {
+          key: "whatsapp" as const,
+          label: "WhatsApp",
+          render: (row: PeopleRosterEntry) =>
+            row.whatsapp ? formatSriLankaWhatsAppDisplay(row.whatsapp) : "—",
+        },
+        {
+          key: "paperCenterGrades" as const,
+          label: "Grades",
+          render: (row: PeopleRosterEntry) => (
+            <div className="flex flex-wrap gap-1">
+              {(row.paperCenterGrades ?? []).map((grade) => (
+                <Badge key={grade} variant="outline">
+                  {formatPaperCenterGradeLabel(grade)}
+                </Badge>
+              ))}
+            </div>
+          ),
+        }
+      );
+    }
+
+    base.push(
+      {
+        key: "role" as const,
+        label: "Role",
+        render: (row: PeopleRosterEntry) => roleBadge(row.role),
+      },
+      {
+        key: "active" as const,
+        label: "Status",
+        render: (row: PeopleRosterEntry) => (
+          <Badge
+            variant={row.active ? "default" : "outline"}
+            className={row.active ? "bg-icvf-accent" : "border-input text-muted-foreground"}
+          >
+            {row.active ? "Active" : "Inactive"}
+          </Badge>
+        ),
+      },
+      {
+        key: "id" as const,
+        label: "Actions",
+        render: (row: PeopleRosterEntry) => (
+          <div className="flex flex-wrap gap-2">
+            {row.role === "teacher" && (
+              <Button type="button" variant="outline" size="sm" onClick={() => openEditStaff(row)}>
+                <Pencil className="mr-1 size-3.5" /> Edit
+              </Button>
+            )}
+            {row.role !== "admin" && row.role !== "super_admin" && (
+              <Button type="button" variant="outline" size="sm" onClick={() => void handleToggleActive(row)}>
+                {row.active ? "Deactivate" : "Activate"}
+              </Button>
+            )}
+            {row.role === "teacher" && manageAdmins && (
+              <Button type="button" variant="outline" size="sm" onClick={() => void handlePromote(row)}>
+                <ShieldCheck className="mr-1 size-3.5" /> Promote
+              </Button>
+            )}
+            {row.role === "admin" && manageAdmins && (
+              <Button type="button" variant="outline" size="sm" onClick={() => void handleDemote(row)}>
+                Demote
+              </Button>
+            )}
+            {(row.role === "teacher" ||
+              row.role === "admin" ||
+              row.role === "content_manager" ||
+              row.role === "paper_center_staff") && (
+              <Button type="button" variant="outline" size="sm" onClick={() => void handleResetPassword(row)}>
+                <KeyRound className="mr-1 size-3.5" /> Reset
+              </Button>
+            )}
+          </div>
+        ),
+      }
+    );
+
+    return base;
+  }, [tab, manageAdmins]);
 
   const emptyCopy = emptyStateCopy();
 
@@ -861,7 +930,19 @@ function PeoplePageContent() {
               <FormField control={paperCenterForm.control} name="paperCenterId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Paper center</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      const center = paperCenters.find((item) => item.id === value);
+                      const allowed = new Set(center?.grades ?? []);
+                      const currentGrades = paperCenterForm.getValues("grades");
+                      paperCenterForm.setValue(
+                        "grades",
+                        currentGrades.filter((grade) => allowed.has(grade))
+                      );
+                    }}
+                  >
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select center" /></SelectTrigger>
                     </FormControl>
@@ -871,6 +952,44 @@ function PeoplePageContent() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={paperCenterForm.control} name="staffRole" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Staff role</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="in_charge">Center in-charge</SelectItem>
+                      <SelectItem value="staff">Paper center staff</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={paperCenterForm.control} name="whatsapp" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>WhatsApp number</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="07X XXX XXXX" inputMode="tel" />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">Sri Lankan mobile number</p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={paperCenterForm.control} name="grades" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assigned grades</FormLabel>
+                  <FormControl>
+                    <GradeCheckboxes
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={selectedPaperCenterGrades}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

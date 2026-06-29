@@ -32,6 +32,8 @@ export interface StudentSocialLinks {
   whatsapp?: string;
 }
 
+export type RegistrationStatus = "pending" | "approved" | "rejected";
+
 export interface Student {
   id: string;
   userId: string;
@@ -40,6 +42,7 @@ export interface Student {
   indexNumber?: string;
   nicNumber?: string;
   phone?: string;
+  schoolName?: string;
   notifyEmail?: boolean;
   examYear?: string;
   ictGrade?: string;
@@ -61,6 +64,26 @@ export interface Student {
   active?: boolean;
   disabledAt?: string | null;
   createdAt?: string;
+  registrationStatus?: RegistrationStatus;
+  registrationReviewedAt?: string | null;
+  registrationReviewedBy?: string | null;
+}
+
+export interface StudentEnrollmentDetail {
+  enrollmentId: string;
+  courseId: string;
+  course: Pick<Course, "name" | "level" | "teacherName" | "durationMonths" | "coverImageUrl" | "category">;
+  batch: Pick<CourseBatch, "id" | "name" | "batchCode" | "startDate" | "classDays" | "startTime" | "endTime">;
+  enrollmentCode: string;
+  joinedAt: string;
+  active: boolean;
+  isPrimary: boolean;
+}
+
+export interface EnrollmentOverviewRow {
+  student: Student;
+  enrollments: StudentEnrollmentDetail[];
+  enrollmentCount: number;
 }
 
 export interface FlipCardData {
@@ -135,6 +158,9 @@ export interface PassPaperItem {
   createdAt: string;
 }
 
+export type PaperCenterGrade = "10" | "11" | "12" | "13";
+export type PaperCenterStaffRole = "in_charge" | "staff";
+
 export interface PaperCenterStaff {
   id: string;
   userId: string;
@@ -145,6 +171,9 @@ export interface PaperCenterStaff {
   displayName: string;
   staffUsername: string;
   email: string;
+  staffRole: PaperCenterStaffRole;
+  whatsapp: string;
+  grades: PaperCenterGrade[];
   active: boolean;
   createdAt: string;
 }
@@ -192,6 +221,7 @@ export interface CourseBatch {
   endTime: string;
   classDays: string[];
   totalClasses: number;
+  zoomLink?: string | null;
   active: boolean;
   createdBy: string | null;
   createdAt: string;
@@ -216,6 +246,13 @@ export interface ClassSession {
   startTime: string;
   endTime: string;
   status: ClassSessionStatus;
+  zoomLink?: string | null;
+  canvaSlideUrl?: string | null;
+  canvaSlideTitle?: string | null;
+  cancelReason?: string | null;
+  cancelledAt?: string | null;
+  batchName?: string;
+  batchCode?: string;
 }
 
 export interface PeopleRosterEntry {
@@ -231,6 +268,9 @@ export interface PeopleRosterEntry {
   certified?: boolean;
   paperCenterId?: string;
   paperCenterName?: string;
+  paperCenterStaffRole?: PaperCenterStaffRole;
+  whatsapp?: string;
+  paperCenterGrades?: PaperCenterGrade[];
   sourceTable: "teachers" | "profiles" | "content_managers" | "paper_center_staff";
 }
 
@@ -318,8 +358,38 @@ export interface Notification {
   title: string;
   body: string;
   read: boolean;
-  type: "result" | "announcement" | "achievement";
+  type: "result" | "announcement" | "achievement" | "class";
   createdAt: string;
+  metadata?: Record<string, unknown> | null;
+}
+
+export type WhatsAppMessageType =
+  | "last_class"
+  | "last_class_eve"
+  | "manual_batch"
+  | "manual_broadcast"
+  | "manual_paper_center"
+  | "manual_paper_center_broadcast"
+  | "class_cancel"
+  | "class_reminder"
+  | "absent";
+
+export interface BatchWhatsAppLogEntry {
+  id: string;
+  batchId: string | null;
+  sessionId: string | null;
+  studentId: string | null;
+  paperCenterId: string | null;
+  paperCenterStaffId: string | null;
+  phone: string;
+  messageType: WhatsAppMessageType;
+  messageTitle: string;
+  messageBody: string;
+  status: "pending" | "sent" | "failed" | "skipped";
+  providerMessageId?: string | null;
+  error?: string | null;
+  createdAt: string;
+  studentName?: string;
 }
 
 export interface Payment {
@@ -330,6 +400,66 @@ export interface Payment {
   status: "paid" | "pending" | "overdue";
   method: string;
   date: string;
+}
+
+export type SessionChargeStatus = "pending" | "paid" | "waived" | "void";
+
+export interface SessionCharge {
+  id: string;
+  studentId: string;
+  sessionId: string;
+  batchId: string;
+  courseId: string;
+  courseName?: string;
+  batchName?: string;
+  sessionNumber?: number;
+  scheduledDate?: string;
+  attendanceRecordId?: string | null;
+  amountLkr: number;
+  status: SessionChargeStatus;
+  billingMonth: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentAllocation {
+  id: string;
+  paymentId: string;
+  sessionChargeId: string;
+  amountLkr: number;
+  createdAt: string;
+}
+
+export interface StudentBillingSummary {
+  studentId: string;
+  studentName?: string;
+  courseId: string;
+  courseName: string;
+  sessionsBilled: number;
+  totalChargedLkr: number;
+  totalPaidLkr: number;
+  totalOutstandingLkr: number;
+}
+
+export interface StudentFinanceRosterRow {
+  studentId: string;
+  studentName: string;
+  courseCount: number;
+  sessionsBilled: number;
+  totalChargedLkr: number;
+  totalPaidLkr: number;
+  totalOutstandingLkr: number;
+}
+
+export interface FinanceOverview {
+  totalSessionRevenueLkr: number;
+  totalOutstandingLkr: number;
+  sessionsBilledThisMonth: number;
+  multiCourseStudentCount: number;
+  revenueByCourse: { courseId: string; courseName: string; revenueLkr: number }[];
+  monthlyTrend: { month: string; revenueLkr: number }[];
+  chargeStatusBreakdown: { name: string; value: number }[];
+  perClassFeeLkr: number;
 }
 
 export interface Certificate {
@@ -440,6 +570,7 @@ export interface PaperCenter {
   mapUrl: string;
   mapX?: number;
   mapY?: number;
+  grades: PaperCenterGrade[];
   sortOrder: number;
   isActive: boolean;
 }
@@ -543,6 +674,7 @@ export interface BrandLogoSettings {
 export interface PlatformSettings {
   onlinePaymentsEnabled: boolean;
   defaultInstituteFeeLkr: number;
+  perClassFeeLkr: number;
   marketingComingSoonEnabled: boolean;
   sitePublicMode: SitePublicMode;
   brandLogo: BrandLogoSettings;
@@ -625,6 +757,7 @@ export interface BlogPost {
   tags: string[];
   authorName: string;
   readingTimeMinutes: number;
+  viewCount: number;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;

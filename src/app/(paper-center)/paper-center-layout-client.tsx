@@ -10,15 +10,15 @@ export function PaperCenterLayoutClient({ children }: { children: React.ReactNod
   const portalTitle = staff?.paperCenterName ? `${staff.paperCenterName}` : "Paper Center";
 
   return (
-    <PortalAuthGate allowedRoles={["paper_center_staff"]} loginHref="/login/paper-center">
-      <PortalShell
-        navItems={paperCenterNav}
-        variant="admin"
-        title={portalTitle}
-        homeHref="/paper-center/dashboard"
-      >
+    <PortalShell
+      navItems={paperCenterNav}
+      variant="admin"
+      title={portalTitle}
+      homeHref="/paper-center/dashboard"
+    >
+      <PortalAuthGate allowedRoles={["paper_center_staff"]} loginHref="/login/paper-center">
         {children}
-      </PortalShell>
-    </PortalAuthGate>
+      </PortalAuthGate>
+    </PortalShell>
   );
 }

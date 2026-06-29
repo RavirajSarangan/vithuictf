@@ -44,7 +44,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
-  serverExternalPackages: ["sharp", "@napi-rs/canvas"],
+  serverExternalPackages: ["sharp", "@napi-rs/canvas", "googleapis"],
   turbopack: {
     root: projectRoot,
   },
@@ -73,6 +73,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [75, 90],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns: buildSupabaseImageRemotePatterns(),
   },
   async headers() {
@@ -107,7 +110,7 @@ const nextConfig: NextConfig = {
         .replace(/\s+/g, " ")
         .trim(),
       // Stripe Checkout/Elements iframes.
-      `frame-src https://js.stripe.com https://hooks.stripe.com`,
+      `frame-src https://js.stripe.com https://hooks.stripe.com https://www.canva.com`,
       `upgrade-insecure-requests`,
     ].join("; ");
 
@@ -118,7 +121,7 @@ const nextConfig: NextConfig = {
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "Permissions-Policy", value: "geolocation=(), microphone=(), camera=()" },
       { key: "X-DNS-Prefetch-Control", value: "on" },
-      { key: "Content-Security-Policy-Report-Only", value: csp },
+      { key: isProd ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only", value: csp },
     ] as const;
 
   return [

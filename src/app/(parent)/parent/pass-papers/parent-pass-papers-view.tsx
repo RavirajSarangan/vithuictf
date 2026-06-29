@@ -1,6 +1,6 @@
 "use client";
 
-import { PassPaperBrowser } from "@/components/pass-papers/pass-paper-browser";
+import { PassPaperBrowserLazy } from "@/components/pass-papers/pass-paper-browser-lazy";
 import { usePassPaperBrowse } from "@/hooks/use-pass-papers";
 import { StudentPageLoading } from "@/components/student/portal/student-portal-states";
 
@@ -17,7 +17,7 @@ export default function ParentPassPapersPage({ pathSlugs = [] }: { pathSlugs?: s
           Browse G.C.E. O/L, A/L, and scholarship past papers.
         </p>
       </div>
-      <PassPaperBrowser
+      <PassPaperBrowserLazy
         folders={folders}
         items={items}
         loading={loading}

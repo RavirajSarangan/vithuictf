@@ -118,10 +118,25 @@ export function buildMessageBox(message: string): string {
 
 export function buildStudentCredentialsCard(options: {
   studentId: string;
-  password: string;
+  password?: string;
   passwordLabel?: string;
+  passwordReminder?: string;
 }): string {
   const passwordLabel = options.passwordLabel ?? "Portal password";
+  const passwordContent = options.password?.trim()
+    ? escapeHtml(options.password)
+    : options.passwordReminder
+      ? escapeHtml(options.passwordReminder)
+      : "";
+
+  const passwordRow = passwordContent
+    ? `<tr>
+            <td style="padding:12px 0 0;border-top:1px solid #f1e4c8;">
+              <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:${MUTED};">${escapeHtml(passwordLabel)}</p>
+              <p style="margin:0;font-size:18px;line-height:1.35;font-weight:800;color:${NAVY_DARK};font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">${passwordContent}</p>
+            </td>
+          </tr>`
+    : "";
 
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 8px;border-collapse:separate;border-spacing:0;">
     <tr>
@@ -134,12 +149,7 @@ export function buildStudentCredentialsCard(options: {
               <p style="margin:0;font-size:20px;line-height:1.3;font-weight:800;letter-spacing:0.04em;color:${NAVY};font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">${escapeHtml(options.studentId)}</p>
             </td>
           </tr>
-          <tr>
-            <td style="padding:12px 0 0;border-top:1px solid #f1e4c8;">
-              <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:${MUTED};">${escapeHtml(passwordLabel)}</p>
-              <p style="margin:0;font-size:18px;line-height:1.35;font-weight:800;color:${NAVY_DARK};font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">${escapeHtml(options.password)}</p>
-            </td>
-          </tr>
+          ${passwordRow}
         </table>
         <p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:${MUTED};">Keep these details safe. You will need them every time you sign in.</p>
       </td>

@@ -776,6 +776,7 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          metadata: Json | null
           read: boolean
           title: string
           type: Database["public"]["Enums"]["notification_type"]
@@ -785,6 +786,7 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          metadata?: Json | null
           read?: boolean
           title: string
           type: Database["public"]["Enums"]["notification_type"]
@@ -794,6 +796,7 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          metadata?: Json | null
           read?: boolean
           title?: string
           type?: Database["public"]["Enums"]["notification_type"]
@@ -809,11 +812,62 @@ export type Database = {
           },
         ]
       }
+      paper_center_staff: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_name: string
+          email: string
+          grades: string[]
+          id: string
+          paper_center_id: string
+          staff_role: string
+          staff_username: string
+          user_id: string
+          whatsapp: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_name: string
+          email: string
+          grades?: string[]
+          id?: string
+          paper_center_id: string
+          staff_role?: string
+          staff_username: string
+          user_id: string
+          whatsapp?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_name?: string
+          email?: string
+          grades?: string[]
+          id?: string
+          paper_center_id?: string
+          staff_role?: string
+          staff_username?: string
+          user_id?: string
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paper_center_staff_paper_center_id_fkey"
+            columns: ["paper_center_id"]
+            isOneToOne: false
+            referencedRelation: "paper_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       paper_centers: {
         Row: {
           address: string
           created_at: string
           district: string
+          grades: string[]
           id: string
           is_active: boolean
           map_url: string
@@ -827,6 +881,7 @@ export type Database = {
           address?: string
           created_at?: string
           district?: string
+          grades?: string[]
           id?: string
           is_active?: boolean
           map_url?: string
@@ -840,6 +895,7 @@ export type Database = {
           address?: string
           created_at?: string
           district?: string
+          grades?: string[]
           id?: string
           is_active?: boolean
           map_url?: string
@@ -1131,6 +1187,7 @@ export type Database = {
           index_number: string | null
           nic_number: string | null
           notify_email: boolean
+          notify_whatsapp: boolean
           exam_year: string | null
           ict_grade: string | null
           onboarding_completed_at: string | null
@@ -1140,6 +1197,7 @@ export type Database = {
           photo_url: string | null
           points: number
           rank: number
+          school_name: string | null
           social_links: Json
           streak: number
           student_id: string
@@ -1147,6 +1205,10 @@ export type Database = {
           username: string | null
           active: boolean
           disabled_at: string | null
+          created_at: string
+          registration_status: string
+          registration_reviewed_at: string | null
+          registration_reviewed_by: string | null
         }
         Insert: {
           bio?: string
@@ -1160,6 +1222,7 @@ export type Database = {
           index_number?: string | null
           nic_number?: string | null
           notify_email?: boolean
+          notify_whatsapp?: boolean
           exam_year?: string | null
           ict_grade?: string | null
           onboarding_completed_at?: string | null
@@ -1169,6 +1232,7 @@ export type Database = {
           photo_url?: string | null
           points?: number
           rank?: number
+          school_name?: string | null
           social_links?: Json
           streak?: number
           student_id: string
@@ -1176,6 +1240,10 @@ export type Database = {
           username?: string | null
           active?: boolean
           disabled_at?: string | null
+          created_at?: string
+          registration_status?: string
+          registration_reviewed_at?: string | null
+          registration_reviewed_by?: string | null
         }
         Update: {
           bio?: string
@@ -1189,6 +1257,7 @@ export type Database = {
           index_number?: string | null
           nic_number?: string | null
           notify_email?: boolean
+          notify_whatsapp?: boolean
           exam_year?: string | null
           ict_grade?: string | null
           onboarding_completed_at?: string | null
@@ -1198,13 +1267,18 @@ export type Database = {
           photo_url?: string | null
           points?: number
           rank?: number
+          school_name?: string | null
           social_links?: Json
+          registration_status?: string
+          registration_reviewed_at?: string | null
+          registration_reviewed_by?: string | null
           streak?: number
           student_id?: string
           user_id?: string
           username?: string | null
           active?: boolean
           disabled_at?: string | null
+          created_at?: string
         }
         Relationships: [
           {
@@ -1336,6 +1410,7 @@ export type Database = {
           end_time: string
           class_days: string[]
           total_classes: number
+          zoom_link: string | null
           active: boolean
           created_by: string | null
           created_at: string
@@ -1351,6 +1426,7 @@ export type Database = {
           end_time?: string
           class_days?: string[]
           total_classes?: number
+          zoom_link?: string | null
           active?: boolean
           created_by?: string | null
           created_at?: string
@@ -1366,8 +1442,63 @@ export type Database = {
           end_time?: string
           class_days?: string[]
           total_classes?: number
+          zoom_link?: string | null
           active?: boolean
           created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      batch_whatsapp_log: {
+        Row: {
+          id: string
+          batch_id: string | null
+          session_id: string | null
+          student_id: string | null
+          paper_center_id: string | null
+          paper_center_staff_id: string | null
+          phone: string
+          message_type: Database["public"]["Enums"]["whatsapp_message_type"]
+          message_title: string
+          message_body: string
+          status: Database["public"]["Enums"]["whatsapp_delivery_status"]
+          provider_message_id: string | null
+          error: string | null
+          sent_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          batch_id?: string | null
+          session_id?: string | null
+          student_id?: string | null
+          paper_center_id?: string | null
+          paper_center_staff_id?: string | null
+          phone?: string
+          message_type: Database["public"]["Enums"]["whatsapp_message_type"]
+          message_title?: string
+          message_body?: string
+          status?: Database["public"]["Enums"]["whatsapp_delivery_status"]
+          provider_message_id?: string | null
+          error?: string | null
+          sent_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          batch_id?: string | null
+          session_id?: string | null
+          student_id?: string | null
+          paper_center_id?: string | null
+          paper_center_staff_id?: string | null
+          phone?: string
+          message_type?: Database["public"]["Enums"]["whatsapp_message_type"]
+          message_title?: string
+          message_body?: string
+          status?: Database["public"]["Enums"]["whatsapp_delivery_status"]
+          provider_message_id?: string | null
+          error?: string | null
+          sent_by?: string | null
           created_at?: string
         }
         Relationships: []
@@ -1408,6 +1539,14 @@ export type Database = {
           start_time: string
           end_time: string
           status: Database["public"]["Enums"]["class_session_status"]
+          zoom_link: string | null
+          canva_slide_url: string | null
+          canva_slide_title: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          reminder_sent_at: string | null
+          last_class_notified_at: string | null
+          last_class_eve_notified_at: string | null
         }
         Insert: {
           id?: string
@@ -1417,6 +1556,14 @@ export type Database = {
           start_time: string
           end_time: string
           status?: Database["public"]["Enums"]["class_session_status"]
+          zoom_link?: string | null
+          canva_slide_url?: string | null
+          canva_slide_title?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          reminder_sent_at?: string | null
+          last_class_notified_at?: string | null
+          last_class_eve_notified_at?: string | null
         }
         Update: {
           id?: string
@@ -1426,6 +1573,14 @@ export type Database = {
           start_time?: string
           end_time?: string
           status?: Database["public"]["Enums"]["class_session_status"]
+          zoom_link?: string | null
+          canva_slide_url?: string | null
+          canva_slide_title?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          reminder_sent_at?: string | null
+          last_class_notified_at?: string | null
+          last_class_eve_notified_at?: string | null
         }
         Relationships: []
       }
@@ -1453,6 +1608,135 @@ export type Database = {
           status?: Database["public"]["Enums"]["attendance_status"]
           marked_by?: string | null
           marked_at?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          id: number
+          online_payments_enabled: boolean
+          default_institute_fee_lkr: number
+          per_class_fee_lkr: number
+          marketing_coming_soon_enabled: boolean | null
+          site_public_mode: string | null
+          brand_logo_settings: unknown
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          online_payments_enabled?: boolean
+          default_institute_fee_lkr?: number
+          per_class_fee_lkr?: number
+          marketing_coming_soon_enabled?: boolean | null
+          site_public_mode?: string | null
+          brand_logo_settings?: unknown
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          online_payments_enabled?: boolean
+          default_institute_fee_lkr?: number
+          per_class_fee_lkr?: number
+          marketing_coming_soon_enabled?: boolean | null
+          site_public_mode?: string | null
+          brand_logo_settings?: unknown
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      session_charges: {
+        Row: {
+          id: string
+          student_id: string
+          session_id: string
+          batch_id: string
+          course_id: string
+          attendance_record_id: string | null
+          amount_lkr: number
+          status: Database["public"]["Enums"]["session_charge_status"]
+          billing_month: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          session_id: string
+          batch_id: string
+          course_id: string
+          attendance_record_id?: string | null
+          amount_lkr: number
+          status?: Database["public"]["Enums"]["session_charge_status"]
+          billing_month: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          session_id?: string
+          batch_id?: string
+          course_id?: string
+          attendance_record_id?: string | null
+          amount_lkr?: number
+          status?: Database["public"]["Enums"]["session_charge_status"]
+          billing_month?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_allocations: {
+        Row: {
+          id: string
+          payment_id: string
+          session_charge_id: string
+          amount_lkr: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          payment_id: string
+          session_charge_id: string
+          amount_lkr: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          payment_id?: string
+          session_charge_id?: string
+          amount_lkr?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      student_billing_summary: {
+        Row: {
+          student_id: string
+          course_id: string
+          course_name: string
+          sessions_billed: number
+          total_charged_lkr: number
+          total_paid_lkr: number
+          total_outstanding_lkr: number
+        }
+        Insert: {
+          student_id?: string
+          course_id?: string
+          course_name?: string
+          sessions_billed?: number
+          total_charged_lkr?: number
+          total_paid_lkr?: number
+          total_outstanding_lkr?: number
+        }
+        Update: {
+          student_id?: string
+          course_id?: string
+          course_name?: string
+          sessions_billed?: number
+          total_charged_lkr?: number
+          total_paid_lkr?: number
+          total_outstanding_lkr?: number
         }
         Relationships: []
       }
@@ -1546,6 +1830,10 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      check_rate_limit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_parent_of: { Args: { p_student_id: string }; Returns: boolean }
@@ -1556,10 +1844,22 @@ export type Database = {
       }
       own_student_id: { Args: never; Returns: string }
       student_enrolled_course_id: { Args: never; Returns: string }
+      student_enrolled_course_ids: { Args: never; Returns: string[] }
     }
     Enums: {
       course_level: "OL" | "AL" | "University" | "Professional"
-      notification_type: "result" | "announcement" | "achievement"
+      notification_type: "result" | "announcement" | "achievement" | "class"
+      whatsapp_message_type:
+        | "last_class"
+        | "last_class_eve"
+        | "manual_batch"
+        | "manual_broadcast"
+        | "manual_paper_center"
+        | "manual_paper_center_broadcast"
+        | "class_cancel"
+        | "class_reminder"
+        | "absent"
+      whatsapp_delivery_status: "pending" | "sent" | "failed" | "skipped"
       payment_status: "paid" | "pending" | "overdue"
       resource_category:
         | "notes"
@@ -1569,6 +1869,7 @@ export type Database = {
         | "study_guides"
       resource_type: "pdf" | "video"
       attendance_status: "present" | "absent" | "late"
+      session_charge_status: "pending" | "paid" | "waived" | "void"
       class_session_status: "scheduled" | "completed" | "cancelled"
       pass_paper_layout: "grid" | "list" | "folder"
       pass_paper_medium: "sinhala" | "tamil" | "english"
@@ -2154,7 +2455,7 @@ export const Constants = {
   public: {
     Enums: {
       course_level: ["OL", "AL", "University", "Professional"],
-      notification_type: ["result", "announcement", "achievement"],
+      notification_type: ["result", "announcement", "achievement", "class"],
       payment_status: ["paid", "pending", "overdue"],
       resource_category: [
         "notes",

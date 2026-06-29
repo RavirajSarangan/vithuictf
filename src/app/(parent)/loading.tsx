@@ -1,5 +1,5 @@
-import { PortalShellLoading } from "@/components/layout/portal-shell-loading";
+import { StudentPageLoading } from "@/components/student/portal/student-portal-states";
 
 export default function ParentRouteLoading() {
-  return <PortalShellLoading rows={3} />;
+  return <StudentPageLoading rows={3} />;
 }

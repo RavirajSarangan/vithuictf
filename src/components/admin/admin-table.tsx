@@ -15,7 +15,7 @@ import { GlassCard } from "@/components/shared/glass-card";
 import { cn } from "@/lib/utils";
 
 interface Column<T> {
-  key: keyof T;
+  key: keyof T | string;
   label: string;
   linkTo?: (row: T) => string;
   render?: (row: T) => React.ReactNode;
@@ -28,6 +28,7 @@ interface AdminTableProps<T extends { id: string }> {
   onView?: (row: T) => void;
   viewHref?: (row: T) => string;
   emptyMessage?: string;
+  rowClassName?: (row: T) => string | undefined;
 }
 
 export function AdminTable<T extends { id: string }>({
@@ -37,6 +38,7 @@ export function AdminTable<T extends { id: string }>({
   onView,
   viewHref,
   emptyMessage = "No records found",
+  rowClassName,
 }: AdminTableProps<T>) {
   const router = useRouter();
 
@@ -67,10 +69,12 @@ export function AdminTable<T extends { id: string }>({
           {data.map((row) => {
             const href = viewHref?.(row);
             return (
-              <TableRow key={row.id} className="group">
+              <TableRow key={row.id} className={cn("group", rowClassName?.(row))}>
                 {columns.map((c) => {
                   const cellLink = c.linkTo?.(row);
-                  const content = c.render ? c.render(row) : String(row[c.key] ?? "");
+                  const content = c.render
+                    ? c.render(row)
+                    : String((row as Record<string, unknown>)[c.key as string] ?? "");
 
                   return (
                     <TableCell key={String(c.key)}>

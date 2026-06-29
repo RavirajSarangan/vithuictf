@@ -16,6 +16,7 @@ const DISPLAY_HEIGHT_PX = {
   authLoginAside: 48,
   authLoginDesktop: 56,
   mobileSheet: 52,
+  portal: 40,
 } as const;
 
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT_PX;
@@ -42,6 +43,7 @@ const WORDMARK_LAYOUT_PX: Partial<
   authLoginAside: { width: 150, height: 48 },
   authLoginDesktop: { width: 118, height: 56 },
   mobileSheet: { width: 188, height: 52 },
+  portal: { width: 84, height: 40 },
 };
 
 interface BrandLogoProps {

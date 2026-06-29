@@ -133,6 +133,31 @@ export async function autoEnrollStudentOnRegistration(
   await enrollStudentInBatchWithClient(supabase, batchId, studentUuid);
 }
 
+export type AdminEnrollMeta = {
+  examYear?: string | null;
+  ictGrade?: string | null;
+  studyTrack?: RegisterStudentInput["studyTrack"];
+};
+
+/** Auto-enroll for admin-created students (no full registration form). */
+export async function autoEnrollStudentForAdmin(
+  supabase: DbClient,
+  studentUuid: string,
+  courseId: string,
+  batchId: string | undefined,
+  meta?: AdminEnrollMeta
+): Promise<void> {
+  const resolvedBatchId =
+    batchId ??
+    (await findRegistrationBatchForCourse(supabase, courseId, {
+      studyTrack: meta?.studyTrack ?? (meta?.examYear ? "al" : meta?.ictGrade ? "grade" : "al"),
+      examYear: meta?.examYear ?? undefined,
+      ictGrade: (meta?.ictGrade as "grade_10" | "grade_11" | undefined) ?? undefined,
+    }));
+  if (!resolvedBatchId) return;
+  await enrollStudentInBatchWithClient(supabase, resolvedBatchId, studentUuid);
+}
+
 export function assertCourseMatchesStudyTrack(
   courseLevel: string,
   studyTrack: RegisterStudentInput["studyTrack"]

@@ -86,6 +86,7 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
   const [username, setUsername] = useState("");
   const [nicNumber, setNicNumber] = useState("");
   const [phone, setPhone] = useState("");
+  const [schoolName, setSchoolName] = useState("");
   const [studyTrack, setStudyTrack] = useState<StudyTrack>("al");
   const [examYear, setExamYear] = useState("");
   const [ictGrade, setIctGrade] = useState<IctGrade | "">("");
@@ -179,8 +180,9 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
     const input: RegisterStudentInput = {
       displayName: name.trim(),
       username: username.trim(),
-      nicNumber: nicNumber.trim(),
-      phone: phone.trim() || undefined,
+      nicNumber: nicNumber.trim() || undefined,
+      phone: phone.trim(),
+      schoolName: schoolName.trim(),
       studyTrack,
       examYear: studyTrack === "al" ? examYear : undefined,
       ictGrade: studyTrack === "grade" ? (ictGrade as IctGrade) : undefined,
@@ -281,7 +283,9 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
           </div>
 
           <div className="flex flex-col gap-2">
-            <RequiredLabel htmlFor={`${idPrefix}-nic`}>{t("auth.nicNumber")}</RequiredLabel>
+            <Label htmlFor={`${idPrefix}-nic`} className="text-sm font-semibold text-icvf-navy">
+              {t("auth.nicNumberOptional")}
+            </Label>
             <Input
               id={`${idPrefix}-nic`}
               value={nicNumber}
@@ -290,15 +294,12 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
               placeholder={t("auth.nicNumberPlaceholder")}
               autoComplete="off"
               inputMode="text"
-              required
             />
             <p className="text-xs text-icvf-text-light">{t("auth.nicNumberHint")}</p>
           </div>
 
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor={`${idPrefix}-phone`} className="text-sm font-semibold text-icvf-navy">
-              {t("auth.phone")}
-            </Label>
+            <RequiredLabel htmlFor={`${idPrefix}-phone`}>{t("auth.whatsapp")}</RequiredLabel>
             <Input
               id={`${idPrefix}-phone`}
               type="tel"
@@ -306,6 +307,19 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
               onChange={(e) => setPhone(e.target.value)}
               className={authFieldClassName}
               placeholder={t("auth.phonePlaceholder")}
+              required
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <RequiredLabel htmlFor={`${idPrefix}-school`}>{t("auth.schoolName")}</RequiredLabel>
+            <Input
+              id={`${idPrefix}-school`}
+              value={schoolName}
+              onChange={(e) => setSchoolName(e.target.value)}
+              className={authFieldClassName}
+              placeholder={t("auth.schoolNamePlaceholder")}
+              required
             />
           </div>
         </div>

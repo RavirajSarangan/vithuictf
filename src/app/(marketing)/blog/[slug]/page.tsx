@@ -13,6 +13,8 @@ import {
 import { BlogPostContent } from "@/components/blog/blog-post-content";
 import { BlogPostCard } from "@/components/blog/blog-post-card";
 import { BlogPostShare } from "@/components/blog/blog-post-share";
+import { BlogPostViewTracker } from "@/components/blog/blog-post-view-tracker";
+import { BlogViewCount } from "@/components/blog/blog-view-count";
 import { BlogStorageImage } from "@/components/blog/blog-storage-image";
 import { ArticleJsonLd } from "@/components/seo/json-ld";
 import { MarketingContainer, MarketingSection } from "@/components/landing/marketing-layout";
@@ -56,11 +58,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const related = await getRelatedBlogPosts(post);
   const publishedLabel = post.publishedAt
-    ? format(new Date(post.publishedAt), "MMMM d, yyyy")
+    ? format(new Date(post.publishedAt), "MMMM d, yyyy 'at' h:mm a")
     : null;
 
   return (
     <>
+      <BlogPostViewTracker slug={post.slug} />
       <ArticleJsonLd
         title={post.title}
         description={post.excerpt || post.seoDescription}
@@ -97,6 +100,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <Clock className="size-4" />
               {post.readingTimeMinutes} min read
             </span>
+            <BlogViewCount postId={post.id} initialCount={post.viewCount} />
             {post.authorName && <span>By {post.authorName}</span>}
           </div>
 

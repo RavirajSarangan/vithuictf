@@ -6,10 +6,10 @@ import { staffNav } from "@/lib/navigation";
 
 export function StaffLayoutClient({ children }: { children: React.ReactNode }) {
   return (
-    <PortalAuthGate allowedRoles={["content_manager"]} loginHref="/login/social-tracking">
-      <PortalShell navItems={staffNav} variant="admin" title="Content Team" homeHref="/staff/tracking">
+    <PortalShell navItems={staffNav} variant="admin" title="Content Team" homeHref="/staff/tracking">
+      <PortalAuthGate allowedRoles={["content_manager"]} loginHref="/login/social-tracking">
         {children}
-      </PortalShell>
-    </PortalAuthGate>
+      </PortalAuthGate>
+    </PortalShell>
   );
 }

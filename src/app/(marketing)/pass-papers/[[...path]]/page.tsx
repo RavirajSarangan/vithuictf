@@ -14,6 +14,8 @@ export const metadata: Metadata = buildPageMetadata({
   path: "/pass-papers",
 });
 
+export const revalidate = 300;
+
 type PageProps = {
   params: Promise<{ path?: string[] }>;
 };

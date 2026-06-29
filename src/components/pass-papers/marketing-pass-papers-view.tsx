@@ -1,4 +1,4 @@
-import { PassPaperBrowser } from "@/components/pass-papers/pass-paper-browser";
+import { PassPaperBrowserLazy } from "@/components/pass-papers/pass-paper-browser-lazy";
 import {
   MarketingContainer,
   MarketingSection,
@@ -26,7 +26,7 @@ export function MarketingPassPapersView({
           light={false}
           badgeVariant="accent"
         />
-        <PassPaperBrowser
+        <PassPaperBrowserLazy
           folders={folders}
           items={items}
           loading={false}

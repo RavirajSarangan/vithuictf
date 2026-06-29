@@ -7,6 +7,7 @@ export function revalidateStudentPortalPaths() {
     "/results",
     "/resources",
     "/calendar",
+    "/slides",
     "/achievements",
     "/leaderboard",
     "/profile-card",

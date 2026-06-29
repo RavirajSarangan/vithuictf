@@ -6,10 +6,10 @@ import { parentNav } from "@/lib/navigation";
 
 export function ParentLayoutClient({ children }: { children: React.ReactNode }) {
   return (
-    <PortalAuthGate allowedRoles={["parent"]} loginHref="/login">
-      <PortalShell navItems={parentNav} variant="parent">
+    <PortalShell navItems={parentNav} variant="parent">
+      <PortalAuthGate allowedRoles={["parent"]} loginHref="/login">
         {children}
-      </PortalShell>
-    </PortalAuthGate>
+      </PortalAuthGate>
+    </PortalShell>
   );
 }

@@ -3,6 +3,7 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AdminTable } from "@/components/admin/admin-table";
+import { StudentPageLoading } from "@/components/student/portal/student-portal-states";
 import { useStaffExamPaperBatches } from "@/hooks/use-exam-papers";
 import { FileText } from "lucide-react";
 
@@ -21,7 +22,7 @@ export default function PaperCenterHistoryPage() {
       />
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading history…</p>
+        <StudentPageLoading rows={2} />
       ) : batches.length === 0 ? (
         <EmptyState
           icon={FileText}

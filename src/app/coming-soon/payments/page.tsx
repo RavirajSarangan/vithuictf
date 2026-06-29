@@ -1,6 +1,6 @@
 import { ComingSoon } from "@/components/shared/coming-soon";
 import { createClient } from "@/lib/supabase/server";
-import { isOnlinePaymentsAvailable } from "@/lib/payment-access";
+import { isOnlinePaymentsAvailable } from "@/lib/payment-access.server";
 import { redirect } from "next/navigation";
 
 export default async function PaymentsComingSoonPage() {

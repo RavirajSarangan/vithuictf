@@ -7,6 +7,8 @@ import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin
 import { requireStaff, requireAdmin, requireSuperAdmin, signUpWithRole, getSessionProfile } from "@/lib/actions/auth";
 import { logAdminAction } from "@/lib/audit";
 import { sendStaffWelcomeEmail, sendStudentWelcomeEmail } from "@/lib/actions/email";
+import { sendStudentWelcomeWhatsApp } from "@/lib/actions/whatsapp";
+import { getAppUrl } from "@/lib/email/resend";
 import { BRAND } from "@/lib/constants";
 import {
   revalidateMarketingPaths,
@@ -23,7 +25,11 @@ import { slugifyBlogTitle, validateBlogSlug } from "@/lib/blog/slug";
 import type { CourseLevel, MarketingAnnouncementContentType, MarketingAnnouncementDisplayStyle, SitePublicMode, BrandLogoSettings, BlogPostStatus, UserRole } from "@/types";
 import { validateBrandLogoSettings } from "@/lib/brand-logo-settings";
 import { deriveStaffUsername } from "@/lib/staff-username";
-import { USERNAME_PATTERN } from "@/lib/validation/register-student";
+import { USERNAME_PATTERN, isValidNic, normalizeNic } from "@/lib/validation/register-student";
+import {
+  normalizeSriLankaWhatsApp,
+  validateSriLankaWhatsApp,
+} from "@/lib/validation/sri-lanka-phone";
 
 const PEOPLE_PATHS = ["/admin/people", "/admin/staff", "/admin/content-team"] as const;
 
@@ -85,18 +91,71 @@ export async function deleteStudent(id: string) {
 export async function addStudent(data: {
   displayName: string;
   email: string;
-  courseId: string;
-  courseName: string;
+  courseId?: string;
+  courseName?: string;
+  courseIds?: string[];
+  batchIds?: Record<string, string>;
+  whatsapp: string;
+  schoolName: string;
+  nicNumber?: string;
   password?: string;
+  examYear?: string;
+  ictGrade?: string;
+  registrationStatus?: "approved" | "pending";
 }) {
   await requireStaff();
 
   if (!data.displayName.trim()) throw new Error("Student name is required");
   if (!isValidEmail(data.email)) throw new Error("Invalid email address");
 
+  const whatsappError = validateSriLankaWhatsApp(data.whatsapp);
+  if (whatsappError) throw new Error(whatsappError);
+
+  const schoolName = data.schoolName.trim();
+  if (schoolName.length < 2) throw new Error("School name is required");
+
+  const normalizedWhatsApp = normalizeSriLankaWhatsApp(data.whatsapp);
+  if (!normalizedWhatsApp) throw new Error("Enter a valid Sri Lankan mobile number");
+
+  const nicRaw = data.nicNumber?.trim() ?? "";
+  let nicNumber: string | null = null;
+  if (nicRaw) {
+    nicNumber = normalizeNic(nicRaw);
+    if (!isValidNic(nicNumber)) {
+      throw new Error("Enter a valid NIC number (e.g. 123456789V or 200012345678)");
+    }
+  }
+
+  const courseIds = data.courseIds?.length
+    ? data.courseIds
+    : data.courseId
+      ? [data.courseId]
+      : [];
+  if (!courseIds.length) throw new Error("Select at least one course");
+
   const supabase = await createClient();
+  const { data: courseRows } = await supabase
+    .from("courses")
+    .select("id, name, student_count")
+    .in("id", courseIds);
+  if (!courseRows?.length || courseRows.length !== courseIds.length) {
+    throw new Error("One or more selected courses were not found");
+  }
+
+  const primaryCourse = courseRows[0]!;
+  const primaryCourseName = data.courseName ?? primaryCourse.name;
+
   const { data: existing } = await supabase.from("students").select("id").eq("email", data.email).maybeSingle();
   if (existing) throw new Error("A student with this email already exists");
+
+  if (nicNumber) {
+    const { data: byNic } = await supabase
+      .from("students")
+      .select("id")
+      .eq("nic_number", nicNumber)
+      .maybeSingle();
+    if (byNic) throw new Error("This NIC number is already registered.");
+  }
 
   const tempPassword = data.password ?? `${BRAND.studentIdPrefix}-${crypto.randomUUID().slice(0, 8)}`;
   const user = await signUpWithRole(data.email, tempPassword, data.displayName, "student");
@@ -110,8 +169,14 @@ export async function addStudent(data: {
       student_id: studentId,
       display_name: data.displayName,
       email: data.email,
-      course_id: data.courseId,
-      course_name: data.courseName,
+      course_id: primaryCourse.id,
+      course_name: primaryCourseName,
+      phone: normalizedWhatsApp,
+      school_name: schoolName,
+      nic_number: nicNumber,
+      exam_year: data.examYear ?? null,
+      ict_grade: data.ictGrade ?? null,
+      registration_status: data.registrationStatus ?? "approved",
     })
     .eq("user_id", user.id)
     .select("id")
@@ -119,12 +184,41 @@ export async function addStudent(data: {
 
   if (error) throw new Error(error.message);
 
-  const { data: courseRow } = await admin.from("courses").select("student_count").eq("id", data.courseId).maybeSingle();
-  if (courseRow) {
-    await admin
-      .from("courses")
-      .update({ student_count: courseRow.student_count + 1 })
-      .eq("id", data.courseId);
+  await admin
+    .from("courses")
+    .update({ student_count: primaryCourse.student_count + 1 })
+    .eq("id", primaryCourse.id);
+
+  const registrationStatus = data.registrationStatus ?? "approved";
+  if (registrationStatus === "approved") {
+    const { autoEnrollStudentForAdmin } = await import("@/lib/academics/registration-enrollment");
+    const enrollMeta = {
+      examYear: data.examYear ?? null,
+      ictGrade: data.ictGrade ?? null,
+      studyTrack: data.examYear ? ("al" as const) : data.ictGrade ? ("grade" as const) : undefined,
+    };
+    for (const course of courseRows) {
+      await autoEnrollStudentForAdmin(
+        admin,
+        updated.id,
+        course.id,
+        data.batchIds?.[course.id],
+        enrollMeta
+      );
+    }
+    for (const course of courseRows.slice(1)) {
+      const { data: extraCourse } = await admin
+        .from("courses")
+        .select("student_count")
+        .eq("id", course.id)
+        .maybeSingle();
+      if (extraCourse) {
+        await admin
+          .from("courses")
+          .update({ student_count: extraCourse.student_count + 1 })
+          .eq("id", course.id);
+      }
+    }
   }
 
   const emailResult = await sendStudentWelcomeEmail({
@@ -132,20 +226,32 @@ export async function addStudent(data: {
     studentId,
     email: data.email,
     tempPassword,
-    courseName: data.courseName,
+    courseName: primaryCourseName,
+  });
+
+  const whatsappResult = await sendStudentWelcomeWhatsApp({
+    phone: normalizedWhatsApp,
+    displayName: data.displayName,
+    studentId,
+    courseName: primaryCourseName,
+    loginUrl: `${getAppUrl()}/login`,
+    selfRegistered: false,
   });
 
   revalidatePath("/admin/students");
+  revalidatePath("/academics/enrollments");
   revalidateStudentPortalPaths();
   return {
     id: updated.id,
     studentId,
     email: data.email,
     displayName: data.displayName,
-    courseName: data.courseName,
+    courseName: primaryCourseName,
     tempPassword: data.password ? undefined : tempPassword,
     emailSent: emailResult.emailSent,
     emailError: emailResult.error,
+    whatsappSent: whatsappResult.whatsappSent,
+    whatsappError: whatsappResult.error,
   };
 }
 
@@ -176,7 +282,29 @@ export async function resendStudentWelcomeEmail(studentDbId: string) {
     courseName: student.course_name ?? `${BRAND.name} Program`,
   });
 
-  return { tempPassword, ...emailResult };
+  let whatsappResult: { whatsappSent: boolean; error?: string } = {
+    whatsappSent: false,
+  };
+  if (student.phone) {
+    whatsappResult = await sendStudentWelcomeWhatsApp({
+      phone: student.phone,
+      displayName: student.display_name,
+      studentId: student.student_id,
+      username: student.username ?? undefined,
+      indexNumber: student.index_number ?? undefined,
+      courseName: student.course_name ?? `${BRAND.name} Program`,
+      loginUrl: `${getAppUrl()}/login`,
+      selfRegistered: false,
+    });
+  }
+
+  return {
+    tempPassword,
+    emailSent: emailResult.emailSent,
+    error: emailResult.error,
+    whatsappSent: whatsappResult.whatsappSent,
+    whatsappError: whatsappResult.error,
+  };
 }
 
 export async function deleteCourse(id: string): Promise<ActionResult> {
@@ -888,8 +1016,37 @@ export async function broadcastNotification(title: string, body: string) {
   revalidatePath("/admin/notifications");
 }
 
+export async function broadcastStudentMessage(input: {
+  title: string;
+  body: string;
+  sendPortal: boolean;
+  sendWhatsApp: boolean;
+}) {
+  const profile = await requireAdmin();
+  const { broadcastStudentMessage: sendStudentMessage } = await import(
+    "@/lib/academics/batch-notifications"
+  );
+  const summary = await sendStudentMessage({
+    title: input.title,
+    body: input.body,
+    channels: {
+      sendPortal: input.sendPortal,
+      sendWhatsApp: input.sendWhatsApp,
+    },
+    sentBy: profile.id,
+  });
+  revalidatePath("/admin/notifications");
+  revalidateStudentPortalPaths();
+  return summary;
+}
+
 export async function markNotificationRead(id: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
   const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id);
   if (error) throw new Error(error.message);
 }
@@ -1059,6 +1216,7 @@ export async function addPaperCenter(data: { name: string; district: string; add
     address: data.address,
     map_url: data.mapUrl ?? "",
     sort_order: data.sortOrder ?? 0,
+    grades: ["10", "11", "12", "13"],
   });
 }
 export async function deletePaperCenter(id: string) { await crudRow("paper_centers", "delete", undefined, id); }
@@ -1364,6 +1522,7 @@ export type BlogPostInput = {
   seoDescription?: string;
   tags?: string[];
   authorName?: string;
+  publishedAt?: string | null;
 };
 
 function blogCategoryPayload(data: BlogCategoryInput) {
@@ -1417,9 +1576,11 @@ function blogPostPayload(data: BlogPostInput, existingPublishedAt?: string | nul
   const slug = validateBlogPostInput(data, data.status === "published");
   const now = new Date().toISOString();
 
-  let publishedAt: string | null = existingPublishedAt ?? null;
-  if (data.status === "published") {
-    publishedAt = publishedAt ?? now;
+  let publishedAt: string | null =
+    data.publishedAt !== undefined ? data.publishedAt : (existingPublishedAt ?? null);
+
+  if (data.status === "published" && !publishedAt) {
+    publishedAt = now;
   }
 
   return {

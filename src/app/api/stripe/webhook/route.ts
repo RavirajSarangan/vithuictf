@@ -27,23 +27,29 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const studentId = session.metadata?.student_id;
+    const userId = session.metadata?.user_id;
     const studentName = (session.metadata?.student_name ?? "Student").slice(0, 120);
     const amount = (session.amount_total ?? 0) / 100;
 
     if (studentId && amount > 0) {
       const admin = createAdminClient();
 
-      // Validate that the student referenced by webhook metadata actually exists
-      // before inserting a payment, so forged/garbage metadata cannot create
-      // orphan payment records.
+      if (!userId) {
+        return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
+      }
+
       const { data: student } = await admin
         .from("students")
-        .select("id")
+        .select("id, user_id")
         .eq("id", studentId)
         .maybeSingle();
 
       if (!student) {
         return NextResponse.json({ error: "Unknown student" }, { status: 400 });
+      }
+
+      if (student.user_id !== userId) {
+        return NextResponse.json({ error: "Student payment mismatch" }, { status: 400 });
       }
 
       await admin.from("payments").insert({

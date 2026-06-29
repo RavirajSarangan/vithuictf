@@ -10,6 +10,16 @@ import { actionFailure, formatAccountRole, type ActionResult } from "@/lib/actio
 import { isAdminClientConfigured } from "@/lib/supabase/admin";
 import { normalizeStaffUsername } from "@/lib/staff-username";
 import { USERNAME_PATTERN } from "@/lib/validation/register-student";
+import {
+  normalizePaperCenterGrades,
+  validateStaffGradesForCenter,
+  type PaperCenterGrade,
+  type PaperCenterStaffRole,
+} from "@/lib/paper-centers/grades";
+import {
+  normalizeSriLankaWhatsApp,
+  validateSriLankaWhatsApp,
+} from "@/lib/validation/sri-lanka-phone";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -20,6 +30,9 @@ export async function addPaperCenterStaff(data: {
   staffUsername: string;
   email: string;
   paperCenterId: string;
+  staffRole: PaperCenterStaffRole;
+  whatsapp: string;
+  grades: PaperCenterGrade[];
   password?: string;
 }): Promise<ActionResult<{ tempPassword?: string; loginUrl?: string }>> {
   try {
@@ -36,12 +49,19 @@ export async function addPaperCenterStaff(data: {
     if (!isValidEmail(data.email)) return { ok: false, error: "Invalid email address" };
     if (!data.paperCenterId) return { ok: false, error: "Paper center is required" };
 
+    const whatsappError = validateSriLankaWhatsApp(data.whatsapp);
+    if (whatsappError) return { ok: false, error: whatsappError };
+
     const normalizedUsername = normalizeStaffUsername(data.staffUsername);
     if (!normalizedUsername || !USERNAME_PATTERN.test(normalizedUsername)) {
       return { ok: false, error: "Use 3–20 letters, numbers, or underscores for username" };
     }
 
+    const staffRole: PaperCenterStaffRole = data.staffRole === "in_charge" ? "in_charge" : "staff";
     const normalizedEmail = data.email.trim().toLowerCase();
+    const normalizedWhatsapp = normalizeSriLankaWhatsApp(data.whatsapp);
+    if (!normalizedWhatsapp) return { ok: false, error: "Invalid WhatsApp number" };
+
     const supabase = await createClient();
     const admin = createAdminClient();
 
@@ -70,12 +90,31 @@ export async function addPaperCenterStaff(data: {
 
     const { data: center } = await supabase
       .from("paper_centers")
-      .select("id, is_active, slug")
+      .select("id, is_active, slug, grades")
       .eq("id", data.paperCenterId)
       .maybeSingle();
 
     if (!center?.is_active) {
       return { ok: false, error: "Selected paper center is not available" };
+    }
+
+    const centerGrades = normalizePaperCenterGrades(center.grades ?? []);
+    const staffGrades = normalizePaperCenterGrades(data.grades);
+    const gradeError = validateStaffGradesForCenter(staffGrades, centerGrades);
+    if (gradeError) return { ok: false, error: gradeError };
+
+    if (staffRole === "in_charge") {
+      const { data: existingInCharge } = await supabase
+        .from("paper_center_staff")
+        .select("id")
+        .eq("paper_center_id", data.paperCenterId)
+        .eq("staff_role", "in_charge")
+        .eq("active", true)
+        .maybeSingle();
+
+      if (existingInCharge) {
+        return { ok: false, error: "This center already has an active in-charge staff member" };
+      }
     }
 
     const tempPassword = data.password ?? `ICTF-${crypto.randomUUID().slice(0, 8)}`;
@@ -93,6 +132,9 @@ export async function addPaperCenterStaff(data: {
       display_name: data.displayName.trim(),
       staff_username: normalizedUsername,
       email: normalizedEmail,
+      staff_role: staffRole,
+      whatsapp: normalizedWhatsapp,
+      grades: staffGrades,
       active: true,
     });
 
@@ -188,4 +230,34 @@ export async function resetPaperCenterStaffPassword(id: string, newPassword?: st
   if (error) throw new Error(error.message);
 
   return { tempPassword: newPassword ? undefined : tempPassword, email: staff.email };
+}
+
+export async function countPaperCenterStaffRecipients(paperCenterId?: string): Promise<number> {
+  await requireSuperAdmin();
+  const { countActivePaperCenterStaff } = await import("@/lib/paper-centers/staff-notifications");
+  return countActivePaperCenterStaff(paperCenterId);
+}
+
+export async function sendPaperCenterStaffMessage(input: {
+  paperCenterId?: string;
+  title: string;
+  body: string;
+}) {
+  const profile = await requireSuperAdmin();
+
+  const title = input.title.trim();
+  const body = input.body.trim();
+  if (!title) throw new Error("Title is required");
+  if (!body) throw new Error("Message is required");
+
+  const { sendPaperCenterStaffWhatsApp } = await import("@/lib/paper-centers/staff-notifications");
+  const summary = await sendPaperCenterStaffWhatsApp({
+    paperCenterId: input.paperCenterId,
+    title,
+    body,
+    sentBy: profile.id,
+  });
+
+  revalidatePath("/admin/paper-centers");
+  return summary;
 }

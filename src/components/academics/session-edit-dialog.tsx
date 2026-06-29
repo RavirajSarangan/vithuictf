@@ -29,9 +29,16 @@ interface SessionEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
+  onManageSlides?: (session: ClassSession) => void;
 }
 
-export function SessionEditDialog({ session, open, onOpenChange, onSaved }: SessionEditDialogProps) {
+export function SessionEditDialog({
+  session,
+  open,
+  onOpenChange,
+  onSaved,
+  onManageSlides,
+}: SessionEditDialogProps) {
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
@@ -139,6 +146,23 @@ export function SessionEditDialog({ session, open, onOpenChange, onSaved }: Sess
                   </FormItem>
                 )}
               />
+              {session.canvaSlideUrl ? (
+                <p className="text-sm text-muted-foreground">
+                  Canva slides assigned
+                  {session.canvaSlideTitle ? `: ${session.canvaSlideTitle}` : ""}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No Canva slides assigned</p>
+              )}
+              {onManageSlides ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onManageSlides(session)}
+                >
+                  Manage slides
+                </Button>
+              ) : null}
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? (
                   <>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   mapBatchEnrollment,
+  mapBatchWhatsAppLog,
   mapClassSession,
   mapCourseBatch,
 } from "@/lib/supabase/mappers";
@@ -11,10 +12,13 @@ import { filterBatchesForTeacher, filterStudentsForTeacher } from "@/lib/teacher
 import type {
   AttendanceStatus,
   BatchEnrollment,
+  BatchWhatsAppLogEntry,
   ClassSession,
   ClassSessionStatus,
   CourseBatch,
+  EnrollmentOverviewRow,
   Student,
+  StudentEnrollmentDetail,
 } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { useCurrentTeacher } from "@/hooks/use-data";
@@ -290,7 +294,10 @@ export type BatchAttendanceSummaryRow = {
   attendancePercent: number;
 };
 
-export function useBatchAttendanceSummary(batchId: string | null) {
+export function useBatchAttendanceSummary(
+  batchId: string | null,
+  options?: { fromDate?: string; toDate?: string }
+) {
   const [data, setData] = useState<BatchAttendanceSummaryRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -307,8 +314,12 @@ export function useBatchAttendanceSummary(batchId: string | null) {
     void (async () => {
       const supabase = createClient();
 
+      let sessionQuery = supabase.from("class_sessions").select("id, status, scheduled_date").eq("batch_id", batchId);
+      if (options?.fromDate) sessionQuery = sessionQuery.gte("scheduled_date", options.fromDate);
+      if (options?.toDate) sessionQuery = sessionQuery.lte("scheduled_date", options.toDate);
+
       const [{ data: sessions }, { data: enrollments }] = await Promise.all([
-        supabase.from("class_sessions").select("id, status").eq("batch_id", batchId),
+        sessionQuery,
         supabase
           .from("batch_enrollments")
           .select("student_id, enrollment_code, students(display_name)")
@@ -321,11 +332,11 @@ export function useBatchAttendanceSummary(batchId: string | null) {
         .map((s) => s.id);
       const totalSessions = sessionIds.length;
 
-      let attendance: { student_id: string; status: string }[] = [];
+      let attendance: { student_id: string; status: string; session_id: string }[] = [];
       if (sessionIds.length) {
         const { data: records } = await supabase
           .from("attendance_records")
-          .select("student_id, status")
+          .select("student_id, status, session_id")
           .in("session_id", sessionIds);
         attendance = records ?? [];
       }
@@ -365,7 +376,7 @@ export function useBatchAttendanceSummary(batchId: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [batchId]);
+  }, [batchId, options?.fromDate, options?.toDate]);
 
   return { data, loading };
 }
@@ -560,6 +571,8 @@ export function useAcademicsCalendarSessions(batchId?: string, weekStart?: strin
   const teacher = useCurrentTeacher();
   const [data, setData] = useState<AcademicsCalendarSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
   const weekStartDate = weekStart ?? formatWeekStart(new Date());
 
@@ -632,9 +645,90 @@ export function useAcademicsCalendarSessions(batchId?: string, weekStart?: strin
     return () => {
       cancelled = true;
     };
-  }, [batchId, weekStartDate, user?.role, teacher]);
+  }, [batchId, weekStartDate, user?.role, teacher, version]);
 
-  return { data, loading, weekStart: weekStartDate };
+  return { data, loading, weekStart: weekStartDate, refresh };
+}
+
+export function useAcademicsCalendarSessionsForMonth(batchId?: string, monthKey?: string) {
+  const { user } = useAuth();
+  const teacher = useCurrentTeacher();
+  const [data, setData] = useState<AcademicsCalendarSession[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const resolvedMonth = monthKey ?? `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const supabase = createClient();
+      const [year, month] = resolvedMonth.split("-").map(Number);
+      const startStr = `${year}-${String(month).padStart(2, "0")}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const endStr = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+      let query = supabase
+        .from("class_sessions")
+        .select("*, course_batches(name, batch_code, course_id, courses(name))")
+        .gte("scheduled_date", startStr)
+        .lte("scheduled_date", endStr)
+        .order("scheduled_date")
+        .order("start_time");
+
+      if (batchId) {
+        query = query.eq("batch_id", batchId);
+      }
+
+      const { data: rows } = await query;
+      if (cancelled) return;
+
+      let sessions = (rows ?? []).map((row) => {
+        const batchRaw = row.course_batches as unknown;
+        const batch = (Array.isArray(batchRaw) ? batchRaw[0] : batchRaw) as {
+          name: string;
+          batch_code: string;
+          course_id: string;
+          courses?: { name: string } | { name: string }[] | null;
+        } | null;
+        const courseRaw = batch?.courses;
+        const courseName = Array.isArray(courseRaw) ? courseRaw[0]?.name : courseRaw?.name;
+        const mapped = mapClassSession(row);
+        return {
+          ...mapped,
+          batchName: batch?.name ?? "Batch",
+          batchCode: batch?.batch_code ?? "",
+          courseName,
+        };
+      });
+
+      if (!batchId) {
+        const batchIds = [...new Set(sessions.map((s) => s.batchId))];
+        const { data: batchRows } = await supabase
+          .from("course_batches")
+          .select("id, course_id")
+          .in("id", batchIds.length ? batchIds : ["00000000-0000-0000-0000-000000000000"]);
+        const allowed = new Set(
+          filterBatchesForTeacher(
+            (batchRows ?? []).map((b) => ({ id: b.id, courseId: b.course_id } as CourseBatch)),
+            user?.role,
+            teacher
+          ).map((b) => b.id)
+        );
+        sessions = sessions.filter((s) => allowed.has(s.batchId));
+      }
+
+      setData(sessions);
+      setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [batchId, resolvedMonth, user?.role, teacher]);
+
+  return { data, loading };
 }
 
 export type StudentBatchAttendance = {
@@ -747,14 +841,143 @@ export function useStudentBatchAttendance(studentId: string | null) {
   return { data, loading };
 }
 
-export type StudentEnrollment = {
-  enrollmentId: string;
-  courseId: string;
-  courseName: string;
-  batchId: string;
-  batchName: string;
-  batchCode: string;
-};
+export type StudentEnrollment = StudentEnrollmentDetail;
+
+function mapEnrollmentRow(
+  enrollment: {
+    id: string;
+    batch_id: string;
+    enrollment_code: string;
+    joined_at: string;
+    active: boolean;
+    course_batches?: unknown;
+  },
+  primaryCourseId: string | null
+): StudentEnrollmentDetail | null {
+  const batchRaw = enrollment.course_batches as unknown;
+  const batch = (Array.isArray(batchRaw) ? batchRaw[0] : batchRaw) as {
+    id: string;
+    name: string;
+    batch_code: string;
+    start_date: string;
+    class_days: string[];
+    start_time: string;
+    end_time: string;
+    course_id: string;
+    courses?: {
+      id: string;
+      name: string;
+      level: string;
+      teacher_name: string;
+      duration_months: number | null;
+      cover_image_url: string | null;
+      category: string | null;
+    } | {
+      id: string;
+      name: string;
+      level: string;
+      teacher_name: string;
+      duration_months: number | null;
+      cover_image_url: string | null;
+      category: string | null;
+    }[] | null;
+  } | null;
+
+  const courseRaw = batch?.courses;
+  const course = Array.isArray(courseRaw) ? courseRaw[0] : courseRaw;
+  if (!batch?.course_id || !course) return null;
+
+  return {
+    enrollmentId: enrollment.id,
+    courseId: course.id,
+    course: {
+      name: course.name,
+      level: course.level as StudentEnrollmentDetail["course"]["level"],
+      teacherName: course.teacher_name,
+      durationMonths: course.duration_months ?? undefined,
+      coverImageUrl: course.cover_image_url ?? undefined,
+      category: course.category ?? undefined,
+    },
+    batch: {
+      id: batch.id,
+      name: batch.name,
+      batchCode: batch.batch_code,
+      startDate: batch.start_date,
+      classDays: batch.class_days ?? [],
+      startTime: batch.start_time,
+      endTime: batch.end_time,
+    },
+    enrollmentCode: enrollment.enrollment_code,
+    joinedAt: enrollment.joined_at,
+    active: enrollment.active,
+    isPrimary: primaryCourseId === course.id,
+  };
+}
+
+export function useEnrollmentOverview() {
+  const { user } = useAuth();
+  const teacher = useCurrentTeacher();
+  const [data, setData] = useState<EnrollmentOverviewRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const supabase = createClient();
+      const { data: studentRows } = await supabase
+        .from("students")
+        .select("*")
+        .order("display_name");
+
+      let students = (studentRows ?? []).map((row) => mapStudent(row));
+      students = filterStudentsForTeacher(students, user?.role, teacher);
+
+      const { data: enrollmentRows } = await supabase
+        .from("batch_enrollments")
+        .select(
+          "id, batch_id, student_id, enrollment_code, joined_at, active, course_batches(id, name, batch_code, start_date, class_days, start_time, end_time, course_id, courses(id, name, level, teacher_name, duration_months, cover_image_url, category))"
+        )
+        .eq("active", true);
+
+      const byStudent = new Map<string, StudentEnrollmentDetail[]>();
+      for (const enrollment of enrollmentRows ?? []) {
+        const student = students.find((s) => s.id === enrollment.student_id);
+        if (!student) continue;
+        const mapped = mapEnrollmentRow(enrollment, student.courseId);
+        if (!mapped) continue;
+        const list = byStudent.get(student.id) ?? [];
+        if (!list.some((e) => e.courseId === mapped.courseId)) {
+          list.push(mapped);
+        }
+        byStudent.set(student.id, list);
+      }
+
+      const overview: EnrollmentOverviewRow[] = students.map((student) => {
+        const enrollments = byStudent.get(student.id) ?? [];
+        return {
+          student,
+          enrollments,
+          enrollmentCount: enrollments.length,
+        };
+      });
+
+      if (!cancelled) {
+        setData(overview);
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [version, user?.role, teacher]);
+
+  return { data, loading, refresh };
+}
 
 export function useStudentEnrollments(studentId: string | null) {
   const [data, setData] = useState<StudentEnrollment[]>([]);
@@ -772,36 +995,24 @@ export function useStudentEnrollments(studentId: string | null) {
 
     void (async () => {
       const supabase = createClient();
+      const { data: studentRow } = await supabase
+        .from("students")
+        .select("course_id")
+        .eq("id", studentId)
+        .maybeSingle();
+
       const { data: enrollments } = await supabase
         .from("batch_enrollments")
         .select(
-          "id, batch_id, course_batches(name, batch_code, course_id, courses(id, name))"
+          "id, batch_id, enrollment_code, joined_at, active, course_batches(id, name, batch_code, start_date, class_days, start_time, end_time, course_id, courses(id, name, level, teacher_name, duration_months, cover_image_url, category))"
         )
         .eq("student_id", studentId)
         .eq("active", true);
 
       const results: StudentEnrollment[] = [];
-
       for (const enrollment of enrollments ?? []) {
-        const batchRaw = enrollment.course_batches as unknown;
-        const batch = (Array.isArray(batchRaw) ? batchRaw[0] : batchRaw) as {
-          name: string;
-          batch_code: string;
-          course_id: string;
-          courses?: { id: string; name: string } | { id: string; name: string }[] | null;
-        } | null;
-        const courseRaw = batch?.courses;
-        const course = Array.isArray(courseRaw) ? courseRaw[0] : courseRaw;
-        if (!batch?.course_id || !course) continue;
-
-        results.push({
-          enrollmentId: enrollment.id,
-          courseId: course.id,
-          courseName: course.name,
-          batchId: enrollment.batch_id,
-          batchName: batch.name,
-          batchCode: batch.batch_code,
-        });
+        const mapped = mapEnrollmentRow(enrollment, studentRow?.course_id ?? null);
+        if (mapped) results.push(mapped);
       }
 
       const uniqueByCourse = new Map<string, StudentEnrollment>();
@@ -823,4 +1034,260 @@ export function useStudentEnrollments(studentId: string | null) {
   }, [studentId]);
 
   return { data, loading };
+}
+
+export function useStudentBatchCalendarSessions(studentId: string | null, courseId?: string | null) {
+  const [data, setData] = useState<AcademicsCalendarSession[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!studentId) {
+      setData([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const supabase = createClient();
+      const { data: enrollments } = await supabase
+        .from("batch_enrollments")
+        .select("batch_id, course_batches(course_id)")
+        .eq("student_id", studentId)
+        .eq("active", true);
+
+      let batchIds = (enrollments ?? []).map((e) => e.batch_id);
+      if (courseId) {
+        batchIds = (enrollments ?? [])
+          .filter((e) => {
+            const batchRaw = e.course_batches as unknown;
+            const batch = (Array.isArray(batchRaw) ? batchRaw[0] : batchRaw) as { course_id: string } | null;
+            return batch?.course_id === courseId;
+          })
+          .map((e) => e.batch_id);
+      }
+
+      if (!batchIds.length) {
+        if (!cancelled) {
+          setData([]);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const { data: rows } = await supabase
+        .from("class_sessions")
+        .select("*, course_batches(name, batch_code, course_id, courses(name))")
+        .in("batch_id", batchIds)
+        .order("scheduled_date")
+        .order("start_time");
+
+      if (cancelled) return;
+
+      const sessions: AcademicsCalendarSession[] = (rows ?? []).map((row) => {
+        const batchRaw = row.course_batches as unknown;
+        const batch = (Array.isArray(batchRaw) ? batchRaw[0] : batchRaw) as {
+          name: string;
+          batch_code: string;
+          courses?: { name: string } | { name: string }[] | null;
+        } | null;
+        const courseRaw = batch?.courses;
+        const courseName = Array.isArray(courseRaw) ? courseRaw[0]?.name : courseRaw?.name;
+        return {
+          ...mapClassSession(row),
+          batchName: batch?.name ?? "Batch",
+          batchCode: batch?.batch_code ?? "",
+          courseName,
+        };
+      });
+
+      setData(sessions);
+      setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId, courseId]);
+
+  return { data, loading };
+}
+
+export function useStudentBatchTodaySessions(studentId: string | null, courseId?: string | null) {
+  const { data, loading } = useStudentBatchCalendarSessions(studentId, courseId);
+  const today = new Date().toISOString().slice(0, 10);
+  const todaySessions = useMemo(
+    () => data.filter((s) => s.scheduledDate === today && s.status !== "cancelled"),
+    [data, today]
+  );
+  return { data: todaySessions, loading };
+}
+
+export function useActiveBatchesOverview() {
+  const [data, setData] = useState<
+    Array<
+      CourseBatch & {
+        enrolledCount: number;
+        nextSessionDate: string | null;
+        nextSessionTime: string | null;
+      }
+    >
+  >([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const supabase = createClient();
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: batches } = await supabase
+        .from("course_batches")
+        .select("*, courses(name, cover_image_url)")
+        .eq("active", true)
+        .order("start_date", { ascending: false });
+
+      const results: Array<
+        CourseBatch & {
+          enrolledCount: number;
+          nextSessionDate: string | null;
+          nextSessionTime: string | null;
+        }
+      > = [];
+
+      for (const row of batches ?? []) {
+        const batch = mapCourseBatch(row);
+        const [{ count }, { data: nextSession }] = await Promise.all([
+          supabase
+            .from("batch_enrollments")
+            .select("id", { count: "exact", head: true })
+            .eq("batch_id", batch.id)
+            .eq("active", true),
+          supabase
+            .from("class_sessions")
+            .select("scheduled_date, start_time")
+            .eq("batch_id", batch.id)
+            .eq("status", "scheduled")
+            .gte("scheduled_date", today)
+            .order("scheduled_date")
+            .order("start_time")
+            .limit(1)
+            .maybeSingle(),
+        ]);
+
+        results.push({
+          ...batch,
+          enrolledCount: count ?? 0,
+          nextSessionDate: nextSession?.scheduled_date ?? null,
+          nextSessionTime: nextSession?.start_time ?? null,
+        });
+      }
+
+      if (!cancelled) {
+        setData(results);
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { data, loading };
+}
+
+export function useBatchWhatsAppLog(batchId: string | null) {
+  const [data, setData] = useState<BatchWhatsAppLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!batchId) {
+      setData([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const supabase = createClient();
+      const { data: rows } = await supabase
+        .from("batch_whatsapp_log")
+        .select("*, students(full_name)")
+        .eq("batch_id", batchId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (!cancelled) {
+        setData((rows ?? []).map((row) => mapBatchWhatsAppLog(row)));
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [batchId]);
+
+  return { data, loading };
+}
+
+export function useStudentSessionSlide(sessionId: string | null) {
+  const [session, setSession] = useState<ClassSession | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!sessionId) {
+      setSession(null);
+      setNotFound(false);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+
+    void (async () => {
+      const supabase = createClient();
+      const { data: row, error } = await supabase
+        .from("class_sessions")
+        .select("*, course_batches(name, batch_code)")
+        .eq("id", sessionId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error || !row) {
+        setSession(null);
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      const mapped = mapClassSession(row);
+      if (!mapped.canvaSlideUrl) {
+        setSession(mapped);
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      setSession(mapped);
+      setNotFound(false);
+      setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  return { session, loading, notFound };
 }

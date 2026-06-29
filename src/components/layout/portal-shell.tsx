@@ -15,6 +15,9 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -31,6 +34,67 @@ export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** Sidebar section label (admin portal). Items without a group render first. */
+  group?: string;
+}
+
+interface NavSection {
+  label?: string;
+  items: NavItem[];
+}
+
+function groupNavItems(items: NavItem[]): NavSection[] {
+  const sections: NavSection[] = [];
+  const indexByLabel = new Map<string | undefined, number>();
+
+  for (const item of items) {
+    const key = item.group;
+    const existing = indexByLabel.get(key);
+    if (existing !== undefined) {
+      sections[existing]?.items.push(item);
+      continue;
+    }
+    indexByLabel.set(key, sections.length);
+    sections.push({ label: key, items: [item] });
+  }
+
+  return sections;
+}
+
+function NavMenuLink({
+  item,
+  pathname,
+}: {
+  item: NavItem;
+  pathname: string;
+}) {
+  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+  return (
+    <SidebarMenuItem className="relative">
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1/2 z-10 h-7 w-1 -translate-y-1/2 rounded-r-full bg-icvf-accent shadow-sm transition-all duration-300"
+        />
+      ) : null}
+      <SidebarMenuButton
+        isActive={active}
+        size="lg"
+        render={<Link href={item.href} />}
+        className={cn(
+          "h-11 rounded-xl px-3.5 font-medium transition-all duration-200",
+          "text-white/75 hover:bg-white/10 hover:text-white",
+          "data-active:bg-white data-active:text-icvf-navy data-active:shadow-md",
+          "data-active:hover:bg-white data-active:hover:text-icvf-navy",
+          active && "bg-white text-icvf-navy shadow-md hover:bg-white hover:text-icvf-navy"
+        )}
+      >
+        <item.icon className={cn("size-[18px]", active && "text-icvf-navy")} />
+        <span>{item.label}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
 }
 
 interface PortalShellProps {
@@ -79,46 +143,36 @@ function PortalSidebar({
   const brandHref =
     homeHref ??
     (variant === "student" ? "/" : variant === "parent" ? "/parent/dashboard" : "/admin/dashboard");
+  const navSections = useMemo(
+    () => (variant === "admin" ? groupNavItems(navItems) : [{ items: navItems }]),
+    [navItems, variant]
+  );
 
   return (
     <Sidebar className="border-r border-white/10 bg-icvf-navy [&_[data-sidebar=sidebar]]:bg-icvf-navy">
       <SidebarHeader className="border-b border-white/10 px-4 py-5">
         <Link href={brandHref} className="inline-flex" aria-label={BRAND.name}>
-          <BrandLogo size="md" light />
+          <BrandLogo size="portal" src={BRAND.logoPortal} priority />
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
-        <SidebarMenu className="gap-1.5">
-          {navItems.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <SidebarMenuItem key={item.href} className="relative">
-                {active ? (
-                  <span
-                    aria-hidden
-                    className="absolute left-0 top-1/2 z-10 h-7 w-1 -translate-y-1/2 rounded-r-full bg-icvf-accent shadow-sm transition-all duration-300"
-                  />
-                ) : null}
-                <SidebarMenuButton
-                  isActive={active}
-                  size="lg"
-                  render={<Link href={item.href} />}
-                  className={cn(
-                    "h-11 rounded-xl px-3.5 font-medium transition-all duration-200",
-                    "text-white/75 hover:bg-white/10 hover:text-white",
-                    "data-active:bg-white data-active:text-icvf-navy data-active:shadow-md",
-                    "data-active:hover:bg-white data-active:hover:text-icvf-navy",
-                    active && "bg-white text-icvf-navy shadow-md hover:bg-white hover:text-icvf-navy"
-                  )}
-                >
-                  <item.icon className={cn("size-[18px]", active && "text-icvf-navy")} />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
+      <SidebarContent className="px-1 py-4">
+        {navSections.map((section) => (
+          <SidebarGroup key={section.label ?? "main"} className="p-0 px-2">
+            {section.label ? (
+              <SidebarGroupLabel className="h-auto px-2.5 pb-1.5 pt-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 first:pt-1">
+                {section.label}
+              </SidebarGroupLabel>
+            ) : null}
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1.5">
+                {section.items.map((item) => (
+                  <NavMenuLink key={item.href} item={item} pathname={pathname} />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-white/10 p-4">

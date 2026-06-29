@@ -261,7 +261,11 @@ export type MarketingUiKey =
   | "auth.indexNumber"
   | "auth.indexAutoNote"
   | "auth.phone"
+  | "auth.whatsapp"
+  | "auth.schoolName"
+  | "auth.schoolNamePlaceholder"
   | "auth.nicNumber"
+  | "auth.nicNumberOptional"
   | "auth.nicNumberPlaceholder"
   | "auth.nicNumberHint"
   | "auth.course"
@@ -801,7 +805,17 @@ const UI: Record<MarketingUiKey, UiEntry> = {
     ta: "உங்கள் அட்டவணை எண் தானாக உருவாக்கப்பட்டு, பதிவுக்குப் பிறகு உங்கள் மின்னஞ்சலுக்கு அனுப்பப்படும்.",
   },
   "auth.phone": { en: "Phone (optional)", ta: "தொலைபேசி (விருப்பம்)" },
+  "auth.whatsapp": { en: "WhatsApp Number", ta: "WhatsApp எண்" },
+  "auth.schoolName": { en: "School Name", ta: "பாடசாலை பெயர்" },
+  "auth.schoolNamePlaceholder": {
+    en: "e.g. Jaffna Hindu College",
+    ta: "எ.கா. யாழ்ப்பாண இந்துக் கல்லூரி",
+  },
   "auth.nicNumber": { en: "NIC Number", ta: "தேசிய அடையாள அட்டை எண்" },
+  "auth.nicNumberOptional": {
+    en: "NIC Number (optional)",
+    ta: "தேசிய அடையாள அட்டை எண் (விருப்பம்)",
+  },
   "auth.nicNumberPlaceholder": { en: "123456789V or 200012345678", ta: "123456789V அல்லது 200012345678" },
   "auth.nicNumberHint": {
     en: "Sri Lankan NIC: 9 digits + V/X, or the new 12-digit format.",

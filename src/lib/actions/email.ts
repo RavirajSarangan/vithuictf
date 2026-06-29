@@ -12,6 +12,11 @@ import {
   buildContactInquiryConfirmationEmailSubject,
 } from "@/lib/email/templates/contact-inquiry-confirmation";
 import {
+  buildRegistrationPendingEmailHtml,
+  buildRegistrationPendingEmailSubject,
+  buildRegistrationPendingEmailText,
+} from "@/lib/email/templates/registration-pending";
+import {
   buildWelcomeStudentEmailHtml,
   buildWelcomeStudentEmailSubject,
   buildWelcomeStudentEmailText,
@@ -23,6 +28,30 @@ import {
   buildWelcomeStaffEmailText,
   type WelcomeStaffEmailData,
 } from "@/lib/email/templates/welcome-staff";
+
+export async function sendStudentRegistrationPendingEmail(data: {
+  displayName: string;
+  studentId: string;
+  email: string;
+  courseName: string;
+}): Promise<{ emailSent: boolean; error?: string }> {
+  const config = getResendConfig();
+
+  if (!config) {
+    console.info("[email] Resend not configured. Registration pending email for:", data.email);
+    return { emailSent: false, error: "Email service not configured" };
+  }
+
+  const result = await sendEmail({
+    to: data.email,
+    subject: buildRegistrationPendingEmailSubject(),
+    html: buildRegistrationPendingEmailHtml(data),
+    text: buildRegistrationPendingEmailText(data),
+    replyTo: config.replyTo,
+  });
+
+  return { emailSent: result.emailSent, error: result.error };
+}
 
 export async function sendStudentWelcomeEmail(
   data: Omit<WelcomeStudentEmailData, "loginUrl">
@@ -38,7 +67,9 @@ export async function sendStudentWelcomeEmail(
 
   const result = await sendEmail({
     to: data.email,
-    subject: buildWelcomeStudentEmailSubject(data.studentId),
+    subject: buildWelcomeStudentEmailSubject(data.studentId, {
+      registrationApproved: data.registrationApproved,
+    }),
     html: buildWelcomeStudentEmailHtml(payload),
     text: buildWelcomeStudentEmailText(payload),
     replyTo: config.replyTo,

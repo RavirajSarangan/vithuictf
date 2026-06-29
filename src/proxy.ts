@@ -12,6 +12,7 @@ import {
   isSitePublicModeGated,
   shouldBypassSiteGate,
 } from "@/lib/site-access";
+import { isAdminOnlyRoute, isSuperAdminOnlyRoute } from "@/lib/admin-access";
 import type { UserRole } from "@/types";
 
 const studentRoutes: Record<string, UserRole[]> = {
@@ -85,6 +86,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // API routes bypass proxy auth — each handler must enforce its own checks.
   if (pathname.startsWith("/api/")) {
     return nextWithPathname(request, pathname);
   }
@@ -156,6 +158,12 @@ export async function proxy(request: NextRequest) {
     ) {
       return redirectForRole(session.role, request);
     }
+    if (session.role === "teacher" && isAdminOnlyRoute(pathname)) {
+      return NextResponse.redirect(new URL("/academics/dashboard", request.url));
+    }
+    if (session.role !== "super_admin" && isSuperAdminOnlyRoute(pathname)) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
   }
 
   if (pathname.startsWith("/academics")) {
@@ -177,6 +185,9 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/paper-center")) {
+    if (pathname === "/paper-center" || pathname === "/paper-center/") {
+      return NextResponse.redirect(new URL("/paper-center/dashboard", request.url));
+    }
     if (!session) {
       return NextResponse.redirect(new URL("/login/paper-center", request.url));
     }

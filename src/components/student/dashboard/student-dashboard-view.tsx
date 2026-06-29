@@ -24,7 +24,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCalendarSessions } from "@/hooks/use-calendar";
 import {
   useAchievements,
   useActivities,
@@ -32,8 +31,10 @@ import {
   useStudentData,
   useStudentResults,
 } from "@/hooks/use-student-data";
-import { formatMinutes, formatTime12, sessionsForToday } from "@/lib/calendar/utils";
+import { formatTime12 } from "@/lib/calendar/utils";
 import { formatStudentRank, hasAssignedRank } from "@/lib/student-rank";
+import { useStudentBatchTodaySessions } from "@/hooks/use-academics";
+import type { AcademicsCalendarSession } from "@/hooks/use-academics";
 import { cn } from "@/lib/utils";
 import { useActiveCourseId, useActiveCourseName } from "@/contexts/student-course-context";
 import type { ActivityItem, Exam, Result, Student } from "@/types";
@@ -222,11 +223,7 @@ function HeroBanner({
   );
 }
 
-function TodayClassesList({
-  sessions,
-}: {
-  sessions: ReturnType<typeof sessionsForToday>;
-}) {
+function TodayClassesList({ sessions }: { sessions: AcademicsCalendarSession[] }) {
   if (sessions.length === 0) {
     return <EmptyRow message="No classes scheduled for today." />;
   }
@@ -235,18 +232,35 @@ function TodayClassesList({
     <ul className="flex flex-col gap-2">
       {sessions.map((session) => (
         <li key={session.id}>
-          <Link
-            href="/calendar"
-            className="group flex min-h-11 items-center justify-between gap-3 rounded-xl border border-icvf-border bg-icvf-surface/50 px-3 py-2.5 transition-colors hover:border-icvf-navy/20 hover:bg-icvf-navy/5 sm:px-4 sm:py-3"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-icvf-navy">{session.title}</p>
-              <p className="text-xs text-icvf-text-light">
-                {formatTime12(session.startTime)} · {formatMinutes(session.durationMinutes)}
+          <div className="group flex min-h-11 items-center justify-between gap-3 rounded-xl border border-icvf-border bg-icvf-surface/50 px-3 py-2.5 transition-colors hover:border-icvf-navy/20 hover:bg-icvf-navy/5 sm:px-4 sm:py-3">
+            <Link
+              href={session.zoomLink || "/calendar"}
+              className="min-w-0 flex-1"
+            >
+              <p className="truncate text-sm font-semibold text-icvf-navy">
+                {session.batchName} · Class {session.sessionNumber}
               </p>
+              <p className="text-xs text-icvf-text-light">
+                {formatTime12(session.startTime)}
+                {session.zoomLink ? " · Zoom link available" : ""}
+                {session.canvaSlideUrl ? " · Slides available" : ""}
+              </p>
+            </Link>
+            <div className="flex shrink-0 items-center gap-2">
+              {session.canvaSlideUrl ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  nativeButton={false}
+                  className="h-8 rounded-lg text-xs"
+                  render={<Link href={`/slides/${session.id}`}>Slides</Link>}
+                />
+              ) : null}
+              <Link href={session.zoomLink || "/calendar"} className="text-icvf-text-light hover:text-icvf-accent">
+                <ArrowUpRight className="size-4" />
+              </Link>
             </div>
-            <ArrowUpRight className="size-4 shrink-0 text-icvf-text-light group-hover:text-icvf-accent" />
-          </Link>
+          </div>
         </li>
       ))}
     </ul>
@@ -346,12 +360,12 @@ export function StudentDashboardView() {
   const { achievements } = useAchievements(studentId);
   const { activities } = useActivities(studentId);
   const { exams } = useExams();
-  const { data: calendarSessions } = useCalendarSessions(courseId ?? undefined);
-
-  const todayClasses = useMemo(
-    () => sessionsForToday(calendarSessions),
-    [calendarSessions]
+  const { data: batchTodaySessions, loading: batchTodayLoading } = useStudentBatchTodaySessions(
+    studentId ?? null,
+    courseId
   );
+
+  const todayClasses = batchTodaySessions;
 
   const upcomingExams = useMemo(
     () => (courseId ? exams.filter((exam) => exam.courseId === courseId).slice(0, 4) : []),
@@ -363,7 +377,7 @@ export function StudentDashboardView() {
     [results]
   );
 
-  if (student === undefined) {
+  if (student === undefined || batchTodayLoading) {
     return <DashboardSkeleton />;
   }
 

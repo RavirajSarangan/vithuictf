@@ -32,10 +32,17 @@ import {
 } from "@/components/ui/breadcrumb";
 import { ArrowLeft, Loader2, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatSriLankaWhatsAppDisplay } from "@/lib/validation/sri-lanka-phone";
+import { StudentEnrollmentPanel } from "@/components/academics/student-enrollment-panel";
+import { EnrollmentStatusBadge } from "@/components/academics/enrollment-status-badge";
+import { approveStudentRegistration, rejectStudentRegistration } from "@/lib/actions/academics";
+import { useAuth } from "@/providers/auth-provider";
 
 export default function AdminStudentDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const id = params.id as string;
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,6 +72,11 @@ export default function AdminStudentDetailPage() {
       } else {
         toast.warning(result.error ?? "Email not sent");
         toast.info(`New password: ${result.tempPassword}`, { duration: 10000 });
+      }
+      if (result.whatsappSent) {
+        toast.success("Welcome WhatsApp resent");
+      } else if (result.whatsappError) {
+        toast.warning(`WhatsApp not sent: ${result.whatsappError}`, { duration: 10000 });
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to resend email");
@@ -121,7 +133,41 @@ export default function AdminStudentDetailPage() {
         title={student.displayName}
         description={`Student ID: ${student.studentId}`}
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {student.registrationStatus === "pending" && isAdmin && (
+              <>
+                <Button
+                  variant="default"
+                  onClick={async () => {
+                    try {
+                      await approveStudentRegistration(student.id);
+                      toast.success("Registration approved");
+                      const row = await getStudent(id);
+                      setStudent(row ? mapStudent(row) : null);
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Failed");
+                    }
+                  }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    try {
+                      await rejectStudentRegistration(student.id);
+                      toast.success("Registration rejected");
+                      const row = await getStudent(id);
+                      setStudent(row ? mapStudent(row) : null);
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Failed");
+                    }
+                  }}
+                >
+                  Reject
+                </Button>
+              </>
+            )}
             <Button variant="outline"  onClick={handleResend} disabled={resending}>
               {resending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Mail className="mr-2 size-4" />}
               Resend Welcome Email
@@ -167,14 +213,36 @@ export default function AdminStudentDetailPage() {
               <span className="text-muted-foreground">Student ID</span>
               <span className="font-mono">{student.studentId}</span>
             </div>
+            {student.phone ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">WhatsApp</span>
+                <span>{formatSriLankaWhatsAppDisplay(student.phone)}</span>
+              </div>
+            ) : null}
+            {student.schoolName ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">School</span>
+                <span>{student.schoolName}</span>
+              </div>
+            ) : null}
+            {student.nicNumber ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">NIC</span>
+                <span className="font-mono">{student.nicNumber}</span>
+              </div>
+            ) : null}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Course</span>
               <Badge className="bg-icvf-accent/20 text-icvf-accent">{student.courseName}</Badge>
             </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Registration</span>
+              <EnrollmentStatusBadge status={student.registrationStatus ?? "approved"} />
+            </div>
           </CardContent>
         </Card>
 
-        <Card >
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Performance</CardTitle>
           </CardHeader>
@@ -198,6 +266,21 @@ export default function AdminStudentDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Enrollments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StudentEnrollmentPanel
+            student={student}
+            onUpdated={async () => {
+              const row = await getStudent(id);
+              setStudent(row ? mapStudent(row) : null);
+            }}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

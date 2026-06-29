@@ -12,15 +12,9 @@ import {
   getDriveLinkKind,
   resolveFolderPathIds,
 } from "@/lib/pass-papers-utils";
-import * as LucideIcons from "lucide-react";
-import { ChevronRight, ExternalLink, Folder, FolderOpen } from "lucide-react";
+import { ChevronRight, ExternalLink, FolderOpen } from "lucide-react";
+import { PassPaperFolderIcon } from "@/lib/pass-papers/icon-map";
 import { cn } from "@/lib/utils";
-
-function FolderIcon({ iconKey, className }: { iconKey: string; className?: string }) {
-  const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
-  const Icon = icons[iconKey] ?? Folder;
-  return <Icon className={className} />;
-}
 
 export function PassPaperBrowser({
   folders,
@@ -166,7 +160,7 @@ export function PassPaperBrowser({
                   )}
                   style={{ backgroundColor: `${folder.accentColor}22`, color: folder.accentColor }}
                 >
-                  <FolderIcon iconKey={folder.iconKey} className="size-5" />
+                  <PassPaperFolderIcon iconKey={folder.iconKey} className="size-5" />
                 </div>
                 <div>
                   <p className="font-medium">{folder.title}</p>

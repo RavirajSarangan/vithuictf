@@ -8,15 +8,35 @@ import {
   requireAcademicsStaff,
   requireAdmin,
 } from "@/lib/actions/auth";
+import { sendStudentWelcomeEmail } from "@/lib/actions/email";
+import { sendStudentWelcomeWhatsApp } from "@/lib/actions/whatsapp";
+import { getAppUrl } from "@/lib/email/resend";
 import { revalidateStudentPortalPaths } from "@/lib/revalidation-paths";
+import { validateCanvaSlideUrl } from "@/lib/canva/url";
 import type { AttendanceStatus, ClassSessionStatus } from "@/types";
-
-const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+import { isValidNic, normalizeNic } from "@/lib/validation/register-student";
+import {
+  normalizeSriLankaWhatsApp,
+  validateSriLankaWhatsApp,
+} from "@/lib/validation/sri-lanka-phone";
+import {
+  buildSessionScheduleFromRow,
+  computeTotalClasses,
+  countClassDaysInRange,
+} from "@/lib/academics/schedule";
+import {
+  notifyBatchStudentsPortal,
+  notifyAbsentStudents,
+  sendBatchManualMessage,
+  type DeliverySummary,
+  type MessageChannels,
+} from "@/lib/academics/batch-notifications";
 
 function revalidateAcademicsPaths() {
   revalidatePath("/academics/dashboard");
   revalidatePath("/academics/batches");
   revalidatePath("/academics/students");
+  revalidatePath("/academics/enrollments");
   revalidatePath("/academics/attendance");
   revalidatePath("/academics/reports");
   revalidatePath("/academics/calendar");
@@ -102,6 +122,37 @@ async function nextBatchCode(courseId: string, courseName: string): Promise<stri
   return `${prefix}${seq}`;
 }
 
+export async function previewBatchCode(courseId: string): Promise<string> {
+  await requireAcademicsStaff();
+  const supabase = await createClient();
+  const { data: course } = await supabase
+    .from("courses")
+    .select("name")
+    .eq("id", courseId)
+    .maybeSingle();
+  if (!course) throw new Error("Course not found");
+  return nextBatchCode(courseId, course.name);
+}
+
+export async function previewBatchSchedule(input: {
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  classDays: string[];
+}) {
+  await requireAcademicsStaff();
+  const totalClasses = computeTotalClasses({
+    startDate: input.startDate,
+    endDate: input.endDate,
+    startTime: input.startTime,
+    endTime: input.endTime,
+    classDays: input.classDays,
+  });
+  const inRange = countClassDaysInRange(input);
+  return { totalClasses, daysInRange: inRange };
+}
+
 async function nextEnrollmentCode(batchCode: string): Promise<string> {
   const supabase = await createClient();
   const prefix = `${batchCode}-`;
@@ -122,13 +173,6 @@ function parseDateOnly(value: string): Date {
   return new Date(y, m - 1, d);
 }
 
-function formatDateOnly(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 type BatchScheduleRow = {
   start_date: string;
   end_date: string;
@@ -138,36 +182,8 @@ type BatchScheduleRow = {
   total_classes: number;
 };
 
-type PlannedSession = {
-  session_number: number;
-  scheduled_date: string;
-  start_time: string;
-  end_time: string;
-};
-
-function buildSessionSchedule(batch: BatchScheduleRow): PlannedSession[] {
-  const classDays = new Set(batch.class_days.map((d) => d.toLowerCase()));
-  const sessions: PlannedSession[] = [];
-
-  let sessionNumber = 1;
-  const cursor = parseDateOnly(batch.start_date);
-  const end = parseDateOnly(batch.end_date);
-
-  while (cursor <= end && sessionNumber <= batch.total_classes) {
-    const dayKey = WEEKDAY_KEYS[cursor.getDay()];
-    if (classDays.has(dayKey)) {
-      sessions.push({
-        session_number: sessionNumber,
-        scheduled_date: formatDateOnly(cursor),
-        start_time: batch.start_time,
-        end_time: batch.end_time,
-      });
-      sessionNumber += 1;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return sessions;
+function buildSessionSchedule(batch: BatchScheduleRow) {
+  return buildSessionScheduleFromRow(batch);
 }
 
 function normalizeTime(value: string): string {
@@ -209,7 +225,7 @@ async function syncClassSessionsToSchedule(batchId: string) {
 
   const { data: batch } = await supabase
     .from("course_batches")
-    .select("start_date, end_date, start_time, end_time, class_days, total_classes")
+    .select("start_date, end_date, start_time, end_time, class_days, total_classes, zoom_link")
     .eq("id", batchId)
     .maybeSingle();
   if (!batch) throw new Error("Batch not found");
@@ -261,6 +277,7 @@ async function syncClassSessionsToSchedule(batchId: string) {
         start_time: target.start_time,
         end_time: target.end_time,
         status: "scheduled",
+        zoom_link: batch.zoom_link ?? null,
       });
       if (error) throw new Error(error.message);
     }
@@ -290,6 +307,9 @@ export async function createBatch(data: {
   endTime: string;
   classDays: string[];
   totalClasses?: number;
+  zoomLink?: string;
+  studentIds?: string[];
+  setAsCurrentCourse?: boolean;
 }) {
   const profile = await requireAcademicsStaff();
   if (!data.name.trim()) throw new Error("Batch name is required");
@@ -298,6 +318,17 @@ export async function createBatch(data: {
   const start = parseDateOnly(data.startDate);
   const end = parseDateOnly(data.endDate);
   if (end < start) throw new Error("End date must be on or after start date");
+
+  const totalClasses = computeTotalClasses({
+    startDate: data.startDate,
+    endDate: data.endDate,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    classDays: data.classDays,
+  });
+  if (totalClasses === 0) {
+    throw new Error("No class days in the selected date range");
+  }
 
   const supabase = await createClient();
   const { data: course } = await supabase
@@ -308,7 +339,7 @@ export async function createBatch(data: {
   if (!course) throw new Error("Course not found");
 
   const batchCode = await nextBatchCode(data.courseId, course.name);
-  const totalClasses = data.totalClasses ?? 10;
+  const zoomLink = data.zoomLink?.trim() || null;
 
   const { data: batch, error } = await supabase
     .from("course_batches")
@@ -322,6 +353,7 @@ export async function createBatch(data: {
       end_time: data.endTime,
       class_days: data.classDays,
       total_classes: totalClasses,
+      zoom_link: zoomLink,
       created_by: profile.id,
     })
     .select("id")
@@ -329,9 +361,23 @@ export async function createBatch(data: {
 
   if (error) throw new Error(error.message);
 
-  await generateClassSessions(batch.id);
+  const sessionResult = await generateClassSessions(batch.id);
+  let enrolled = 0;
+  if (data.studentIds?.length) {
+    const enrollFn = data.setAsCurrentCourse ? enrollStudentsInCourse : enrollStudentsInBatch;
+    const result = await enrollFn(batch.id, data.studentIds, {
+      deactivateOtherCourses: data.setAsCurrentCourse,
+    });
+    enrolled = result.enrolled;
+  }
+
   revalidateAcademicsPaths();
-  return { id: batch.id, batchCode };
+  return {
+    id: batch.id,
+    batchCode,
+    sessionsCreated: sessionResult.created,
+    enrolled,
+  };
 }
 
 export async function updateBatchSchedule(
@@ -345,6 +391,7 @@ export async function updateBatchSchedule(
     classDays?: string[];
     totalClasses?: number;
     active?: boolean;
+    zoomLink?: string;
   }
 ) {
   await requireAcademicsStaff();
@@ -357,6 +404,33 @@ export async function updateBatchSchedule(
     .maybeSingle();
   if (!before) throw new Error("Batch not found");
 
+  const nextStart = data.startDate ?? before.start_date;
+  const nextEnd = data.endDate ?? before.end_date;
+  const nextClassDays = data.classDays ?? before.class_days;
+  const nextStartTime = data.startTime ?? before.start_time;
+  const nextEndTime = data.endTime ?? before.end_time;
+
+  const scheduleChanged =
+    data.startDate !== undefined ||
+    data.endDate !== undefined ||
+    data.classDays !== undefined ||
+    data.startTime !== undefined ||
+    data.endTime !== undefined;
+
+  let computedTotal = before.total_classes;
+  if (scheduleChanged) {
+    computedTotal = computeTotalClasses({
+      startDate: nextStart,
+      endDate: nextEnd,
+      startTime: nextStartTime,
+      endTime: nextEndTime,
+      classDays: nextClassDays,
+    });
+    if (computedTotal === 0) {
+      throw new Error("No class days in the selected date range");
+    }
+  }
+
   const updates: Record<string, unknown> = {};
   if (data.name !== undefined) updates.name = data.name.trim();
   if (data.startDate !== undefined) updates.start_date = data.startDate;
@@ -364,15 +438,25 @@ export async function updateBatchSchedule(
   if (data.startTime !== undefined) updates.start_time = data.startTime;
   if (data.endTime !== undefined) updates.end_time = data.endTime;
   if (data.classDays !== undefined) updates.class_days = data.classDays;
-  if (data.totalClasses !== undefined) updates.total_classes = data.totalClasses;
+  if (scheduleChanged) updates.total_classes = computedTotal;
+  else if (data.totalClasses !== undefined) updates.total_classes = data.totalClasses;
   if (data.active !== undefined) updates.active = data.active;
+  if (data.zoomLink !== undefined) updates.zoom_link = data.zoomLink.trim() || null;
 
   const { error } = await supabase.from("course_batches").update(updates).eq("id", batchId);
   if (error) throw new Error(error.message);
 
   let syncResult: { synced: number; preservedWithAttendance: number } | null = null;
-  if (scheduleFieldsChanged(before, data)) {
+  if (scheduleFieldsChanged(before, { ...data, totalClasses: computedTotal })) {
     syncResult = await syncClassSessionsToSchedule(batchId);
+  }
+
+  if (data.zoomLink !== undefined) {
+    await supabase
+      .from("class_sessions")
+      .update({ zoom_link: data.zoomLink.trim() || null })
+      .eq("batch_id", batchId)
+      .eq("status", "scheduled");
   }
 
   revalidateAcademicsPaths();
@@ -409,6 +493,7 @@ export async function generateClassSessions(batchId: string) {
     start_time: s.start_time,
     end_time: s.end_time,
     status: "scheduled" as ClassSessionStatus,
+    zoom_link: batch.zoom_link ?? null,
   }));
 
   if (sessions.length === 0) {
@@ -424,7 +509,13 @@ export async function generateClassSessions(batchId: string) {
 
 export async function updateSessionTimes(
   sessionId: string,
-  data: { scheduledDate?: string; startTime?: string; endTime?: string; status?: ClassSessionStatus }
+  data: {
+    scheduledDate?: string;
+    startTime?: string;
+    endTime?: string;
+    status?: ClassSessionStatus;
+    zoomLink?: string;
+  }
 ) {
   await requireAcademicsStaff();
   const supabase = await createClient();
@@ -433,11 +524,111 @@ export async function updateSessionTimes(
   if (data.startTime !== undefined) updates.start_time = data.startTime;
   if (data.endTime !== undefined) updates.end_time = data.endTime;
   if (data.status !== undefined) updates.status = data.status;
+  if (data.zoomLink !== undefined) updates.zoom_link = data.zoomLink.trim() || null;
 
   const { error } = await supabase.from("class_sessions").update(updates).eq("id", sessionId);
   if (error) throw new Error(error.message);
   revalidateAcademicsPaths();
 }
+
+export async function updateSessionCanvaSlide(
+  sessionId: string,
+  data: { url: string; title?: string }
+) {
+  await requireAcademicsStaff();
+  const canvaSlideUrl = validateCanvaSlideUrl(data.url);
+  const canvaSlideTitle = data.title?.trim() || null;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("class_sessions")
+    .update({
+      canva_slide_url: canvaSlideUrl,
+      canva_slide_title: canvaSlideTitle,
+    })
+    .eq("id", sessionId);
+  if (error) throw new Error(error.message);
+  revalidateAcademicsPaths();
+}
+
+export async function clearSessionCanvaSlide(sessionId: string) {
+  await requireAcademicsStaff();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("class_sessions")
+    .update({
+      canva_slide_url: null,
+      canva_slide_title: null,
+    })
+    .eq("id", sessionId);
+  if (error) throw new Error(error.message);
+  revalidateAcademicsPaths();
+}
+
+export async function cancelClassSession(sessionId: string, reason: string) {
+  const profile = await requireAcademicsStaff();
+  const supabase = await createClient();
+  const trimmed = reason.trim();
+  if (!trimmed) throw new Error("Cancel message is required");
+
+  const { data: session } = await supabase
+    .from("class_sessions")
+    .select("id, batch_id, session_number, scheduled_date, start_time, status")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (!session) throw new Error("Session not found");
+  if (session.status === "cancelled") throw new Error("Session is already cancelled");
+
+  const { data: batch } = await supabase
+    .from("course_batches")
+    .select("name, batch_code")
+    .eq("id", session.batch_id)
+    .maybeSingle();
+
+  const { error } = await supabase
+    .from("class_sessions")
+    .update({
+      status: "cancelled",
+      cancel_reason: trimmed,
+      cancelled_at: new Date().toISOString(),
+    })
+    .eq("id", sessionId);
+  if (error) throw new Error(error.message);
+
+  const title = `Class cancelled — ${batch?.name ?? "Batch"}`;
+  const body = `Class ${session.session_number} on ${session.scheduled_date} (${session.start_time.slice(0, 5)}) is cancelled. ${trimmed}`;
+
+  await notifyBatchStudentsPortal(session.batch_id, title, body, {
+    sessionId,
+    batchId: session.batch_id,
+    batchCode: batch?.batch_code,
+    kind: "class_cancel",
+  });
+
+  revalidateAcademicsPaths();
+  return { notifiedBy: profile.id };
+}
+
+export async function sendBatchMessage(
+  batchId: string,
+  input: { title: string; body: string; sendPortal: boolean; sendWhatsApp: boolean }
+): Promise<DeliverySummary> {
+  const profile = await requireAcademicsStaff();
+  const channels: MessageChannels = {
+    sendPortal: input.sendPortal,
+    sendWhatsApp: input.sendWhatsApp,
+  };
+  const summary = await sendBatchManualMessage(batchId, {
+    title: input.title,
+    body: input.body,
+    channels,
+    sentBy: profile.id,
+  });
+  revalidateAcademicsPaths();
+  return summary;
+}
+
+export type { DeliverySummary, MessageChannels };
 
 export async function enrollStudentInBatch(batchId: string, studentId: string) {
   await requireAcademicsStaff();
@@ -746,6 +937,15 @@ export async function markAttendance(
 
   if (!records.length) throw new Error("No attendance records provided");
 
+  const { data: existing } = await supabase
+    .from("attendance_records")
+    .select("student_id, status")
+    .eq("session_id", sessionId);
+
+  const previousByStudent = new Map(
+    (existing ?? []).map((r) => [r.student_id, r.status as AttendanceStatus])
+  );
+
   const rows = records.map((r) => ({
     session_id: sessionId,
     student_id: r.studentId,
@@ -759,7 +959,46 @@ export async function markAttendance(
     .upsert(rows, { onConflict: "session_id,student_id" });
   if (error) throw new Error(error.message);
 
+  const newlyAbsent = records.filter((r) => {
+    if (r.status !== "absent") return false;
+    const prev = previousByStudent.get(r.studentId);
+    return prev !== "absent";
+  });
+
+  if (newlyAbsent.length > 0) {
+    const { data: sessionRow } = await supabase
+      .from("class_sessions")
+      .select("session_number, scheduled_date, batch_id, course_batches(name)")
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    if (sessionRow?.batch_id) {
+      const batchRaw = sessionRow.course_batches as unknown;
+      const batch = (Array.isArray(batchRaw) ? batchRaw[0] : batchRaw) as { name: string } | null;
+      try {
+        await notifyAbsentStudents({
+          batchId: sessionRow.batch_id,
+          sessionId,
+          batchName: batch?.name ?? "Your batch",
+          classDate: sessionRow.scheduled_date,
+          classNumber: sessionRow.session_number,
+          studentIds: newlyAbsent.map((r) => r.studentId),
+          sentBy: profile.id,
+        });
+      } catch (notifyError) {
+        console.error("Absent notification failed:", notifyError);
+      }
+    }
+  }
+
+  // DB trigger syncs session_charges; re-sync here as a safety net for edge cases.
+  const { syncChargesForSession } = await import("@/lib/billing/session-charges");
+  await syncChargesForSession(supabase, sessionId, records);
+
   revalidateAcademicsPaths();
+  revalidatePath("/admin/finance");
+  revalidatePath("/admin/finance/students");
+  revalidatePath("/admin/finance/ledger");
 }
 
 export async function updateStudent(
@@ -769,7 +1008,9 @@ export async function updateStudent(
     email?: string;
     courseId?: string;
     courseName?: string;
-    phone?: string;
+    whatsapp?: string;
+    schoolName?: string;
+    nicNumber?: string;
     examYear?: string;
     ictGrade?: string;
   }
@@ -779,17 +1020,51 @@ export async function updateStudent(
 
   const { data: before } = await supabase
     .from("students")
-    .select("course_id")
+    .select("course_id, user_id")
     .eq("id", studentId)
     .maybeSingle();
   if (!before) throw new Error("Student not found");
+
+  if (data.whatsapp !== undefined) {
+    const whatsappError = validateSriLankaWhatsApp(data.whatsapp);
+    if (whatsappError) throw new Error(whatsappError);
+  }
+
+  if (data.schoolName !== undefined) {
+    const schoolName = data.schoolName.trim();
+    if (schoolName.length < 2) throw new Error("School name is required");
+  }
+
+  let normalizedNic: string | null | undefined;
+  if (data.nicNumber !== undefined) {
+    const nicRaw = data.nicNumber.trim();
+    if (!nicRaw) {
+      normalizedNic = null;
+    } else {
+      normalizedNic = normalizeNic(nicRaw);
+      if (!isValidNic(normalizedNic)) {
+        throw new Error("Enter a valid NIC number (e.g. 123456789V or 200012345678)");
+      }
+      const { data: byNic } = await supabase
+        .from("students")
+        .select("id")
+        .eq("nic_number", normalizedNic)
+        .neq("id", studentId)
+        .maybeSingle();
+      if (byNic) throw new Error("This NIC number is already registered.");
+    }
+  }
 
   const updates: Record<string, unknown> = {};
   if (data.displayName !== undefined) updates.display_name = data.displayName.trim();
   if (data.email !== undefined) updates.email = data.email.trim().toLowerCase();
   if (data.courseId !== undefined) updates.course_id = data.courseId;
   if (data.courseName !== undefined) updates.course_name = data.courseName;
-  if (data.phone !== undefined) updates.phone = data.phone;
+  if (data.whatsapp !== undefined) {
+    updates.phone = normalizeSriLankaWhatsApp(data.whatsapp);
+  }
+  if (data.schoolName !== undefined) updates.school_name = data.schoolName.trim();
+  if (normalizedNic !== undefined) updates.nic_number = normalizedNic;
   if (data.examYear !== undefined) updates.exam_year = data.examYear;
   if (data.ictGrade !== undefined) updates.ict_grade = data.ictGrade;
 
@@ -834,4 +1109,200 @@ export async function setStudentActive(studentId: string, active: boolean) {
   }
 
   revalidateAcademicsPaths();
+}
+
+export async function transferStudentBatch(enrollmentId: string, targetBatchId: string) {
+  await requireAcademicsStaff();
+  const supabase = await createClient();
+
+  const { data: enrollment } = await supabase
+    .from("batch_enrollments")
+    .select("id, student_id, batch_id, active")
+    .eq("id", enrollmentId)
+    .maybeSingle();
+  if (!enrollment) throw new Error("Enrollment not found");
+
+  const { data: targetBatch } = await supabase
+    .from("course_batches")
+    .select("id, batch_code, active, course_id")
+    .eq("id", targetBatchId)
+    .maybeSingle();
+  if (!targetBatch) throw new Error("Target batch not found");
+  if (!targetBatch.active) throw new Error("Cannot transfer to an inactive batch");
+
+  const { data: sourceBatch } = await supabase
+    .from("course_batches")
+    .select("course_id")
+    .eq("id", enrollment.batch_id)
+    .maybeSingle();
+  if (sourceBatch?.course_id !== targetBatch.course_id) {
+    throw new Error("Target batch must belong to the same course");
+  }
+  if (enrollment.batch_id === targetBatchId) {
+    throw new Error("Student is already in this batch");
+  }
+
+  await supabase.from("batch_enrollments").update({ active: false }).eq("id", enrollmentId);
+
+  const { data: existingTarget } = await supabase
+    .from("batch_enrollments")
+    .select("id, active")
+    .eq("batch_id", targetBatchId)
+    .eq("student_id", enrollment.student_id)
+    .maybeSingle();
+
+  if (existingTarget) {
+    const { error } = await supabase
+      .from("batch_enrollments")
+      .update({ active: true })
+      .eq("id", existingTarget.id);
+    if (error) throw new Error(error.message);
+  } else {
+    const enrollmentCode = await nextEnrollmentCode(targetBatch.batch_code);
+    const { error } = await supabase.from("batch_enrollments").insert({
+      batch_id: targetBatchId,
+      student_id: enrollment.student_id,
+      enrollment_code: enrollmentCode,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  revalidateAcademicsPaths();
+}
+
+export type CourseBatchPair = { courseId: string; batchId: string };
+
+export async function enrollStudentInCourses(
+  studentId: string,
+  pairs: CourseBatchPair[],
+  options?: { setPrimaryCourseId?: string }
+) {
+  await requireAcademicsStaff();
+  if (!pairs.length) throw new Error("Select at least one course");
+
+  const uniquePairs = pairs.filter(
+    (p, i, arr) => arr.findIndex((x) => x.courseId === p.courseId) === i
+  );
+
+  for (const { batchId } of uniquePairs) {
+    await enrollStudentInCourse(batchId, studentId);
+  }
+
+  if (options?.setPrimaryCourseId) {
+    await setStudentPrimaryCourse(studentId, options.setPrimaryCourseId);
+  }
+
+  return { enrolled: uniquePairs.length };
+}
+
+export async function approveStudentRegistration(
+  studentId: string,
+  batchSelections?: CourseBatchPair[]
+) {
+  const profile = await requireAdmin();
+  const supabase = await createClient();
+
+  const { data: student } = await supabase
+    .from("students")
+    .select(
+      "id, course_id, exam_year, ict_grade, registration_status, display_name, email, student_id, course_name, phone, username, index_number"
+    )
+    .eq("id", studentId)
+    .maybeSingle();
+  if (!student) throw new Error("Student not found");
+  if (student.registration_status === "approved") {
+    throw new Error("Registration is already approved");
+  }
+
+  const admin = isAdminClientConfigured() ? createAdminClient() : supabase;
+
+  if (batchSelections?.length) {
+    for (const { batchId } of batchSelections) {
+      await enrollStudentInCourse(batchId, studentId);
+    }
+  } else if (student.course_id) {
+    const { autoEnrollStudentForAdmin } = await import("@/lib/academics/registration-enrollment");
+    await autoEnrollStudentForAdmin(admin, studentId, student.course_id, undefined, {
+      examYear: student.exam_year,
+      ictGrade: student.ict_grade,
+      studyTrack: student.exam_year ? "al" : student.ict_grade ? "grade" : undefined,
+    });
+  }
+
+  const { error } = await supabase
+    .from("students")
+    .update({
+      registration_status: "approved",
+      registration_reviewed_at: new Date().toISOString(),
+      registration_reviewed_by: profile.id,
+      active: true,
+      disabled_at: null,
+    })
+    .eq("id", studentId);
+  if (error) throw new Error(error.message);
+
+  try {
+    await sendStudentWelcomeEmail({
+      displayName: student.display_name,
+      studentId: student.student_id,
+      username: student.username ?? undefined,
+      indexNumber: student.index_number ?? undefined,
+      email: student.email,
+      courseName: student.course_name ?? "ICT Program",
+      examYear: student.exam_year ?? undefined,
+      ictGrade: student.ict_grade ?? undefined,
+      selfRegistered: true,
+      registrationApproved: true,
+    });
+
+    const normalizedPhone = student.phone ? normalizeSriLankaWhatsApp(student.phone) : null;
+    if (normalizedPhone) {
+      await sendStudentWelcomeWhatsApp({
+        phone: normalizedPhone,
+        displayName: student.display_name,
+        studentId: student.student_id,
+        username: student.username ?? undefined,
+        indexNumber: student.index_number ?? undefined,
+        courseName: student.course_name ?? "ICT Program",
+        loginUrl: `${getAppUrl()}/login`,
+        selfRegistered: true,
+      });
+    }
+  } catch (notifyError) {
+    console.error("[approveStudentRegistration] Welcome notification failed:", notifyError);
+  }
+
+  revalidateAcademicsPaths();
+  return { approved: true };
+}
+
+export async function rejectStudentRegistration(studentId: string, reason?: string) {
+  const profile = await requireAdmin();
+  const supabase = await createClient();
+
+  const { data: student } = await supabase
+    .from("students")
+    .select("id, registration_status")
+    .eq("id", studentId)
+    .maybeSingle();
+  if (!student) throw new Error("Student not found");
+
+  const { error } = await supabase
+    .from("students")
+    .update({
+      registration_status: "rejected",
+      registration_reviewed_at: new Date().toISOString(),
+      registration_reviewed_by: profile.id,
+      active: false,
+      disabled_at: new Date().toISOString(),
+    })
+    .eq("id", studentId);
+  if (error) throw new Error(error.message);
+
+  if (reason?.trim()) {
+    console.info(`Registration rejected for ${studentId}: ${reason.trim()}`);
+  }
+
+  revalidateAcademicsPaths();
+  return { rejected: true };
 }

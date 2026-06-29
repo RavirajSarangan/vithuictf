@@ -45,7 +45,7 @@ export function StudentCourseSwitcher() {
         <SelectContent>
           {enrolledCourses.map((course) => (
             <SelectItem key={course.courseId} value={course.courseId}>
-              {course.courseName}
+              {course.course.name}
             </SelectItem>
           ))}
         </SelectContent>

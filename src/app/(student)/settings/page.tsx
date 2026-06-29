@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { useStudentData, usePlatformSettings } from "@/hooks/use-data";
 import { isOnlinePaymentsAvailable } from "@/lib/payment-access";
+import { getStripeConfigured } from "@/lib/actions/payment-infra";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 import { ONBOARDING_TOUR_KEY } from "@/components/onboarding/onboarding-gate";
@@ -64,10 +65,18 @@ export default function SettingsPage() {
   };
 
   const [paying, setPaying] = useState(false);
+  const [stripeConfigured, setStripeConfigured] = useState(false);
+
+  useEffect(() => {
+    void getStripeConfigured().then(setStripeConfigured);
+  }, []);
 
   const onlinePaymentsLive =
     !platformSettingsLoading &&
-    isOnlinePaymentsAvailable({ onlinePaymentsEnabled: platformSettings.onlinePaymentsEnabled });
+    isOnlinePaymentsAvailable(
+      { onlinePaymentsEnabled: platformSettings.onlinePaymentsEnabled },
+      stripeConfigured
+    );
 
   const handlePayFees = async () => {
     if (!student) return;

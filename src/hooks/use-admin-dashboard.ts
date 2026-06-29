@@ -45,12 +45,14 @@ export type AdminDashboardStats = {
   totalStudents: number;
   totalTeachers: number;
   totalRevenue: number;
+  outstandingSessionFeesLkr: number;
   totalResources: number;
   totalCertificates: number;
   totalCourses: number;
   pendingPayments: number;
   overduePayments: number;
   unreadInquiries: number;
+  pendingRegistrations: number;
 };
 
 export type AdminSuperAdminStats = {
@@ -58,6 +60,13 @@ export type AdminSuperAdminStats = {
   examBatchCount: number;
   passPaperFolderCount: number;
   passPaperItemCount: number;
+};
+
+export type AdminAcademicsStats = {
+  activeBatches: number;
+  todaysSessions: number;
+  missingAttendance: number;
+  weeklyAttendanceRate: number;
 };
 
 export type AdminDashboardOverview = {
@@ -70,6 +79,7 @@ export type AdminDashboardOverview = {
   enrollmentData: { name: string; students: number }[];
   paymentStatus: { name: string; value: number }[];
   superAdmin: AdminSuperAdminStats | null;
+  academics: AdminAcademicsStats | null;
   loading: boolean;
 };
 
@@ -162,6 +172,7 @@ export function useAdminDashboardOverview(includeSuperAdmin = false) {
         enrollmentData: [],
         paymentStatus: [],
         superAdmin: null,
+        academics: null,
         loading: true,
       }
     );
@@ -208,6 +219,11 @@ export function useAdminDashboardOverview(includeSuperAdmin = false) {
         supabase.from("courses").select("id, name"),
         supabase.from("students").select("course_id"),
         supabase.from("payments").select("status"),
+        supabase.from("session_charges").select("amount_lkr").eq("status", "pending"),
+        supabase
+          .from("students")
+          .select("id", { count: "exact", head: true })
+          .eq("registration_status", "pending"),
       ] as const;
 
       const results = await Promise.all(queries);
@@ -232,20 +248,28 @@ export function useAdminDashboardOverview(includeSuperAdmin = false) {
         courseRows,
         studentCourseRows,
         paymentStatusRows,
+        pendingSessionCharges,
+        pendingRegistrationsCount,
       ] = results;
 
       const revenue = (paidPayments.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
+      const outstandingSessionFeesLkr = (pendingSessionCharges.data ?? []).reduce(
+        (s, c) => s + Number(c.amount_lkr),
+        0
+      );
 
       const stats: AdminDashboardStats = {
         totalStudents: studentsCount.count ?? 0,
         totalTeachers: teachersCount.count ?? 0,
         totalRevenue: revenue,
+        outstandingSessionFeesLkr,
         totalResources: resourcesCount.count ?? 0,
         totalCertificates: certificatesCount.count ?? 0,
         totalCourses: coursesCount.count ?? 0,
         pendingPayments: pendingCount.count ?? 0,
         overduePayments: overdueCount.count ?? 0,
         unreadInquiries: unreadInquiriesCount.count ?? 0,
+        pendingRegistrations: pendingRegistrationsCount.count ?? 0,
       };
 
       const recentStudents = (recentStudentRows.data ?? []).map(mapStudent);
@@ -303,6 +327,65 @@ export function useAdminDashboardOverview(includeSuperAdmin = false) {
         }
       }
 
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const weekEnd = new Date();
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      const weekEndStr = weekEnd.toISOString().slice(0, 10);
+
+      const [
+        activeBatchesRes,
+        todaysSessionsRes,
+        weekSessionsRes,
+      ] = await Promise.all([
+        supabase
+          .from("course_batches")
+          .select("id", { count: "exact", head: true })
+          .eq("active", true),
+        supabase
+          .from("class_sessions")
+          .select("id")
+          .eq("scheduled_date", todayStr)
+          .in("status", ["scheduled", "completed"]),
+        supabase
+          .from("class_sessions")
+          .select("id")
+          .gte("scheduled_date", todayStr)
+          .lte("scheduled_date", weekEndStr)
+          .neq("status", "cancelled"),
+      ]);
+
+      const todaysSessionIds = (todaysSessionsRes.data ?? []).map((s) => s.id);
+      let missingAttendance = todaysSessionIds.length;
+      if (todaysSessionIds.length) {
+        const { data: markedSessions } = await supabase
+          .from("attendance_records")
+          .select("session_id")
+          .in("session_id", todaysSessionIds);
+        const markedSet = new Set((markedSessions ?? []).map((r) => r.session_id));
+        missingAttendance = todaysSessionIds.filter((id) => !markedSet.has(id)).length;
+      }
+
+      const weekSessionIds = (weekSessionsRes.data ?? []).map((s) => s.id);
+      let weeklyAttendanceRate = 0;
+      if (weekSessionIds.length) {
+        const { data: weekRecords } = await supabase
+          .from("attendance_records")
+          .select("status")
+          .in("session_id", weekSessionIds);
+        const presentLate = (weekRecords ?? []).filter(
+          (r) => r.status === "present" || r.status === "late"
+        ).length;
+        const total = weekRecords?.length ?? 0;
+        if (total > 0) weeklyAttendanceRate = Math.round((presentLate / total) * 100);
+      }
+
+      const academics: AdminAcademicsStats = {
+        activeBatches: activeBatchesRes.count ?? 0,
+        todaysSessions: todaysSessionIds.length,
+        missingAttendance,
+        weeklyAttendanceRate,
+      };
+
       const next: AdminDashboardOverview = {
         stats,
         recentStudents,
@@ -318,6 +401,7 @@ export function useAdminDashboardOverview(includeSuperAdmin = false) {
         enrollmentData,
         paymentStatus,
         superAdmin,
+        academics,
         loading: false,
       };
 

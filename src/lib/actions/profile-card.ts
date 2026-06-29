@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { mapStudent } from "@/lib/supabase/mappers";
+import { sendProfilePhotoWhatsApp } from "@/lib/actions/whatsapp";
+import { getAppUrl } from "@/lib/email/resend";
+import { normalizeSriLankaWhatsApp } from "@/lib/validation/sri-lanka-phone";
 import type { FlipCardData, StudentSocialLinks } from "@/types";
 
 async function requireStudentUserId(): Promise<string> {
@@ -64,6 +67,27 @@ export async function uploadStudentPhoto(formData: FormData): Promise<string> {
     .eq("user_id", userId);
 
   if (updateError) throw new Error(updateError.message);
+
+  const { data: studentRow } = await supabase
+    .from("students")
+    .select("display_name, student_id, phone")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (studentRow?.phone) {
+    const normalizedPhone = normalizeSriLankaWhatsApp(studentRow.phone);
+    if (normalizedPhone) {
+      const cardUrl = `${getAppUrl()}/card/${studentRow.student_id}`;
+      const whatsappResult = await sendProfilePhotoWhatsApp({
+        phone: normalizedPhone,
+        displayName: studentRow.display_name,
+        cardUrl,
+      });
+      if (!whatsappResult.whatsappSent) {
+        console.warn("[whatsapp] Profile photo confirmation not sent:", whatsappResult.error);
+      }
+    }
+  }
 
   revalidatePath("/profile-card");
   revalidatePath("/dashboard");

@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { PortalAuthGate } from "@/components/auth/portal-auth-gate";
 import { PortalShell } from "@/components/layout/portal-shell";
-import { PortalShellLoading } from "@/components/layout/portal-shell-loading";
+import { StudentPageLoading } from "@/components/student/portal/student-portal-states";
 import { adminNav } from "@/lib/navigation";
 import {
   filterAdminNavForRole,
@@ -19,10 +19,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const navItems = useMemo(
-    () => filterAdminNavForRole(adminNav, user?.role),
-    [user?.role]
-  );
+  const blocked =
+    (!loading && user?.role === "teacher" && isAdminOnlyRoute(pathname)) ||
+    (!loading && user?.role !== "super_admin" && isSuperAdminOnlyRoute(pathname));
 
   useEffect(() => {
     if (loading || !user) return;
@@ -35,25 +34,25 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
-  const blocked =
-    (!loading && user?.role === "teacher" && isAdminOnlyRoute(pathname)) ||
-    (!loading && user?.role !== "super_admin" && isSuperAdminOnlyRoute(pathname));
-
   if (blocked) {
-    return <PortalShellLoading rows={2} />;
+    return <StudentPageLoading rows={2} />;
   }
 
-  return (
-    <PortalShell navItems={navItems} variant="admin" title={getAdminPortalTitle(user?.role)}>
-      {children}
-    </PortalShell>
-  );
+  return <>{children}</>;
 }
 
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const navItems = useMemo(
+    () => filterAdminNavForRole(adminNav, user?.role),
+    [user?.role]
+  );
+
   return (
-    <PortalAuthGate allowedRoles={["admin", "super_admin", "teacher"]} loginHref="/login/admin">
-      <AdminLayoutInner>{children}</AdminLayoutInner>
-    </PortalAuthGate>
+    <PortalShell navItems={navItems} variant="admin" title={getAdminPortalTitle(user?.role)}>
+      <PortalAuthGate allowedRoles={["admin", "super_admin", "teacher"]} loginHref="/login/admin">
+        <AdminLayoutInner>{children}</AdminLayoutInner>
+      </PortalAuthGate>
+    </PortalShell>
   );
 }

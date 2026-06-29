@@ -2,6 +2,7 @@ import type {
   Achievement,
   ActivityItem,
   BatchEnrollment,
+  BatchWhatsAppLogEntry,
   BlogPostStatus,
   Certificate,
   ClassSession,
@@ -27,6 +28,8 @@ import type {
   PlatformSettings,
   Resource,
   Result,
+  SessionCharge,
+  StudentBillingSummary,
   SiteStats,
   SocialContentEntry,
   SocialContentType,
@@ -85,6 +88,7 @@ export function mapStudent(row: StudentRow): Student {
     indexNumber: row.index_number ?? undefined,
     nicNumber: row.nic_number ?? undefined,
     phone: row.phone ?? undefined,
+    schoolName: row.school_name ?? undefined,
     notifyEmail: row.notify_email,
     examYear: row.exam_year ?? undefined,
     ictGrade: row.ict_grade ?? undefined,
@@ -105,7 +109,19 @@ export function mapStudent(row: StudentRow): Student {
     onboardingSteps: parsedSteps,
     active: (row as StudentRow & { active?: boolean }).active ?? true,
     disabledAt: (row as StudentRow & { disabled_at?: string | null }).disabled_at ?? null,
-    createdAt: (row as StudentRow & { created_at?: string | null }).created_at ?? undefined,
+    createdAt: row.created_at,
+    registrationStatus:
+      ((row as StudentRow & { registration_status?: string }).registration_status as
+        | "pending"
+        | "approved"
+        | "rejected"
+        | undefined) ?? "approved",
+    registrationReviewedAt:
+      (row as StudentRow & { registration_reviewed_at?: string | null }).registration_reviewed_at ??
+      null,
+    registrationReviewedBy:
+      (row as StudentRow & { registration_reviewed_by?: string | null }).registration_reviewed_by ??
+      null,
   };
 }
 
@@ -168,6 +184,7 @@ export function mapNotification(row: NotificationRow): Notification {
     read: row.read,
     type: row.type,
     createdAt: row.created_at,
+    metadata: (row.metadata as Record<string, unknown> | null) ?? null,
   };
 }
 
@@ -204,6 +221,54 @@ export function mapPayment(row: Database["public"]["Tables"]["payments"]["Row"])
     status: row.status,
     method: row.method,
     date: row.payment_date,
+  };
+}
+
+export function mapSessionCharge(
+  row: Database["public"]["Tables"]["session_charges"]["Row"] & {
+    courses?: { name: string } | null;
+    course_batches?: { name: string } | null;
+    class_sessions?: { session_number: number; scheduled_date: string } | null;
+  }
+): SessionCharge {
+  return {
+    id: row.id,
+    studentId: row.student_id,
+    sessionId: row.session_id,
+    batchId: row.batch_id,
+    courseId: row.course_id,
+    courseName: row.courses?.name,
+    batchName: row.course_batches?.name,
+    sessionNumber: row.class_sessions?.session_number,
+    scheduledDate: row.class_sessions?.scheduled_date,
+    attendanceRecordId: row.attendance_record_id,
+    amountLkr: Number(row.amount_lkr),
+    status: row.status,
+    billingMonth: row.billing_month,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapStudentBillingSummary(row: {
+  student_id: string;
+  course_id: string;
+  course_name: string;
+  sessions_billed: number;
+  total_charged_lkr: number;
+  total_paid_lkr: number;
+  total_outstanding_lkr: number;
+  students?: { display_name: string } | null;
+}): StudentBillingSummary {
+  return {
+    studentId: row.student_id,
+    studentName: row.students?.display_name,
+    courseId: row.course_id,
+    courseName: row.course_name,
+    sessionsBilled: Number(row.sessions_billed),
+    totalChargedLkr: Number(row.total_charged_lkr),
+    totalPaidLkr: Number(row.total_paid_lkr),
+    totalOutstandingLkr: Number(row.total_outstanding_lkr),
   };
 }
 
@@ -378,6 +443,9 @@ export function mapPaperCenter(row: Database["public"]["Tables"]["paper_centers"
     mapUrl: row.map_url,
     mapX: row.map_x ?? undefined,
     mapY: row.map_y ?? undefined,
+    grades: (row.grades ?? []).filter((grade): grade is import("@/types").PaperCenterGrade =>
+      grade === "10" || grade === "11" || grade === "12" || grade === "13"
+    ),
     sortOrder: row.sort_order,
     isActive: row.is_active,
   };
@@ -471,6 +539,7 @@ export function mapSiteStats(row: Database["public"]["Tables"]["site_stats"]["Ro
 export function mapPlatformSettings(row: {
   online_payments_enabled: boolean;
   default_institute_fee_lkr: number;
+  per_class_fee_lkr?: number;
   marketing_coming_soon_enabled?: boolean;
   site_public_mode?: string;
   brand_logo_settings?: unknown;
@@ -485,6 +554,7 @@ export function mapPlatformSettings(row: {
   return {
     onlinePaymentsEnabled: row.online_payments_enabled,
     defaultInstituteFeeLkr: Number(row.default_institute_fee_lkr),
+    perClassFeeLkr: Number(row.per_class_fee_lkr ?? 1200),
     marketingComingSoonEnabled: row.marketing_coming_soon_enabled ?? true,
     sitePublicMode: validMode,
     brandLogo: parseBrandLogoSettings(row.brand_logo_settings),
@@ -545,6 +615,7 @@ export function mapBlogPost(row: {
   tags: string[] | null;
   author_name: string;
   reading_time_minutes: number;
+  view_count?: number | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -568,6 +639,7 @@ export function mapBlogPost(row: {
     tags: row.tags ?? [],
     authorName: row.author_name,
     readingTimeMinutes: row.reading_time_minutes,
+    viewCount: row.view_count ?? 0,
     publishedAt: row.published_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -636,12 +708,16 @@ export function mapPaperCenterStaff(row: {
   display_name: string;
   staff_username: string;
   email: string;
+  staff_role?: string;
+  whatsapp?: string;
+  grades?: string[];
   active: boolean;
   created_at: string;
   paper_centers?: { name: string; district?: string; address?: string; slug?: string } | null;
 }): PaperCenterStaff {
   const center = row.paper_centers;
   const place = center ? [center.district, center.address].filter(Boolean).join(" · ") : undefined;
+  const staffRole = row.staff_role === "in_charge" ? "in_charge" : "staff";
   return {
     id: row.id,
     userId: row.user_id,
@@ -652,6 +728,11 @@ export function mapPaperCenterStaff(row: {
     displayName: row.display_name,
     staffUsername: row.staff_username,
     email: row.email,
+    staffRole,
+    whatsapp: row.whatsapp ?? "",
+    grades: (row.grades ?? []).filter((grade): grade is import("@/types").PaperCenterGrade =>
+      grade === "10" || grade === "11" || grade === "12" || grade === "13"
+    ),
     active: row.active,
     createdAt: row.created_at,
   };
@@ -812,6 +893,7 @@ export function mapCourseBatch(row: {
   end_time: string;
   class_days: string[];
   total_classes: number;
+  zoom_link?: string | null;
   active: boolean;
   created_by: string | null;
   created_at: string;
@@ -830,6 +912,7 @@ export function mapCourseBatch(row: {
     endTime: row.end_time,
     classDays: row.class_days ?? [],
     totalClasses: row.total_classes,
+    zoomLink: row.zoom_link ?? null,
     active: row.active,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -865,7 +948,15 @@ export function mapClassSession(row: {
   start_time: string;
   end_time: string;
   status: ClassSessionStatus;
+  zoom_link?: string | null;
+  canva_slide_url?: string | null;
+  canva_slide_title?: string | null;
+  cancel_reason?: string | null;
+  cancelled_at?: string | null;
+  course_batches?: { name: string; batch_code: string } | { name: string; batch_code: string }[] | null;
 }): ClassSession {
+  const batchRaw = row.course_batches;
+  const batch = Array.isArray(batchRaw) ? batchRaw[0] : batchRaw;
   return {
     id: row.id,
     batchId: row.batch_id,
@@ -874,6 +965,39 @@ export function mapClassSession(row: {
     startTime: row.start_time,
     endTime: row.end_time,
     status: row.status,
+    zoomLink: row.zoom_link ?? null,
+    canvaSlideUrl: row.canva_slide_url ?? null,
+    canvaSlideTitle: row.canva_slide_title ?? null,
+    cancelReason: row.cancel_reason ?? null,
+    cancelledAt: row.cancelled_at ?? null,
+    batchName: batch?.name,
+    batchCode: batch?.batch_code,
+  };
+}
+
+type BatchWhatsAppLogRow = Database["public"]["Tables"]["batch_whatsapp_log"]["Row"];
+
+export function mapBatchWhatsAppLog(
+  row: BatchWhatsAppLogRow & { students?: { full_name: string } | { full_name: string }[] | null }
+): BatchWhatsAppLogEntry {
+  const studentRaw = row.students;
+  const student = Array.isArray(studentRaw) ? studentRaw[0] : studentRaw;
+  return {
+    id: row.id,
+    batchId: row.batch_id,
+    sessionId: row.session_id,
+    studentId: row.student_id,
+    paperCenterId: row.paper_center_id,
+    paperCenterStaffId: row.paper_center_staff_id,
+    phone: row.phone,
+    messageType: row.message_type,
+    messageTitle: row.message_title,
+    messageBody: row.message_body,
+    status: row.status,
+    providerMessageId: row.provider_message_id,
+    error: row.error,
+    createdAt: row.created_at,
+    studentName: student?.full_name,
   };
 }
 

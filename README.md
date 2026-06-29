@@ -245,6 +245,18 @@ RESEND_FROM_EMAIL="ICT Foundation <noreply@ictf.lk>"
 CONTACT_INBOX_EMAIL=info@ictf.lk
 RESEND_REPLY_TO_EMAIL=info@ictf.lk
 
+# Meta WhatsApp Business Cloud API — student welcome + profile photo notifications
+# Create approved templates in Meta Business Manager before production use.
+# Batch templates setup: docs/whatsapp-batch-templates.md
+WHATSAPP_ACCESS_TOKEN=...
+WHATSAPP_PHONE_NUMBER_ID=...
+WHATSAPP_WELCOME_TEMPLATE=ictf_student_welcome
+WHATSAPP_PROFILE_TEMPLATE=ictf_profile_photo_updated
+WHATSAPP_ANNOUNCEMENT_TEMPLATE=ictf_batch_announcement
+WHATSAPP_LAST_CLASS_TEMPLATE=ictf_batch_last_class
+CRON_SECRET=...                              # batch notification cron auth
+# WHATSAPP_API_VERSION=v21.0
+
 # Optional — scripts/supabase-bootstrap.sh
 # SUPABASE_DB_PASSWORD=...
 ```

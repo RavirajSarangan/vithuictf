@@ -2,17 +2,17 @@
 
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { sendStudentWelcomeEmail } from "@/lib/actions/email";
+import { sendStudentRegistrationPendingEmail } from "@/lib/actions/email";
 import {
   buildGeneratedIndexNumber,
   normalizeIndexNumber,
   normalizeNic,
-  normalizePhone,
   normalizeUsername,
   USERNAME_PATTERN,
   validateRegisterStudent,
   type RegisterStudentInput,
 } from "@/lib/validation/register-student";
+import { normalizeSriLankaWhatsApp } from "@/lib/validation/sri-lanka-phone";
 import type { UserRole } from "@/types";
 import { BRAND } from "@/lib/constants";
 import { LOGIN_ERROR, isLoginErrorCode, type LoginErrorCode } from "@/lib/auth/login-errors";
@@ -23,6 +23,8 @@ import {
   assertCourseMatchesStudyTrack,
   autoEnrollStudentOnRegistration,
 } from "@/lib/academics/registration-enrollment";
+import { assertRateLimit } from "@/lib/security/rate-limit";
+import { getRequestClientKey } from "@/lib/security/request-client-key";
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -31,6 +33,28 @@ function normalizeEmail(email: string) {
 function normalizeDisplayName(displayName: string, email: string) {
   const trimmed = displayName.trim();
   return trimmed.length >= 2 ? trimmed : email.split("@")[0] ?? "Student";
+}
+
+/** Rate limit gate for login flows (student email, staff email, etc.). */
+export async function assertLoginRateLimit(identifier: string): Promise<void> {
+  const suffix = identifier.trim().toLowerCase();
+  const key = await getRequestClientKey(suffix);
+  await assertRateLimit(
+    `login:${key}`,
+    10,
+    15 * 60,
+    "Too many login attempts. Please try again later."
+  );
+}
+
+async function assertRegistrationRateLimit(): Promise<void> {
+  const key = await getRequestClientKey();
+  await assertRateLimit(
+    `register:ip:${key}`,
+    3,
+    60 * 60,
+    "Too many registration attempts. Please try again later."
+  );
 }
 
 function mapAuthError(message?: string | null): string {
@@ -119,7 +143,7 @@ async function assertStudentUnique(
     .eq("nic_number", nicNumber)
     .maybeSingle();
 
-  if (byNic && byNic.user_id !== excludeUserId) {
+  if (nicNumber && byNic && byNic.user_id !== excludeUserId) {
     throw new Error("This NIC number is already registered.");
   }
 
@@ -170,10 +194,19 @@ async function upsertRegistrationStudent(
 ): Promise<{ indexNumber: string; studentId: string; courseName: string }> {
   const username = normalizeUsername(studentMeta.username);
   const indexNumber = await resolveIndexNumber(admin, studentMeta);
-  const nicNumber = normalizeNic(studentMeta.nicNumber);
-  const phone = studentMeta.phone?.trim() ? normalizePhone(studentMeta.phone) : null;
+  const nicRaw = studentMeta.nicNumber?.trim() ?? "";
+  const nicNumber = nicRaw ? normalizeNic(nicRaw) : null;
+  const phone = normalizeSriLankaWhatsApp(studentMeta.phone);
+  const schoolName = studentMeta.schoolName.trim();
 
-  await assertStudentUnique(admin, username, indexNumber, nicNumber, email, userId);
+  await assertStudentUnique(
+    admin,
+    username,
+    indexNumber,
+    nicNumber ?? "",
+    email,
+    userId
+  );
 
   const { data: course } = await admin
     .from("courses")
@@ -195,6 +228,7 @@ async function upsertRegistrationStudent(
     index_number: indexNumber,
     nic_number: nicNumber,
     phone,
+    school_name: schoolName,
     notify_email: true,
     display_name: displayName,
     email,
@@ -202,6 +236,8 @@ async function upsertRegistrationStudent(
     course_name: courseName,
     exam_year: studentMeta.studyTrack === "al" ? studentMeta.examYear ?? null : null,
     ict_grade: studentMeta.studyTrack === "grade" ? studentMeta.ictGrade ?? null : null,
+    registration_status: "pending",
+    active: true,
   };
 
   const { data: existing } = await admin
@@ -243,8 +279,6 @@ async function upsertRegistrationStudent(
         .eq("id", course.id);
     }
 
-    await autoEnrollStudentOnRegistration(admin, updated.id, course.id, studentMeta);
-
     return { indexNumber, studentId, courseName };
   }
 
@@ -270,8 +304,6 @@ async function upsertRegistrationStudent(
     .from("courses")
     .update({ student_count: course.student_count + 1 })
     .eq("id", course.id);
-
-  await autoEnrollStudentOnRegistration(admin, inserted.id, course.id, studentMeta);
 
   return { indexNumber, studentId, courseName };
 }
@@ -347,6 +379,7 @@ export async function registerStudentAccount(
   input: RegisterStudentInput
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
+    await assertRegistrationRateLimit();
     await signUpWithRole(input.email, input.password, input.displayName, "student", input);
     return { ok: true };
   } catch (err) {
@@ -430,7 +463,7 @@ export async function signUpWithRole(
       admin,
       normalizeUsername(studentMeta.username),
       studentMeta.indexNumber?.trim() ? normalizeIndexNumber(studentMeta.indexNumber) : "",
-      normalizeNic(studentMeta.nicNumber),
+      studentMeta.nicNumber?.trim() ? normalizeNic(studentMeta.nicNumber) : "",
       normalizedEmail
     );
   }
@@ -469,18 +502,11 @@ export async function signUpWithRole(
     );
 
     if (studentMeta && registration) {
-      const username = normalizeUsername(studentMeta.username);
-      await sendStudentWelcomeEmail({
+      await sendStudentRegistrationPendingEmail({
         displayName: normalizedName,
         studentId: registration.studentId,
-        username,
-        indexNumber: registration.indexNumber,
         email: normalizedEmail,
-        tempPassword: password,
         courseName: registration.courseName,
-        examYear: studentMeta.studyTrack === "al" ? studentMeta.examYear : undefined,
-        ictGrade: studentMeta.studyTrack === "grade" ? studentMeta.ictGrade : undefined,
-        selfRegistered: true,
       });
     }
   }
@@ -606,10 +632,11 @@ export async function loginPaperCenterPortal(
   centerSlug?: string
 ): Promise<LoginActionResult> {
   try {
-    const { email, userId } = await resolvePaperCenterStaffLoginMatch(staffUsername, centerSlug);
+    await assertLoginRateLimit(staffUsername);
+    const { email: resolvedEmail, userId } = await resolvePaperCenterStaffLoginMatch(staffUsername, centerSlug);
     const supabase = await createClient();
     const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: resolvedEmail,
       password,
     });
 
@@ -850,6 +877,8 @@ export async function loginAdminPortal(email: string, password: string): Promise
       return loginActionFailure(new Error(LOGIN_ERROR.INVALID_EMAIL));
     }
 
+    await assertLoginRateLimit(normalizedEmail);
+
     const supabase = await createClient();
     const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
@@ -963,6 +992,8 @@ export async function loginInstituteStaff(
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return loginActionFailure(new Error(LOGIN_ERROR.INVALID_EMAIL));
     }
+
+    await assertLoginRateLimit(`${staffUsername}:${normalizedEmail}`);
 
     const { email: resolvedEmail, userId: expectedUserId } = await resolveStaffPortalLoginMatch(
       staffUsername,

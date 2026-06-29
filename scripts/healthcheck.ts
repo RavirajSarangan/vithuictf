@@ -103,6 +103,63 @@ function envCheck(): Check[] {
     detail: !from ? "not set" : fromOk ? "valid" : "invalid — use Name <email@domain>",
   });
 
+  checks.push({
+    name: "WHATSAPP_ACCESS_TOKEN",
+    status: process.env.WHATSAPP_ACCESS_TOKEN?.trim() ? "ok" : "warn",
+    detail: process.env.WHATSAPP_ACCESS_TOKEN?.trim()
+      ? "set"
+      : "missing — WhatsApp notifications disabled",
+  });
+
+  checks.push({
+    name: "WHATSAPP_PHONE_NUMBER_ID",
+    status: process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ? "ok" : "warn",
+    detail: process.env.WHATSAPP_PHONE_NUMBER_ID?.trim()
+      ? "set"
+      : "missing — WhatsApp notifications disabled",
+  });
+
+  const announcementTemplate =
+    process.env.WHATSAPP_ANNOUNCEMENT_TEMPLATE?.trim() ||
+    process.env.WHATSAPP_TEMPLATE_NAME?.trim() ||
+    "ictf_batch_announcement";
+  const lastClassTemplate =
+    process.env.WHATSAPP_LAST_CLASS_TEMPLATE?.trim() ||
+    process.env.WHATSAPP_LAST_CLASS_TEMPLATE_NAME?.trim() ||
+    "ictf_batch_last_class";
+
+  checks.push({
+    name: "WHATSAPP_ANNOUNCEMENT_TEMPLATE",
+    status: "ok",
+    detail: announcementTemplate,
+  });
+
+  checks.push({
+    name: "WHATSAPP_LAST_CLASS_TEMPLATE",
+    status: "ok",
+    detail: lastClassTemplate,
+  });
+
+  checks.push({
+    name: "CRON_SECRET",
+    status: process.env.CRON_SECRET?.trim() ? "ok" : "warn",
+    detail: process.env.CRON_SECRET?.trim()
+      ? "set — batch notification cron enabled"
+      : "missing — /api/cron/batch-notifications will reject requests",
+  });
+
+  const secretsDir = resolve(process.cwd(), "secrets");
+  const hasLocalServiceAccount =
+    existsSync(secretsDir) &&
+    existsSync(resolve(secretsDir, "google-drive-service-account.json"));
+  checks.push({
+    name: "Local secrets/ credentials",
+    status: hasLocalServiceAccount ? "warn" : "ok",
+    detail: hasLocalServiceAccount
+      ? "google-drive-service-account.json on disk — use env vars in production and rotate if shared"
+      : "no committed service account file detected",
+  });
+
   return checks;
 }
 
@@ -129,14 +186,21 @@ async function main() {
   console.log("\nEmail domain (Resend DNS)…");
   const emailCode = await run("npx", ["tsx", "scripts/verify-resend-domain.ts"]);
 
+  console.log("\nSecurity smoke tests…");
+  const securityCode = await run("npx", ["tsx", "scripts/test-security.ts"]);
+
   const failed =
-    envChecks.some((c) => c.status === "fail") || dbCode !== 0 || rtCode !== 0;
+    envChecks.some((c) => c.status === "fail") ||
+    dbCode !== 0 ||
+    rtCode !== 0 ||
+    securityCode !== 0;
   const warnings =
     envChecks.some((c) => c.status === "warn") || emailCode !== 0;
 
   console.log("\n--- Summary ---");
   console.log(`Database:  ${dbCode === 0 ? "OK" : "FAIL"}`);
   console.log(`Realtime:  ${rtCode === 0 ? "OK" : "FAIL"}`);
+  console.log(`Security:  ${securityCode === 0 ? "OK" : "FAIL"}`);
   console.log(`Email DNS: ${emailCode === 0 ? "OK" : "WARN (add LankaHost DNS records)"}`);
 
   if (failed) {

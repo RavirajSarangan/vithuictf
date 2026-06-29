@@ -10,18 +10,7 @@ const chatBodySchema = z.object({
   query: z.string().trim().min(1, "Query is required").max(2000, "Query is too long"),
 });
 
-// Best-effort per-user throttle. NOTE: in-memory state is per-instance only and
-// resets on cold start; durable rate limiting requires Upstash/Vercel KV.
-const RATE_LIMIT = { windowMs: 60_000, max: 20 };
-const recentRequests = new Map<string, number[]>();
-
-function isRateLimited(userId: string): boolean {
-  const now = Date.now();
-  const hits = (recentRequests.get(userId) ?? []).filter((t) => now - t < RATE_LIMIT.windowMs);
-  hits.push(now);
-  recentRequests.set(userId, hits);
-  return hits.length > RATE_LIMIT.max;
-}
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 // Clip free-text fields before interpolating into the system prompt to limit the
 // blast radius of any unexpected content.
@@ -54,12 +43,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (isRateLimited(user.id)) {
+  const allowed = await checkRateLimit(`ai-chat:${user.id}`, 20, 60);
+  if (!allowed) {
     return Response.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  // Derive student context server-side from the authenticated user instead of
-  // trusting client-supplied values (prevents prompt injection via the request body).
+  // Derive student context server-side
   const { data: student } = await supabase
     .from("students")
     .select("display_name, course_name, grade")

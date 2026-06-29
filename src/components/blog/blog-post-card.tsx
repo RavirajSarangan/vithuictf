@@ -5,6 +5,7 @@ import type { BlogPost } from "@/types";
 import { MarketingPanel } from "@/components/landing/marketing-layout";
 import { BlogStorageImage } from "@/components/blog/blog-storage-image";
 import { BlogPostShare } from "@/components/blog/blog-post-share";
+import { BlogViewCount } from "@/components/blog/blog-view-count";
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -50,6 +51,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
               <Clock className="size-3.5" />
               {post.readingTimeMinutes} min read
             </span>
+            <BlogViewCount postId={post.id} initialCount={post.viewCount} variant="dark" />
           </div>
           <h2 className="text-2xl font-bold text-white md:text-3xl">
             <Link href={`/blog/${post.slug}`} className="hover:text-icvf-accent">
@@ -104,6 +106,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
             <Clock className="size-3.5" />
             {post.readingTimeMinutes} min read
           </span>
+          <BlogViewCount postId={post.id} initialCount={post.viewCount} />
         </div>
 
         <h2 className="text-lg font-bold text-icvf-navy">

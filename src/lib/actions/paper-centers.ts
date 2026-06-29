@@ -5,6 +5,11 @@ import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/server";
 import { paperCenterLoginPath, slugifyPaperCenterName } from "@/lib/paper-center-slug";
+import {
+  normalizePaperCenterGrades,
+  validatePaperCenterGrades,
+  type PaperCenterGrade,
+} from "@/lib/paper-centers/grades";
 import { revalidateMarketingPaths } from "@/lib/revalidation-paths";
 
 async function ensureUniqueSlug(base: string, excludeId?: string): Promise<string> {
@@ -32,19 +37,62 @@ function revalidatePaperCenterPaths() {
   revalidatePath("/login/paper-center");
 }
 
+async function nextPaperCenterSortOrder(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data } = await supabase
+    .from("paper_centers")
+    .select("sort_order")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return (data?.sort_order ?? -1) + 1;
+}
+
+async function assertCenterGradesCanBeRemoved(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  centerId: string,
+  nextGrades: PaperCenterGrade[]
+) {
+  const { data: staffRows } = await supabase
+    .from("paper_center_staff")
+    .select("display_name, grades")
+    .eq("paper_center_id", centerId);
+
+  const nextSet = new Set(nextGrades);
+  const conflicts: string[] = [];
+
+  for (const staff of staffRows ?? []) {
+    const staffGrades = normalizePaperCenterGrades(staff.grades ?? []);
+    const removed = staffGrades.filter((grade) => !nextSet.has(grade));
+    if (removed.length > 0) {
+      conflicts.push(`${staff.display_name} (${removed.map((grade) => `G${grade}`).join(", ")})`);
+    }
+  }
+
+  if (conflicts.length > 0) {
+    throw new Error(
+      `Cannot remove grades still assigned to staff: ${conflicts.join("; ")}. Update staff grades first.`
+    );
+  }
+}
+
 export async function addManagedPaperCenter(data: {
   name: string;
   district: string;
   address: string;
   mapUrl?: string;
-  sortOrder?: number;
   slug?: string;
+  grades: PaperCenterGrade[];
 }) {
   await requireSuperAdmin();
   const supabase = await createClient();
 
   const name = data.name.trim();
   if (!name) throw new Error("Center name is required");
+
+  const grades = normalizePaperCenterGrades(data.grades);
+  const gradeError = validatePaperCenterGrades(grades);
+  if (gradeError) throw new Error(gradeError);
 
   const slug = data.slug?.trim()
     ? slugifyPaperCenterName(data.slug)
@@ -53,13 +101,16 @@ export async function addManagedPaperCenter(data: {
   const { data: existing } = await supabase.from("paper_centers").select("id").eq("slug", slug).maybeSingle();
   if (existing) throw new Error("This URL slug is already in use");
 
+  const sortOrder = await nextPaperCenterSortOrder(supabase);
+
   const { error } = await supabase.from("paper_centers").insert({
     name,
     slug,
     district: data.district.trim(),
     address: data.address.trim(),
     map_url: data.mapUrl?.trim() ?? "",
-    sort_order: data.sortOrder ?? 0,
+    sort_order: sortOrder,
+    grades,
     is_active: true,
   });
 
@@ -75,9 +126,9 @@ export async function updateManagedPaperCenter(
     district: string;
     address: string;
     mapUrl?: string;
-    sortOrder?: number;
     slug?: string;
     isActive?: boolean;
+    grades: PaperCenterGrade[];
   }
 ) {
   await requireSuperAdmin();
@@ -85,6 +136,12 @@ export async function updateManagedPaperCenter(
 
   const name = data.name.trim();
   if (!name) throw new Error("Center name is required");
+
+  const grades = normalizePaperCenterGrades(data.grades);
+  const gradeError = validatePaperCenterGrades(grades);
+  if (gradeError) throw new Error(gradeError);
+
+  await assertCenterGradesCanBeRemoved(supabase, id, grades);
 
   const slug = data.slug?.trim()
     ? slugifyPaperCenterName(data.slug)
@@ -107,7 +164,7 @@ export async function updateManagedPaperCenter(
       district: data.district.trim(),
       address: data.address.trim(),
       map_url: data.mapUrl?.trim() ?? "",
-      sort_order: data.sortOrder ?? 0,
+      grades,
       is_active: data.isActive ?? true,
     })
     .eq("id", id);

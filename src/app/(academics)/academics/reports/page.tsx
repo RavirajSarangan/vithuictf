@@ -10,15 +10,28 @@ import {
 } from "@/hooks/use-academics";
 import { exportToCsv } from "@/lib/export/csv";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function attendanceBadgeVariant(percent: number): "default" | "outline" | "destructive" {
+  if (percent < 75) return "destructive";
+  if (percent < 85) return "outline";
+  return "default";
+}
 
 export default function AcademicsReportsPage() {
   const { data: batches, loading: batchesLoading } = useBatches();
   const [batchId, setBatchId] = useState("");
-  const { data: summary, loading: summaryLoading } = useBatchAttendanceSummary(batchId || null);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const { data: summary, loading: summaryLoading } = useBatchAttendanceSummary(batchId || null, {
+    fromDate: fromDate || undefined,
+    toDate: toDate || undefined,
+  });
   const [selectedStudent, setSelectedStudent] = useState<{ id: string; name: string } | null>(null);
   const { data: history, loading: historyLoading } = useStudentAttendanceHistory(
     selectedStudent?.id ?? null,
@@ -26,10 +39,11 @@ export default function AcademicsReportsPage() {
   );
 
   const activeBatches = useMemo(() => batches.filter((b) => b.active), [batches]);
+  const batch = batches.find((b) => b.id === batchId);
 
   const handleExportSummary = () => {
-    const batch = batches.find((b) => b.id === batchId);
-    exportToCsv(`${batch?.batchCode ?? "batch"}-attendance-summary.csv`, summary);
+    const range = fromDate || toDate ? `-${fromDate || "start"}-to-${toDate || "end"}` : "";
+    exportToCsv(`${batch?.batchCode ?? "batch"}${range}-attendance-summary.csv`, summary);
   };
 
   const handleExportHistory = () => {
@@ -49,20 +63,30 @@ export default function AcademicsReportsPage() {
         description="Per-batch attendance summaries and student drill-down"
       />
 
-      <div className="max-w-md space-y-2">
-        <label className="text-sm font-medium">Batch</label>
-        <Select value={batchId} onValueChange={(v) => { setBatchId(v ?? ""); setSelectedStudent(null); }}>
-          <SelectTrigger>
-            <SelectValue placeholder={batchesLoading ? "Loading…" : "Select batch"} />
-          </SelectTrigger>
-          <SelectContent>
-            {activeBatches.map((b) => (
-              <SelectItem key={b.id} value={b.id}>
-                {b.name} ({b.batchCode})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Batch</label>
+          <Select value={batchId} onValueChange={(v) => { setBatchId(v ?? ""); setSelectedStudent(null); }}>
+            <SelectTrigger>
+              <SelectValue placeholder={batchesLoading ? "Loading…" : "Select batch"} />
+            </SelectTrigger>
+            <SelectContent>
+              {activeBatches.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name} ({b.batchCode})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">From date</label>
+          <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">To date</label>
+          <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+        </div>
       </div>
 
       {!batchId ? (
@@ -87,7 +111,11 @@ export default function AcademicsReportsPage() {
               {
                 key: "attendancePercent",
                 label: "Attendance %",
-                render: (row) => `${row.attendancePercent}%`,
+                render: (row) => (
+                  <Badge variant={attendanceBadgeVariant(row.attendancePercent)}>
+                    {row.attendancePercent}%
+                  </Badge>
+                ),
               },
               {
                 key: "studentId",
@@ -105,6 +133,9 @@ export default function AcademicsReportsPage() {
               },
             ]}
             data={summary}
+            rowClassName={(row) =>
+              cn(row.attendancePercent < 75 && "bg-destructive/5")
+            }
           />
         </>
       )}

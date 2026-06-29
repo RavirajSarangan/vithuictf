@@ -1,6 +1,47 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+import { getRequestClientKey } from "@/lib/security/request-client-key";
+
+const STAFF_ROLES = new Set(["teacher", "admin", "super_admin", "content_manager"]);
+
+async function userCanAccessResourceCourse(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  courseId: string | null
+): Promise<boolean> {
+  if (!courseId) return true;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profile?.role && STAFF_ROLES.has(profile.role)) return true;
+
+  const { data: student } = await supabase
+    .from("students")
+    .select("id, course_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!student) return false;
+  if (student.course_id === courseId) return true;
+
+  const { data: enrollments } = await supabase
+    .from("batch_enrollments")
+    .select("course_batches(course_id)")
+    .eq("student_id", student.id)
+    .eq("active", true);
+
+  return (enrollments ?? []).some((row) => {
+    const batch = row.course_batches as { course_id?: string } | { course_id?: string }[] | null;
+    const course = Array.isArray(batch) ? batch[0] : batch;
+    return course?.course_id === courseId;
+  });
+}
 
 export async function GET(
   _request: Request,
@@ -16,7 +57,7 @@ export async function GET(
 
   const { data: resource, error } = await supabase
     .from("resources")
-    .select("id, title, storage_path, view_only, type")
+    .select("id, title, storage_path, view_only, type, course_id")
     .eq("id", id)
     .single();
 
@@ -30,7 +71,13 @@ export async function GET(
     storage_path: string;
     view_only: boolean;
     type: string;
+    course_id: string | null;
   };
+
+  const allowed = await userCanAccessResourceCourse(supabase, user.id, row.course_id);
+  if (!allowed) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   if (!isAdminClientConfigured()) {
     return NextResponse.json({

@@ -7,6 +7,8 @@ export const BRAND = {
   logoAuthMobile: "/landing/ICTF%20PNG%204%202%20(1).webp",
   /** Login/register desktop aside wordmark (navy panel). */
   logoAuthDesktop: "/landing/Vector.webp",
+  /** Portal sidebar wordmark (navy sidebar). */
+  logoPortal: "/landing/Vector.webp",
   /** Square mark for dark backgrounds (nav, footer). */
   logoMark: "/ICTF.svg",
   /** Legacy light wordmark asset (footer, portal shell). */
@@ -28,6 +30,9 @@ export const BRAND = {
   logoFooterHeight: 150,
   /** Square mark intrinsic ratio (ICTF.svg). */
   logoMarkSize: 1767,
+  /** Portal sidebar wordmark intrinsic ratio (Vector.webp). */
+  logoPortalWidth: 420,
+  logoPortalHeight: 200,
   legalName: "Information Communication Technology Forum (PVT) LTD",
   platformName: "ICTF Student Portal",
   studentIdPrefix: "ICTF",

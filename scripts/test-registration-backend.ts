@@ -82,7 +82,8 @@ async function main() {
     displayName: "Registration Test",
     username,
     nicNumber: "200012345678",
-    phone: "+94771234567",
+    phone: "0771234567",
+    schoolName: "Test School",
     studyTrack: "al",
     examYear: "2027",
     courseId: course.id,
@@ -94,7 +95,7 @@ async function main() {
   try {
     const { data: row, error: readError } = await admin
       .from("students")
-      .select("username, index_number, nic_number, phone, notify_email, course_id, student_id, display_name, exam_year, ict_grade")
+      .select("username, index_number, nic_number, phone, school_name, notify_email, course_id, student_id, display_name, exam_year, ict_grade")
       .eq("user_id", user.id)
       .single();
 

@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/shared/page-header";
 import { usePassPaperFoldersAdmin, usePassPaperItems, useAllPassPaperItems } from "@/hooks/use-pass-papers";
 import {
   bulkCreatePassPaperYearFolders,
+  ensurePassPaperExamTemplate,
   createPassPaperFolder,
   createPassPaperItem,
   deletePassPaperFolder,
   deletePassPaperItem,
-  publishPassPaperFolderWithDescendants,
+  publishPassPaperSubtreeComplete,
   publishPassPaperItemsInFolder,
   updatePassPaperFolder,
   updatePassPaperItem,
@@ -33,11 +35,28 @@ import { Label } from "@/components/ui/label";
 import { AdminTable } from "@/components/admin/admin-table";
 import { Badge } from "@/components/ui/badge";
 import type { PassPaperFolder, PassPaperItem, PassPaperLayout } from "@/types";
+import { PASS_PAPER_ICON_KEYS } from "@/lib/pass-papers/icon-map";
 import { FolderOpen, Link2, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { PassPaperBrowser } from "@/components/pass-papers/pass-paper-browser";
 
-const ICON_OPTIONS = ["folder", "folder-open", "book-open", "file-text", "graduation-cap", "layers"];
+const PassPaperBrowser = dynamic(
+  () => import("@/components/pass-papers/pass-paper-browser").then((mod) => mod.PassPaperBrowser),
+  {
+    loading: () => <p className="text-sm text-muted-foreground">Loading preview…</p>,
+  }
+);
+
+const PassPaperDriveImportPanel = dynamic(
+  () =>
+    import("@/components/pass-papers/pass-paper-drive-import-panel").then(
+      (mod) => mod.PassPaperDriveImportPanel
+    ),
+  {
+    loading: () => <p className="text-sm text-muted-foreground">Loading Drive import…</p>,
+  }
+);
+
+const ICON_OPTIONS = PASS_PAPER_ICON_KEYS;
 const LAYOUT_OPTIONS = ["folder", "grid", "list"] as const;
 
 type FolderDraft = {
@@ -67,7 +86,7 @@ export default function AdminPassPapersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = folders.find((f) => f.id === selectedId) ?? null;
   const { items, refresh: refreshItems } = usePassPaperItems(selected?.id ?? null);
-  const { items: allItems } = useAllPassPaperItems();
+  const { items: allItems } = useAllPassPaperItems(Boolean(selected));
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<FolderDraft | null>(null);
   const draftFolderIdRef = useRef<string | null>(null);
@@ -80,6 +99,10 @@ export default function AdminPassPapersPage() {
   const [editingItem, setEditingItem] = useState<PassPaperItem | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [linkFormKey, setLinkFormKey] = useState(0);
+  const [creatingTemplate, setCreatingTemplate] = useState<"al" | "ol" | null>(null);
+
+  const alRoot = folders.find((f) => f.slug === "a-l-past-papers" && !f.parentId);
+  const olRoot = folders.find((f) => f.slug === "o-l-past-papers" && !f.parentId);
 
   useEffect(() => {
     if (!selected) {
@@ -132,6 +155,24 @@ export default function AdminPassPapersPage() {
     }
   };
 
+  const handleCreateExamTemplate = async (examType: "al" | "ol") => {
+    setCreatingTemplate(examType);
+    try {
+      const result = await ensurePassPaperExamTemplate(examType);
+      refresh();
+      setSelectedId(result.rootId);
+      toast.success(
+        `${examType === "al" ? "A/L" : "O/L"} template created${
+          result.createdFolders > 0 ? ` (${result.createdFolders} folders)` : ""
+        }`
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Template creation failed");
+    } finally {
+      setCreatingTemplate(null);
+    }
+  };
+
   const handleCreateFolder = async (parentId: string | null) => {
     if (!newFolderTitle.trim()) return;
     try {
@@ -179,10 +220,11 @@ export default function AdminPassPapersPage() {
   const handlePublishSubtree = async (published: boolean) => {
     if (!selected) return;
     try {
-      const result = await publishPassPaperFolderWithDescendants(selected.id, published);
+      const result = await publishPassPaperSubtreeComplete(selected.id, published);
       refresh();
+      refreshItems();
       toast.success(
-        `${published ? "Published" : "Unpublished"} ${result.updated} folder${result.updated === 1 ? "" : "s"}`
+        `${published ? "Published" : "Unpublished"} ${result.foldersUpdated} folder${result.foldersUpdated === 1 ? "" : "s"} and ${result.itemsUpdated} paper link${result.itemsUpdated === 1 ? "" : "s"}`
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Update failed");
@@ -263,6 +305,14 @@ export default function AdminPassPapersPage() {
         description="Manage folder structure, design, and Google Drive links (no uploads)"
       />
 
+      <PassPaperDriveImportPanel
+        folders={folders}
+        onComplete={() => {
+          refresh();
+          refreshItems();
+        }}
+      />
+
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <aside className="space-y-3 rounded-lg border border-border p-4">
           <div className="flex items-center gap-2 font-medium">
@@ -305,6 +355,36 @@ export default function AdminPassPapersPage() {
             >
               New root folder
             </Button>
+            {!olRoot ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={creatingTemplate !== null}
+                onClick={() => void handleCreateExamTemplate("ol")}
+              >
+                {creatingTemplate === "ol" ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : null}
+                Create O/L template
+              </Button>
+            ) : null}
+            {!alRoot ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={creatingTemplate !== null}
+                onClick={() => void handleCreateExamTemplate("al")}
+              >
+                {creatingTemplate === "al" ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : null}
+                Create A/L template
+              </Button>
+            ) : null}
             {selected ? (
               <Button
                 type="button"

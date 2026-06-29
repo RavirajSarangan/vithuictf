@@ -96,6 +96,9 @@ export function usePeopleRoster() {
           active: staff.active,
           paperCenterId: staff.paperCenterId,
           paperCenterName: staff.paperCenterName,
+          paperCenterStaffRole: staff.staffRole,
+          whatsapp: staff.whatsapp,
+          paperCenterGrades: staff.grades,
           sourceTable: "paper_center_staff",
         });
       }

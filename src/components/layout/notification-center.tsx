@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useNotifications } from "@/hooks/use-data";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell } from "lucide-react";
+import { Bell, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function NotificationCenter() {
@@ -38,8 +38,15 @@ export function NotificationCenter() {
                 )}
                 onClick={() => markRead(n.id)}
               >
-                <p className="text-sm font-medium">{n.title}</p>
-                <p className="text-xs text-muted-foreground">{n.body}</p>
+                <div className="flex items-start gap-2">
+                  {n.type === "class" ? (
+                    <CalendarDays className="mt-0.5 size-4 shrink-0 text-icvf-accent" />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{n.title}</p>
+                    <p className="text-xs text-muted-foreground">{n.body}</p>
+                  </div>
+                </div>
               </button>
             ))
           )}

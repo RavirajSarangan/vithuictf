@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useAdminDashboardOverview } from "@/hooks/use-admin-dashboard";
 import { useAdminRevenueTrend } from "@/hooks/use-data";
 import { DashboardActivityFeed } from "@/components/admin/dashboard/dashboard-activity-feed";
@@ -9,10 +10,18 @@ import { DashboardHero } from "@/components/admin/dashboard/dashboard-hero";
 import { DashboardKpiGrid } from "@/components/admin/dashboard/dashboard-kpi-grid";
 import { DashboardQuickActions } from "@/components/admin/dashboard/dashboard-quick-actions";
 import { DashboardSuperAdminPanel } from "@/components/admin/dashboard/dashboard-super-admin-panel";
+import { DashboardAcademicsPanel } from "@/components/admin/dashboard/dashboard-academics-panel";
 import { DashboardUpcomingSessions } from "@/components/admin/dashboard/dashboard-upcoming-sessions";
-import { TeacherDashboard } from "@/components/admin/dashboard/teacher-dashboard";
+import { DashboardActiveBatches } from "@/components/admin/dashboard/dashboard-active-batches";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/providers/auth-provider";
+
+const TeacherDashboard = dynamic(
+  () => import("@/components/admin/dashboard/teacher-dashboard").then((mod) => mod.TeacherDashboard),
+  {
+    loading: () => <Skeleton className="h-96 rounded-2xl" />,
+  }
+);
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -41,6 +50,7 @@ export default function AdminDashboard() {
       <DashboardHero role={role} displayName={user?.displayName} />
       <DashboardQuickActions role={role} />
       <DashboardKpiGrid stats={overview.stats} loading={overview.loading} />
+      <DashboardActiveBatches />
       <DashboardChartsRow
         revenueTrend={revenueTrend}
         enrollmentData={overview.enrollmentData}
@@ -60,6 +70,7 @@ export default function AdminDashboard() {
         inquiries={overview.recentInquiries}
         loading={overview.loading}
       />
+      <DashboardAcademicsPanel stats={overview.academics} loading={overview.loading} />
       {isSuperAdmin ? (
         <DashboardSuperAdminPanel stats={overview.superAdmin} loading={overview.loading} />
       ) : null}

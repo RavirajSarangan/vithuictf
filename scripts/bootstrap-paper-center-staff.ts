@@ -1,6 +1,8 @@
 /**
  * One-off paper center staff bootstrap. Usage:
- *   npx tsx scripts/bootstrap-paper-center-staff.ts <email> <password> <staffUsername> <paperCenterId> [displayName]
+ *   npx tsx scripts/bootstrap-paper-center-staff.ts <email> <password> <staffUsername> <paperCenterId> [displayName] [staffRole] [whatsapp] [grades]
+ *
+ * grades: comma-separated list, e.g. 10,11
  */
 import ws from "ws";
 
@@ -11,6 +13,8 @@ if (!globalThis.WebSocket) {
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { createAdminClient } from "../src/lib/supabase/admin";
+import { normalizePaperCenterGrades } from "../src/lib/paper-centers/grades";
+import { normalizeSriLankaWhatsApp } from "../src/lib/validation/sri-lanka-phone";
 
 function loadEnvLocal() {
   const path = resolve(process.cwd(), ".env.local");
@@ -33,10 +37,13 @@ const password = process.argv[3] ?? "";
 const staffUsername = (process.argv[4] ?? "").trim().toLowerCase();
 const paperCenterId = process.argv[5] ?? "";
 const displayName = process.argv[6] ?? "Paper Center Staff";
+const staffRole = process.argv[7] === "in_charge" ? "in_charge" : "staff";
+const whatsapp = process.argv[8] ?? "";
+const gradesArg = process.argv[9] ?? "";
 
 if (!email || !password || password.length < 8 || !staffUsername || !paperCenterId) {
   console.error(
-    "Usage: npx tsx scripts/bootstrap-paper-center-staff.ts <email> <password> <staffUsername> <paperCenterId> [displayName]"
+    "Usage: npx tsx scripts/bootstrap-paper-center-staff.ts <email> <password> <staffUsername> <paperCenterId> [displayName] [staffRole] [whatsapp] [grades]"
   );
   process.exit(1);
 }
@@ -46,13 +53,19 @@ async function main() {
 
   const { data: center } = await admin
     .from("paper_centers")
-    .select("id, name")
+    .select("id, name, grades")
     .eq("id", paperCenterId)
     .maybeSingle();
 
   if (!center) {
     throw new Error("Paper center not found");
   }
+
+  const centerGrades = normalizePaperCenterGrades(center.grades ?? []);
+  const staffGrades = gradesArg
+    ? normalizePaperCenterGrades(gradesArg.split(","))
+    : centerGrades;
+  const normalizedWhatsapp = whatsapp ? normalizeSriLankaWhatsApp(whatsapp) : "";
 
   const { data: listed, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
   if (listError) throw new Error(listError.message);
@@ -94,6 +107,9 @@ async function main() {
         display_name: displayName,
         staff_username: staffUsername,
         email,
+        staff_role: staffRole,
+        whatsapp: normalizedWhatsapp,
+        grades: staffGrades,
         active: true,
       },
       { onConflict: "user_id" }
@@ -131,6 +147,9 @@ async function main() {
     display_name: displayName,
     staff_username: staffUsername,
     email,
+    staff_role: staffRole,
+    whatsapp: normalizedWhatsapp,
+    grades: staffGrades,
     active: true,
   });
   if (staffError) throw new Error(staffError.message);

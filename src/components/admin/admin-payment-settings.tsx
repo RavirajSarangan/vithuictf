@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { updatePlatformPaymentSettings } from "@/lib/actions/payments-admin";
+import { getStripeConfigured } from "@/lib/actions/payment-infra";
 import { usePlatformSettings } from "@/hooks/use-data";
 import {
   getOnlinePaymentsStatusLabel,
   isOnlinePaymentsAvailable,
-  isStripeConfigured,
 } from "@/lib/payment-access";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
@@ -19,21 +19,30 @@ import { toast } from "sonner";
 
 export function AdminPaymentSettingsPanel() {
   const { settings, loading, refresh } = usePlatformSettings();
+  const [stripeConfigured, setStripeConfigured] = useState(false);
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(settings.onlinePaymentsEnabled);
   const [instituteFee, setInstituteFee] = useState(settings.defaultInstituteFeeLkr);
+  const [perClassFee, setPerClassFee] = useState(settings.perClassFeeLkr);
   const [settingsKey, setSettingsKey] = useState(
-    () => `${settings.onlinePaymentsEnabled}:${settings.defaultInstituteFeeLkr}`
+    () => `${settings.onlinePaymentsEnabled}:${settings.defaultInstituteFeeLkr}:${settings.perClassFeeLkr}`
   );
 
-  const nextSettingsKey = `${settings.onlinePaymentsEnabled}:${settings.defaultInstituteFeeLkr}`;
+  useEffect(() => {
+    void getStripeConfigured().then(setStripeConfigured);
+  }, []);
+
+  const nextSettingsKey = `${settings.onlinePaymentsEnabled}:${settings.defaultInstituteFeeLkr}:${settings.perClassFeeLkr}`;
   const dirty =
-    enabled !== settings.onlinePaymentsEnabled || instituteFee !== settings.defaultInstituteFeeLkr;
+    enabled !== settings.onlinePaymentsEnabled ||
+    instituteFee !== settings.defaultInstituteFeeLkr ||
+    perClassFee !== settings.perClassFeeLkr;
 
   if (settingsKey !== nextSettingsKey && !dirty && !saving) {
     setSettingsKey(nextSettingsKey);
     setEnabled(settings.onlinePaymentsEnabled);
     setInstituteFee(settings.defaultInstituteFeeLkr);
+    setPerClassFee(settings.perClassFeeLkr);
   }
 
   if (loading) {
@@ -44,13 +53,16 @@ export function AdminPaymentSettingsPanel() {
     );
   }
 
-  const status = getOnlinePaymentsStatusLabel(settings);
-  const stripeReady = isStripeConfigured();
-  const live = isOnlinePaymentsAvailable(settings);
+  const status = getOnlinePaymentsStatusLabel(settings, stripeConfigured);
+  const live = isOnlinePaymentsAvailable(settings, stripeConfigured);
 
   const onSave = async () => {
     if (instituteFee < 1) {
       toast.error("Default institute fee must be at least LKR 1");
+      return;
+    }
+    if (perClassFee < 1) {
+      toast.error("Per-class fee must be at least LKR 1");
       return;
     }
     setSaving(true);
@@ -58,6 +70,7 @@ export function AdminPaymentSettingsPanel() {
       await updatePlatformPaymentSettings({
         onlinePaymentsEnabled: enabled,
         defaultInstituteFeeLkr: instituteFee,
+        perClassFeeLkr: perClassFee,
       });
       refresh();
       toast.success(enabled ? "Online payments enabled" : "Online payments set to coming soon");
@@ -71,6 +84,7 @@ export function AdminPaymentSettingsPanel() {
   const onReset = () => {
     setEnabled(settings.onlinePaymentsEnabled);
     setInstituteFee(settings.defaultInstituteFeeLkr);
+    setPerClassFee(settings.perClassFeeLkr);
   };
 
   return (
@@ -98,7 +112,7 @@ export function AdminPaymentSettingsPanel() {
           </p>
         </div>
         <Badge variant="outline" className="border-input text-muted-foreground">
-          Stripe: {stripeReady ? "configured" : "not configured"}
+          Stripe: {stripeConfigured ? "configured" : "not configured"}
         </Badge>
       </div>
 
@@ -123,9 +137,27 @@ export function AdminPaymentSettingsPanel() {
             className="border-input bg-background text-foreground"
           />
         </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="per-class-fee">Per-class session fee (LKR)</Label>
+          <Input
+            id="per-class-fee"
+            type="number"
+            min={1}
+            value={perClassFee}
+            onChange={(e) => setPerClassFee(Number(e.target.value) || 0)}
+            className="border-input bg-background text-foreground"
+          />
+          <p className="text-xs text-muted-foreground">
+            Charged per attended class session (present or late), per enrolled course. See{" "}
+            <a href="/admin/finance" className="text-primary hover:underline">
+              Finance
+            </a>
+            .
+          </p>
+        </div>
       </div>
 
-      {enabled && !stripeReady ? (
+      {enabled && !stripeConfigured ? (
         <p className="mt-4 text-sm text-amber-300">
           Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to enable live checkout.
         </p>
@@ -134,7 +166,7 @@ export function AdminPaymentSettingsPanel() {
       <div className="mt-6 flex flex-wrap gap-2">
         <Button
           
-          disabled={saving || !dirty || instituteFee < 1}
+          disabled={saving || !dirty || instituteFee < 1 || perClassFee < 1}
           onClick={() => void onSave()}
         >
           {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}

@@ -12,7 +12,7 @@ export interface WelcomeStudentEmailData {
   displayName: string;
   studentId: string;
   email: string;
-  tempPassword: string;
+  tempPassword?: string;
   courseName: string;
   loginUrl: string;
   username?: string;
@@ -20,6 +20,7 @@ export interface WelcomeStudentEmailData {
   examYear?: string;
   ictGrade?: string;
   selfRegistered?: boolean;
+  registrationApproved?: boolean;
 }
 
 const PORTAL_FEATURES = [
@@ -51,10 +52,19 @@ function formatIctGradeLabel(grade?: string): string | undefined {
   return undefined;
 }
 
+function resolvePasswordReminder(data: WelcomeStudentEmailData): string | undefined {
+  if (data.tempPassword?.trim()) return undefined;
+  if (data.selfRegistered) {
+    return "Use the password you chose during registration";
+  }
+  return undefined;
+}
+
 export function buildWelcomeStudentEmailHtml(data: WelcomeStudentEmailData): string {
   const portalUsername = data.username ?? data.email;
   const passwordLabel = data.selfRegistered ? "Your portal password" : "Temporary password";
   const ictGradeLabel = formatIctGradeLabel(data.ictGrade);
+  const passwordReminder = resolvePasswordReminder(data);
 
   const profileRows = [
     { label: "Full name", value: data.displayName },
@@ -76,15 +86,20 @@ export function buildWelcomeStudentEmailHtml(data: WelcomeStudentEmailData): str
     "Explore your dashboard, classes, materials, and results.",
   ];
 
+  const introLine = data.registrationApproved
+    ? `Your registration with <strong>${escapeHtml(BRAND.fullName)} (${escapeHtml(BRAND.name)})</strong> has been approved. Your student account is now active.`
+    : `Welcome to <strong>${escapeHtml(BRAND.fullName)} (${escapeHtml(BRAND.name)})</strong>. Your student account has been created successfully.`;
+
   const bodyHtml = `
     <p style="margin:0 0 16px;">Hello <strong>${escapeHtml(data.displayName)}</strong>,</p>
-    <p style="margin:0 0 8px;">Welcome to <strong>${escapeHtml(BRAND.fullName)} (${escapeHtml(BRAND.name)})</strong>. Your student account has been created successfully.</p>
+    <p style="margin:0 0 8px;">${introLine}</p>
     <p style="margin:0 0 4px;font-size:14px;color:${BRAND.colors.textLight};">Use the credentials below to access the ${escapeHtml(BRAND.platformName)}.</p>
 
     ${buildStudentCredentialsCard({
       studentId: data.studentId,
       password: data.tempPassword,
       passwordLabel,
+      passwordReminder,
     })}
 
     <p style="margin:24px 0 8px;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.colors.textLight};">Your account details</p>
@@ -101,9 +116,13 @@ export function buildWelcomeStudentEmailHtml(data: WelcomeStudentEmailData): str
   `;
 
   return buildIctfEmailLayout({
-    title: "Welcome, new student!",
-    subtitle: "Your Student ID and portal access are ready",
-    preheader: `Your Student ID is ${data.studentId}. Login now to access the ICTF portal.`,
+    title: data.registrationApproved ? "Registration approved!" : "Welcome, new student!",
+    subtitle: data.registrationApproved
+      ? "Your portal access is now active"
+      : "Your Student ID and portal access are ready",
+    preheader: data.registrationApproved
+      ? `Your ${BRAND.name} registration is approved. Student ID: ${data.studentId}.`
+      : `Your Student ID is ${data.studentId}. Login now to access the ICTF portal.`,
     bodyHtml,
     cta: {
       label: "Login now",
@@ -112,19 +131,36 @@ export function buildWelcomeStudentEmailHtml(data: WelcomeStudentEmailData): str
   });
 }
 
-export function buildWelcomeStudentEmailSubject(studentId: string): string {
+export function buildWelcomeStudentEmailSubject(
+  studentId: string,
+  options?: { registrationApproved?: boolean }
+): string {
+  if (options?.registrationApproved) {
+    return `Registration approved — welcome to ${BRAND.name} | Student ID ${studentId}`;
+  }
   return `Welcome to ${BRAND.name} — Student ID ${studentId} & portal login`;
 }
 
 export function buildWelcomeStudentEmailText(data: WelcomeStudentEmailData): string {
+  const passwordReminder = resolvePasswordReminder(data);
+  const passwordLine = data.tempPassword?.trim()
+    ? `Password: ${data.tempPassword}`
+    : passwordReminder
+      ? `Password: ${passwordReminder}`
+      : null;
+
+  const introLine = data.registrationApproved
+    ? `Your registration with ${BRAND.fullName} (${BRAND.name}) has been approved. Your student account is now active.`
+    : `Welcome to ${BRAND.fullName} (${BRAND.name}). Your student account is ready.`;
+
   const lines = [
     `Hello ${data.displayName},`,
     "",
-    `Welcome to ${BRAND.fullName} (${BRAND.name}). Your student account is ready.`,
+    introLine,
     "",
     "YOUR LOGIN CREDENTIALS",
     `Student ID: ${data.studentId}`,
-    `Password: ${data.tempPassword}`,
+    ...(passwordLine ? [passwordLine] : []),
     `Login email: ${data.email}`,
     ...(data.username ? [`Username: ${data.username}`] : []),
     ...(data.indexNumber ? [`Index number: ${data.indexNumber}`] : []),

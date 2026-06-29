@@ -1,25 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { CalendarBoard } from "@/components/calendar/calendar-board";
+import { StudentBatchCalendar } from "@/components/student/student-batch-calendar";
 import {
   StudentPageHeader,
   StudentPageLoading,
 } from "@/components/student/portal/student-portal-states";
 import { useActiveCourseId, useActiveCourseName } from "@/contexts/student-course-context";
+import { useStudentBatchCalendarSessions } from "@/hooks/use-academics";
 import { useStudentData } from "@/hooks/use-data";
-import { useCalendarMinutesSummary, useCalendarSessions, useSubjectCategories } from "@/hooks/use-calendar";
 
 export default function StudentCalendarPage() {
   const student = useStudentData();
   const activeCourseId = useActiveCourseId(student?.courseId);
   const activeCourseName = useActiveCourseName(student?.courseName);
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const { data: categories, isLoading: categoriesLoading } = useSubjectCategories();
-  const { data: sessions, isLoading: sessionsLoading } = useCalendarSessions(activeCourseId ?? undefined, categoryFilter);
-  const summary = useCalendarMinutesSummary(sessions, categories, categoryFilter);
+  const { data: batchSessions, loading } = useStudentBatchCalendarSessions(
+    student?.id ?? null,
+    activeCourseId
+  );
 
-  if (student === undefined || categoriesLoading || sessionsLoading) {
+  if (student === undefined || loading) {
     return <StudentPageLoading rows={2} />;
   }
 
@@ -29,18 +28,11 @@ export default function StudentCalendarPage() {
         title="Calendar"
         description={
           activeCourseName
-            ? `Class schedule and sessions for ${activeCourseName}.`
-            : "View your weekly class schedule and today's sessions."
+            ? `Batch class schedule for ${activeCourseName}.`
+            : "View your weekly batch class schedule."
         }
       />
-      <CalendarBoard
-        sessions={sessions}
-        categories={categories}
-        categoryFilter={categoryFilter}
-        onCategoryFilter={setCategoryFilter}
-        showSummary
-        weeklyTotal={summary.total}
-      />
+      <StudentBatchCalendar sessions={batchSessions} loading={loading} />
     </div>
   );
 }

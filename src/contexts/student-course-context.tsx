@@ -72,7 +72,7 @@ export function StudentCourseProvider({ children }: { children: React.ReactNode 
 
   const activeCourseName = useMemo(() => {
     const match = enrolledCourses.find((e) => e.courseId === activeCourseId);
-    if (match) return match.courseName;
+    if (match) return match.course.name;
     if (activeCourseId && student?.courseId === activeCourseId) {
       return student.courseName;
     }

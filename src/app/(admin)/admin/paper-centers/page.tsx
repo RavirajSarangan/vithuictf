@@ -22,8 +22,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import type { PaperCenter } from "@/types";
-import { Copy, ExternalLink, Loader2, MapPin, Pencil, Plus, Users } from "lucide-react";
+import type { PaperCenter, PaperCenterGrade } from "@/types";
+import { PAPER_CENTER_GRADES, formatPaperCenterGradeLabel } from "@/lib/paper-centers/grades";
+import { GradeCheckboxes } from "@/components/paper-centers/grade-checkboxes";
+import { PaperCenterStaffMessageDialog } from "@/components/paper-centers/paper-center-staff-message-dialog";
+import { Copy, ExternalLink, Loader2, MapPin, MessageSquare, Pencil, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 const centerSchema = z.object({
@@ -32,11 +35,18 @@ const centerSchema = z.object({
   district: z.string().min(1, "District is required"),
   address: z.string().min(1, "Address is required"),
   mapUrl: z.string().optional(),
-  sortOrder: z.number().int().min(0).optional(),
+  grades: z
+    .array(z.enum(["10", "11", "12", "13"]))
+    .min(1, "Select at least one grade"),
   isActive: z.boolean().optional(),
 });
 
 type CenterFormValues = z.infer<typeof centerSchema>;
+
+type MessageTarget = {
+  paperCenterId?: string;
+  paperCenterName: string;
+};
 
 function copyText(value: string, label: string) {
   void navigator.clipboard.writeText(value);
@@ -48,6 +58,7 @@ export default function AdminPaperCentersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PaperCenter | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [messageTarget, setMessageTarget] = useState<MessageTarget | null>(null);
 
   const form = useForm<CenterFormValues>({
     resolver: zodResolver(centerSchema),
@@ -57,7 +68,7 @@ export default function AdminPaperCentersPage() {
       district: "",
       address: "",
       mapUrl: "",
-      sortOrder: 0,
+      grades: [] as PaperCenterGrade[],
       isActive: true,
     },
   });
@@ -75,7 +86,7 @@ export default function AdminPaperCentersPage() {
       district: "",
       address: "",
       mapUrl: "",
-      sortOrder: sorted.length,
+      grades: [],
       isActive: true,
     });
     setOpen(true);
@@ -89,7 +100,7 @@ export default function AdminPaperCentersPage() {
       district: center.district,
       address: center.address,
       mapUrl: center.mapUrl,
-      sortOrder: center.sortOrder,
+      grades: center.grades,
       isActive: center.isActive,
     });
     setOpen(true);
@@ -104,7 +115,7 @@ export default function AdminPaperCentersPage() {
         district: values.district,
         address: values.address,
         mapUrl: values.mapUrl,
-        sortOrder: values.sortOrder ?? 0,
+        grades: values.grades,
         isActive: values.isActive ?? true,
       };
 
@@ -152,10 +163,20 @@ export default function AdminPaperCentersPage() {
         title="Manage Paper Centers"
         description="Create exam paper centers, set login URLs, and manage staff portal access."
         action={
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 size-4" />
-            Add center
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMessageTarget({ paperCenterName: "All centers" })}
+            >
+              <MessageSquare className="mr-2 size-4" />
+              Message all staff
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 size-4" />
+              Add center
+            </Button>
+          </div>
         }
       />
 
@@ -176,6 +197,23 @@ export default function AdminPaperCentersPage() {
           columns={[
             { key: "name", label: "Center" },
             { key: "district", label: "District" },
+            {
+              key: "grades",
+              label: "Grades",
+              render: (row: PaperCenter) => (
+                <div className="flex flex-wrap gap-1">
+                  {row.grades.length > 0 ? (
+                    row.grades.map((grade) => (
+                      <Badge key={grade} variant="outline">
+                        {formatPaperCenterGradeLabel(grade)}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </div>
+              ),
+            },
             { key: "address", label: "Address" },
             {
               key: "slug",
@@ -229,6 +267,20 @@ export default function AdminPaperCentersPage() {
                     <Users className="mr-1 size-3.5" />
                     Staff
                   </Link>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setMessageTarget({
+                        paperCenterId: row.id,
+                        paperCenterName: row.name,
+                      })
+                    }
+                  >
+                    <MessageSquare className="mr-1 size-3.5" />
+                    Message
+                  </Button>
                   <Button type="button" variant="outline" size="sm" onClick={() => void handleToggleActive(row)}>
                     {row.isActive ? "Deactivate" : "Activate"}
                   </Button>
@@ -280,38 +332,36 @@ export default function AdminPaperCentersPage() {
                   </FormItem>
                 )}
               />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="district"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>District</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Jaffna" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="sortOrder"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sort order</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          value={field.value ?? 0}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="district"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>District</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Jaffna" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="grades"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grades served</FormLabel>
+                    <FormControl>
+                      <GradeCheckboxes
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={PAPER_CENTER_GRADES}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="address"
@@ -368,6 +418,15 @@ export default function AdminPaperCentersPage() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      <PaperCenterStaffMessageDialog
+        open={messageTarget !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setMessageTarget(null);
+        }}
+        paperCenterId={messageTarget?.paperCenterId}
+        paperCenterName={messageTarget?.paperCenterName}
+      />
     </div>
   );
 }

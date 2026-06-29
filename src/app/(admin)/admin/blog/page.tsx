@@ -41,7 +41,9 @@ import {
 import { ExternalLink, FileText, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { slugifyBlogTitle } from "@/lib/blog/slug";
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/datetime-local";
 import { normalizeStorageUrl } from "@/lib/storage/public-url";
+import { useAuth } from "@/providers/auth-provider";
 import type { BlogCategory, BlogPost, BlogPostStatus } from "@/types";
 
 const EMPTY_POST_FORM: {
@@ -56,6 +58,8 @@ const EMPTY_POST_FORM: {
   seoDescription: string;
   isFeatured: boolean;
   status: BlogPostStatus;
+  authorName: string;
+  publishedAt: string;
 } = {
   title: "",
   slug: "",
@@ -68,6 +72,8 @@ const EMPTY_POST_FORM: {
   seoDescription: "",
   isFeatured: false,
   status: "draft",
+  authorName: "",
+  publishedAt: "",
 };
 
 const EMPTY_CATEGORY_FORM = {
@@ -79,6 +85,7 @@ const EMPTY_CATEGORY_FORM = {
 };
 
 export default function AdminBlogPage() {
+  const { user } = useAuth();
   const { data: posts, refresh: refreshPosts } = useAdminBlogPosts();
   const { data: categories, refresh: refreshCategories } = useAdminBlogCategories();
 
@@ -94,7 +101,10 @@ export default function AdminBlogPage() {
 
   const openCreatePost = () => {
     setEditingPost(null);
-    setPostForm(EMPTY_POST_FORM);
+    setPostForm({
+      ...EMPTY_POST_FORM,
+      authorName: user?.displayName ?? "",
+    });
     setPostOpen(true);
   };
 
@@ -112,6 +122,8 @@ export default function AdminBlogPage() {
       seoDescription: post.seoDescription,
       isFeatured: post.isFeatured,
       status: post.status,
+      authorName: post.authorName,
+      publishedAt: toDatetimeLocalValue(post.publishedAt),
     });
     setPostOpen(true);
   };
@@ -148,6 +160,8 @@ export default function AdminBlogPage() {
     seoTitle: postForm.seoTitle,
     seoDescription: postForm.seoDescription,
     isFeatured: postForm.isFeatured,
+    authorName: postForm.authorName,
+    publishedAt: fromDatetimeLocalValue(postForm.publishedAt),
     status,
   });
 
@@ -271,10 +285,20 @@ export default function AdminBlogPage() {
         render: (row: BlogPost) => row.categoryName ?? "—",
       },
       {
+        key: "authorName" as const,
+        label: "Author",
+        render: (row: BlogPost) => row.authorName || "—",
+      },
+      {
         key: "publishedAt" as const,
         label: "Published",
         render: (row: BlogPost) =>
-          row.publishedAt ? new Date(row.publishedAt).toLocaleDateString() : "—",
+          row.publishedAt
+            ? new Date(row.publishedAt).toLocaleString(undefined, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })
+            : "—",
       },
     ],
     []
@@ -414,6 +438,30 @@ export default function AdminBlogPage() {
               value={postForm.coverImageUrl}
               onChange={(url) => setPostForm((f) => ({ ...f, coverImageUrl: url }))}
             />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="post-author">Author name</Label>
+                <Input
+                  id="post-author"
+                  value={postForm.authorName}
+                  onChange={(e) => setPostForm((f) => ({ ...f, authorName: e.target.value }))}
+                  placeholder="e.g. Vithusan Mufiji"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="post-published-at">Publish date &amp; time</Label>
+                <Input
+                  id="post-published-at"
+                  type="datetime-local"
+                  value={postForm.publishedAt}
+                  onChange={(e) => setPostForm((f) => ({ ...f, publishedAt: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use the current time when you publish. Future dates schedule the post.
+                </p>
+              </div>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-w-0 space-y-2">

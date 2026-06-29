@@ -13,7 +13,7 @@ import type { User, UserRole } from "@/types";
 import type { RegisterStudentInput } from "@/lib/validation/register-student";
 import { createClient } from "@/lib/supabase/client";
 import { mapProfile } from "@/lib/supabase/mappers";
-import { loginInstituteStaff, registerStudentAccount, resolveStudentLoginEmail } from "@/lib/actions/auth";
+import { loginInstituteStaff, registerStudentAccount, resolveStudentLoginEmail, assertLoginRateLimit } from "@/lib/actions/auth";
 import { EMAIL_PATTERN, LOGIN_ERROR } from "@/lib/auth/login-errors";
 import { getComingSoonPath } from "@/lib/portal-access";
 
@@ -171,6 +171,7 @@ export function AuthProvider({
 
   const signIn = useCallback(
     async (email: string, password: string): Promise<User> => {
+      await assertLoginRateLimit(email);
       const supabase = createClient();
       const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error(error.message);

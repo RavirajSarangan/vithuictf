@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { updateBatchSchedule } from "@/lib/actions/academics";
 import { CLASS_DAYS } from "@/lib/academics/constants";
+import { SchedulePreview } from "@/components/academics/schedule-preview";
+import { scheduleSummary } from "@/lib/academics/schedule";
 import type { CourseBatch } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,8 +23,8 @@ const editBatchSchema = z.object({
   endDate: z.string().min(1),
   startTime: z.string().min(1),
   endTime: z.string().min(1),
-  totalClasses: z.number().min(1).max(52),
   classDays: z.array(z.string()).min(1, "Select at least one day"),
+  zoomLink: z.string().optional(),
 });
 
 type EditBatchValues = z.infer<typeof editBatchSchema>;
@@ -50,12 +52,26 @@ export function BatchEditDialog({
       endDate: batch.endDate,
       startTime: batch.startTime.slice(0, 5),
       endTime: batch.endTime.slice(0, 5),
-      totalClasses: batch.totalClasses,
       classDays: batch.classDays,
+      zoomLink: batch.zoomLink ?? "",
     },
   });
 
-  const classDays = form.watch("classDays");
+  const watched = form.watch();
+  const classDays = watched.classDays;
+
+  const preview = useMemo(() => {
+    if (!watched.startDate || !watched.endDate || !watched.classDays.length) {
+      return { totalClasses: 0, firstDate: null, lastDate: null };
+    }
+    return scheduleSummary({
+      startDate: watched.startDate,
+      endDate: watched.endDate,
+      startTime: watched.startTime,
+      endTime: watched.endTime,
+      classDays: watched.classDays,
+    });
+  }, [watched]);
 
   useEffect(() => {
     if (open) {
@@ -65,15 +81,22 @@ export function BatchEditDialog({
         endDate: batch.endDate,
         startTime: batch.startTime.slice(0, 5),
         endTime: batch.endTime.slice(0, 5),
-        totalClasses: batch.totalClasses,
         classDays: batch.classDays,
+        zoomLink: batch.zoomLink ?? "",
       });
     }
   }, [open, batch, form]);
 
   const onSubmit = async (values: EditBatchValues) => {
+    if (preview.totalClasses === 0) {
+      toast.error("No class days in the selected date range");
+      return;
+    }
     try {
-      const syncResult = await updateBatchSchedule(batch.id, values);
+      const syncResult = await updateBatchSchedule(batch.id, {
+        ...values,
+        totalClasses: preview.totalClasses,
+      });
       onSaved();
       onOpenChange(false);
       if (syncResult) {
@@ -102,8 +125,7 @@ export function BatchEditDialog({
         {hasSessions && (
           <p className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
             Schedule changes auto-update class sessions. Sessions with attendance keep their original
-            dates; times are always updated. Sessions without attendance are rescheduled or removed to
-            match the new schedule.
+            dates.
           </p>
         )}
         <Form {...form}>
@@ -159,7 +181,6 @@ export function BatchEditDialog({
                     <FormControl>
                       <Input type="time" {...field} />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -172,30 +193,10 @@ export function BatchEditDialog({
                     <FormControl>
                       <Input type="time" {...field} />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="totalClasses"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total classes</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={52}
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormItem>
               <FormLabel>Class days</FormLabel>
               <div className="flex flex-wrap gap-3 pt-1">
@@ -223,8 +224,27 @@ export function BatchEditDialog({
                   );
                 })}
               </div>
-              <FormMessage>{form.formState.errors.classDays?.message}</FormMessage>
             </FormItem>
+            <SchedulePreview
+              startDate={watched.startDate}
+              endDate={watched.endDate}
+              startTime={watched.startTime}
+              endTime={watched.endTime}
+              classDays={classDays}
+              totalClasses={preview.totalClasses}
+            />
+            <FormField
+              control={form.control}
+              name="zoomLink"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Zoom link</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="https://zoom.us/j/..." />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? (
                 <>

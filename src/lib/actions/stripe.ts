@@ -3,7 +3,7 @@
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { BRAND } from "@/lib/constants";
-import { isOnlinePaymentsAvailable } from "@/lib/payment-access";
+import { isOnlinePaymentsAvailable } from "@/lib/payment-access.server";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -22,6 +22,16 @@ export async function createStripeCheckoutSession(data: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+
+  const { data: ownedStudent } = await supabase
+    .from("students")
+    .select("id, display_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!ownedStudent || ownedStudent.id !== data.studentId) {
+    throw new Error("You can only pay fees for your own student account.");
+  }
 
   const { data: settings } = await supabase
     .from("platform_settings")
@@ -56,8 +66,8 @@ export async function createStripeCheckoutSession(data: {
       },
     ],
     metadata: {
-      student_id: data.studentId,
-      student_name: data.studentName,
+      student_id: ownedStudent.id,
+      student_name: data.studentName || ownedStudent.display_name,
       user_id: user.id,
     },
   });

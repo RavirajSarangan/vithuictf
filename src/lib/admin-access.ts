@@ -10,6 +10,7 @@ export const ADMIN_ONLY_ROUTES = [
   "/admin/blog",
   "/admin/social-tracking",
   "/admin/content-team",
+  "/admin/finance",
 ] as const;
 
 /** Routes restricted to super_admin only. */

@@ -20,6 +20,7 @@ import {
   FolderOpen,
   GraduationCapIcon,
   Mail,
+  UserCheck,
   UsersIcon,
 } from "lucide-react";
 
@@ -35,7 +36,7 @@ export function DashboardKpiGrid({ stats, loading }: DashboardKpiGridProps) {
   if (loading || !stats) {
     return (
       <div className={cardGridClassName}>
-        {Array.from({ length: 8 }).map((_, index) => (
+        {Array.from({ length: 9 }).map((_, index) => (
           <Skeleton key={index} className="h-36 rounded-xl" />
         ))}
       </div>
@@ -65,6 +66,14 @@ export function DashboardKpiGrid({ stats, loading }: DashboardKpiGridProps) {
       icon: CreditCard,
     },
     {
+      title: "Session fees due",
+      value: `Rs. ${stats.outstandingSessionFeesLkr.toLocaleString()}`,
+      href: "/admin/finance",
+      hint: "Outstanding per-class session charges",
+      icon: CreditCard,
+      alert: stats.outstandingSessionFeesLkr > 0,
+    },
+    {
       title: "Total Courses",
       value: stats.totalCourses.toLocaleString(),
       href: "/admin/courses",
@@ -92,6 +101,14 @@ export function DashboardKpiGrid({ stats, loading }: DashboardKpiGridProps) {
       hint: "Awaiting payment confirmation",
       icon: CreditCard,
       alert: stats.pendingPayments > 0,
+    },
+    {
+      title: "Pending Registrations",
+      value: stats.pendingRegistrations.toLocaleString(),
+      href: "/academics/enrollments",
+      hint: "Review and approve new student sign-ups",
+      icon: UserCheck,
+      alert: stats.pendingRegistrations > 0,
     },
     {
       title: "Unread Inquiries",
