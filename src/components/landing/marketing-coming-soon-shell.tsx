@@ -58,7 +58,7 @@ function AnimatedTitle({ id }: { id: string }) {
   if (reduceMotion) {
     return (
       <h2 id={id} className="text-xl font-bold tracking-tight text-icvf-navy sm:text-[2rem]">
-        {lead} <span className="text-icvf-accent">{accent}</span>
+        {lead} {accent}
       </h2>
     );
   }
@@ -66,7 +66,7 @@ function AnimatedTitle({ id }: { id: string }) {
   return (
     <motion.h2
       id={id}
-      className="flex flex-wrap items-center justify-center gap-x-2 text-xl font-bold tracking-tight sm:gap-x-2.5 sm:text-[2rem]"
+      className="text-xl font-bold tracking-tight text-icvf-navy sm:text-[2rem]"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.8 }}
@@ -88,7 +88,7 @@ function AnimatedTitle({ id }: { id: string }) {
         }}
       >
         {lead}
-      </motion.span>
+      </motion.span>{" "}
       <motion.span
         className="coming-soon-accent-text text-icvf-accent"
         variants={{

@@ -111,8 +111,9 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
                 passPapersActive && "font-semibold text-white"
               )}
               aria-current={passPapersActive ? "page" : undefined}
+              aria-label={`${t("nav.passPapers")} — ${t("nav.passPapersFreeDownload")}`}
             >
-              {t("nav.passPapers")}
+              <span aria-hidden="true">{t("nav.passPapers")}</span>
               <NavFreeDownloadBadge />
             </Link>
           </NavigationMenuLink>

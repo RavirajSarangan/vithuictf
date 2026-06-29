@@ -78,7 +78,23 @@ function nextWithPathname(request: NextRequest, pathname: string): NextResponse 
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
+const CANONICAL_WWW_HOST = "www.ictf.lk";
+const APEX_HOSTS = new Set(["ictf.lk"]);
+
+function canonicalHostRedirect(request: NextRequest): NextResponse | null {
+  const host = request.headers.get("host")?.split(":")[0]?.toLowerCase();
+  if (!host || !APEX_HOSTS.has(host)) return null;
+
+  const url = request.nextUrl.clone();
+  url.protocol = "https:";
+  url.host = CANONICAL_WWW_HOST;
+  return NextResponse.redirect(url, 308);
+}
+
 export async function proxy(request: NextRequest) {
+  const hostRedirect = canonicalHostRedirect(request);
+  if (hostRedirect) return hostRedirect;
+
   const { pathname } = request.nextUrl;
   const localePrefix = pathname.match(/^\/(ta|si)(\/|$)/)?.[1];
 

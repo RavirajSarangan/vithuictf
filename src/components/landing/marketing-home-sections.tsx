@@ -69,7 +69,7 @@ const ContactSection = dynamic(
 
 export function MarketingHomeSections() {
   const data = useMarketingData();
-  const comingSoon = data?.marketingComingSoonEnabled ?? true;
+  const comingSoon = data?.marketingComingSoonEnabled ?? false;
 
   if (comingSoon) {
     return <MarketingComingSoonShell />;

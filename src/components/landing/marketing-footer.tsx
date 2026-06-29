@@ -50,6 +50,14 @@ const SOCIAL_LINKS = Object.entries(BRAND.contact.social).filter(
   ([name]) => name !== "whatsappChannel" && name !== "whatsapp"
 );
 
+const SOCIAL_ARIA_LABELS: Record<string, string> = {
+  facebook: "ICTF on Facebook",
+  instagram: "ICTF on Instagram",
+  youtube: "ICTF on YouTube",
+  linkedin: "ICTF on LinkedIn",
+  telegram: "ICTF on Telegram",
+};
+
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const fadeUp = {
@@ -237,7 +245,7 @@ export function MarketingFooter() {
             >
               <motion.div variants={fadeUp}>
                 <FooterContactItem
-                  href={`mailto:${BRAND.contact.email}`}
+                  href="/#contact"
                   icon={Mail}
                   label={t("contact.email")}
                   value={BRAND.contact.email}
@@ -270,13 +278,14 @@ export function MarketingFooter() {
               {SOCIAL_LINKS.map(([name, url]) => {
                 const Icon = socialIcons[name as keyof typeof socialIcons];
                 if (!Icon) return null;
+                const ariaLabel = SOCIAL_ARIA_LABELS[name] ?? `ICTF on ${name}`;
                 return (
                   <motion.a
                     key={name}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={name}
+                    aria-label={ariaLabel}
                     className="flex size-9 items-center justify-center rounded-full border border-white/12 bg-white/[0.05] text-white/70 transition-colors hover:border-icvf-accent/45 hover:bg-icvf-accent/12 hover:text-icvf-accent"
                     variants={fadeUp}
                     whileHover={reduceMotion ? undefined : { y: -3, scale: 1.05 }}
@@ -340,12 +349,17 @@ export function MarketingFooter() {
                       className={cn(
                         "group inline-flex flex-wrap items-center gap-x-1 text-sm text-white/60 transition-colors hover:text-white"
                       )}
+                      aria-label={
+                        comingSoon?.enabled
+                          ? `${link.label} — ${comingSoonLabel}`
+                          : link.label
+                      }
                     >
                       <span
                         className="size-1 shrink-0 rounded-full bg-icvf-accent/0 transition-colors group-hover:bg-icvf-accent"
                         aria-hidden
                       />
-                      {link.label}
+                      <span aria-hidden={comingSoon?.enabled ? true : undefined}>{link.label}</span>
                       {comingSoon?.enabled ? (
                         <FooterComingSoonBadge label={comingSoonLabel} />
                       ) : null}

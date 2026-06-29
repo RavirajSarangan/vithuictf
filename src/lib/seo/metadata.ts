@@ -123,11 +123,25 @@ export function buildPageMetadata({
   };
 }
 
+const ROOT_KEYWORDS = [
+  "ICTF",
+  "O/L ICT",
+  "A/L ICT",
+  "ICT institute Sri Lanka",
+  "ICT Zoom classes",
+  "ICT paper centers",
+  "past papers",
+  "student portal",
+  "Jaffna ICT",
+  "Vithoosan Sivanathan",
+];
+
 export const rootMetadata: Metadata = buildPageMetadata({
   title: `${BRAND.name} — O/L & A/L ICT Institute Sri Lanka`,
   description:
-    "ICT Foundation (ICTF) — Sri Lanka's trusted O/L & A/L ICT institute. Live Zoom classes, islandwide paper centers, student portal. Founded by Vithoosan Sivanathan. Jaffna HQ, serving all districts.",
+    "ICTF — Sri Lanka's O/L & A/L ICT institute. Live Zoom classes, islandwide paper centers, free pass papers, and student portal. Founded by Vithoosan Sivanathan in Jaffna.",
   path: "/",
+  keywords: ROOT_KEYWORDS,
 });
 
 export const portalRobotsMetadata: Metadata = {

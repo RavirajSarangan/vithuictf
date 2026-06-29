@@ -78,6 +78,16 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns: buildSupabaseImageRemotePatterns(),
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "ictf.lk" }],
+        destination: "https://www.ictf.lk/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
     const immutableStatic = [
@@ -109,8 +119,8 @@ const nextConfig: NextConfig = {
       `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://api.stripe.com https://*.vercel-insights.com https://*.vercel-scripts.com https://accounts.google.com`
         .replace(/\s+/g, " ")
         .trim(),
-      // Stripe Checkout/Elements iframes.
-      `frame-src https://js.stripe.com https://hooks.stripe.com https://www.canva.com`,
+      // Stripe Checkout/Elements iframes + Google Drive pass-paper previews.
+      `frame-src https://js.stripe.com https://hooks.stripe.com https://www.canva.com https://drive.google.com`,
       `upgrade-insecure-requests`,
     ].join("; ");
 

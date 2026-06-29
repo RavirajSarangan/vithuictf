@@ -99,7 +99,7 @@ export function WebSiteJsonLd({ locale = "en" }: { locale?: MarketingLocale }) {
     name: BRAND.fullName,
     alternateName: BRAND.name,
     description:
-      "O/L and A/L ICT institute in Sri Lanka — live Zoom classes, paper centers islandwide, and student portal.",
+      "O/L and A/L ICT institute in Sri Lanka — live Zoom classes, paper centers islandwide, free pass papers, and student portal.",
     publisher: { "@id": `${SITE_URL}/#organization` },
     inLanguage: ["en-LK", "ta-LK", "si-LK"],
     isAccessibleForFree: true,

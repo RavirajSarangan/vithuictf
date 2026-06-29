@@ -169,7 +169,10 @@ export function HeroSection() {
             </p>
 
             <h1 className="hero-enter hero-enter-2 max-w-4xl font-bold">
-              <span className="hero-sub-line">{t("hero.title")}</span>
+              <span className="hero-sub-line">
+                {t("hero.title")}
+                <span className="sr-only"> </span>
+              </span>
               <span className="hero-accent-line">{t("hero.accent")}</span>
             </h1>
 

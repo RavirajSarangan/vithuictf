@@ -6,12 +6,20 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 
 const PAGE_TITLE = "Pass Papers Network | ICTF";
 const PAGE_DESCRIPTION =
-  "Browse G.C.E. O/L, A/L, and scholarship past papers via organized folders and Google Drive links.";
+  "Browse free G.C.E. O/L and A/L ICT past papers by medium and year. Preview and download PDFs on ictf.lk or open on Google Drive.";
 
 export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,
   path: "/pass-papers",
+  keywords: [
+    "ICT past papers",
+    "O/L ICT past papers",
+    "A/L ICT past papers",
+    "free pass papers Sri Lanka",
+    "ICTF pass papers",
+    "download past papers",
+  ],
 });
 
 export const revalidate = 300;

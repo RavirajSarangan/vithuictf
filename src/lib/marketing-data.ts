@@ -57,7 +57,7 @@ export const EMPTY_MARKETING_HOME_DATA: MarketingHomeData = {
   classPrograms: [],
   courses: [],
   companies: [],
-  marketingComingSoonEnabled: true,
+  marketingComingSoonEnabled: false,
 };
 
 const FETCH_TIMEOUT_MS = 6_000;
@@ -103,7 +103,7 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
     courses: (coursesRes.data ?? []).map(mapCourse),
     companies: (companiesRes.data ?? []).map(mapCompany),
     marketingComingSoonEnabled:
-      platformSettingsRes.data?.marketing_coming_soon_enabled ?? true,
+      platformSettingsRes.data?.marketing_coming_soon_enabled ?? false,
   };
 }
 

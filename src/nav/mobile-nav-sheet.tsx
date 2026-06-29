@@ -111,8 +111,9 @@ export function MobileNavSheet({
                   "font-semibold text-icvf-navy-dark"
               )}
               aria-current={pathname.startsWith("/pass-papers") ? "page" : undefined}
+              aria-label={`${t("nav.passPapers")} — ${t("nav.passPapersFreeDownload")}`}
             >
-              {t("nav.passPapers")}
+              <span aria-hidden="true">{t("nav.passPapers")}</span>
               <NavFreeDownloadBadge />
             </Link>
             <Link
