@@ -22,7 +22,7 @@ export function MarketingPassPapersView({
           as="h1"
           badge="Free Download"
           title="Pass Papers Network"
-          subtitle="Browse official and supplementary past papers. All resources open via secure Google Drive links."
+          subtitle="Browse official and supplementary past papers. Preview and download PDFs on this site, or open them on Google Drive."
           light={false}
           badgeVariant="accent"
         />

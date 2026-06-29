@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PassPaperFolder, PassPaperItem } from "@/types";
@@ -12,9 +12,26 @@ import {
   getDriveLinkKind,
   resolveFolderPathIds,
 } from "@/lib/pass-papers-utils";
-import { ChevronRight, ExternalLink, FolderOpen } from "lucide-react";
+import { extractDriveResourceId, buildDriveDownloadUrl } from "@/lib/pass-papers/drive-id";
+import { ChevronRight, Download, ExternalLink, Eye, FolderOpen } from "lucide-react";
 import { PassPaperFolderIcon } from "@/lib/pass-papers/icon-map";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  PassPaperPreviewDialog,
+  type PassPaperPreviewItem,
+} from "@/components/pass-papers/pass-paper-preview-dialog";
 import { cn } from "@/lib/utils";
+
+function itemSubtitle(item: PassPaperItem, isFolderLink: boolean): string {
+  return [
+    isFolderLink ? "Open folder on Drive" : null,
+    item.year,
+    item.medium,
+    item.examType !== "other" ? item.examType.toUpperCase() : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 export function PassPaperBrowser({
   folders,
@@ -33,6 +50,8 @@ export function PassPaperBrowser({
 }) {
   const router = useRouter();
   const useUrlPaths = Boolean(basePath);
+  const [previewItem, setPreviewItem] = useState<PassPaperPreviewItem | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const visibleFolders = useMemo(
     () => filterVisibleFolders(folders, publishedOnly),
@@ -78,6 +97,17 @@ export function PassPaperBrowser({
       router.replace(basePath);
     }
   }, [useUrlPaths, basePath, loading, pathMismatch, pathSlugs.length, router]);
+
+  const openPreview = (item: PassPaperItem) => {
+    const fileId = extractDriveResourceId(item.driveUrl);
+    if (!fileId) return;
+    setPreviewItem({
+      title: item.title,
+      fileId,
+      subtitle: itemSubtitle(item, false),
+    });
+    setPreviewOpen(true);
+  };
 
   if (loading) {
     return <p className="text-sm text-muted-foreground">Loading pass papers…</p>;
@@ -206,34 +236,79 @@ export function PassPaperBrowser({
           <div className="divide-y divide-border rounded-lg border border-border">
             {folderItems.map((item) => {
               const isFolderLink = getDriveLinkKind(item.driveUrl) === "folder";
+              const fileId = !isFolderLink ? extractDriveResourceId(item.driveUrl) : null;
+              const subtitle = itemSubtitle(item, isFolderLink);
+
+              if (isFolderLink || !fileId) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.driveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/50"
+                  >
+                    <div className="flex items-start gap-3">
+                      {isFolderLink ? (
+                        <FolderOpen className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                      ) : null}
+                      <div>
+                        <p className="font-medium">{item.title}</p>
+                        <p className="text-xs text-muted-foreground">{subtitle}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+                  </a>
+                );
+              }
+
               return (
-                <a
+                <div
                   key={item.id}
-                  href={item.driveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/50"
+                  className="flex min-h-11 flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-muted/50 sm:flex-nowrap"
                 >
-                  <div className="flex items-start gap-3">
-                    {isFolderLink ? (
-                      <FolderOpen className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    ) : null}
+                  <button
+                    type="button"
+                    onClick={() => openPreview(item)}
+                    className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                  >
                     <div>
                       <p className="font-medium">{item.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {[
-                          isFolderLink ? "Open folder on Drive" : null,
-                          item.year,
-                          item.medium,
-                          item.examType !== "other" ? item.examType.toUpperCase() : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{subtitle}</p>
                     </div>
+                  </button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1 px-2"
+                      onClick={() => openPreview(item)}
+                    >
+                      <Eye className="size-3.5" />
+                      <span className="hidden sm:inline">Preview</span>
+                    </Button>
+                    <a
+                      href={buildDriveDownloadUrl(fileId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 gap-1 px-2")}
+                    >
+                      <Download className="size-3.5" />
+                      <span className="hidden sm:inline">Download</span>
+                    </a>
+                    <a
+                      href={item.driveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open in Google Drive"
+                      className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-8")}
+                    >
+                      <ExternalLink className="size-3.5" />
+                    </a>
                   </div>
-                  <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
-                </a>
+                </div>
               );
             })}
           </div>
@@ -247,6 +322,12 @@ export function PassPaperBrowser({
             : "No published pass paper folders yet."}
         </p>
       )}
+
+      <PassPaperPreviewDialog
+        item={previewItem}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
     </div>
   );
 }
