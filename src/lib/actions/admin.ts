@@ -1,7 +1,7 @@
 "use server";
 
 import crypto from "crypto";
-import { revalidatePath } from "next/cache";
+import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { requireStaff, requireAdmin, requireSuperAdmin, signUpWithRole, getSessionProfile } from "@/lib/actions/auth";
@@ -102,157 +102,182 @@ export async function addStudent(data: {
   examYear?: string;
   ictGrade?: string;
   registrationStatus?: "approved" | "pending";
-}) {
-  await requireStaff();
+}): Promise<
+  ActionResult<{
+    id: string;
+    studentId: string;
+    email: string;
+    displayName: string;
+    courseName: string;
+    tempPassword?: string;
+    emailSent: boolean;
+    emailError?: string;
+    whatsappSent: boolean;
+    whatsappError?: string;
+  }>
+> {
+  try {
+    await requireStaff();
 
-  if (!data.displayName.trim()) throw new Error("Student name is required");
-  if (!isValidEmail(data.email)) throw new Error("Invalid email address");
+    if (!data.displayName.trim()) return { ok: false, error: "Student name is required" };
+    if (!isValidEmail(data.email)) return { ok: false, error: "Invalid email address" };
 
-  const whatsappError = validateSriLankaWhatsApp(data.whatsapp);
-  if (whatsappError) throw new Error(whatsappError);
+    const whatsappError = validateSriLankaWhatsApp(data.whatsapp);
+    if (whatsappError) return { ok: false, error: whatsappError };
 
-  const schoolName = data.schoolName.trim();
-  if (schoolName.length < 2) throw new Error("School name is required");
+    const schoolName = data.schoolName.trim();
+    if (schoolName.length < 2) return { ok: false, error: "School name is required" };
 
-  const normalizedWhatsApp = normalizeSriLankaWhatsApp(data.whatsapp);
-  if (!normalizedWhatsApp) throw new Error("Enter a valid Sri Lankan mobile number");
+    const normalizedWhatsApp = normalizeSriLankaWhatsApp(data.whatsapp);
+    if (!normalizedWhatsApp) return { ok: false, error: "Enter a valid Sri Lankan mobile number" };
 
-  const nicRaw = data.nicNumber?.trim() ?? "";
-  let nicNumber: string | null = null;
-  if (nicRaw) {
-    nicNumber = normalizeNic(nicRaw);
-    if (!isValidNic(nicNumber)) {
-      throw new Error("Enter a valid NIC number (e.g. 123456789V or 200012345678)");
-    }
-  }
-
-  const courseIds = data.courseIds?.length
-    ? data.courseIds
-    : data.courseId
-      ? [data.courseId]
-      : [];
-  if (!courseIds.length) throw new Error("Select at least one course");
-
-  const supabase = await createClient();
-  const { data: courseRows } = await supabase
-    .from("courses")
-    .select("id, name, student_count")
-    .in("id", courseIds);
-  if (!courseRows?.length || courseRows.length !== courseIds.length) {
-    throw new Error("One or more selected courses were not found");
-  }
-
-  const primaryCourse = courseRows[0]!;
-  const primaryCourseName = data.courseName ?? primaryCourse.name;
-
-  const { data: existing } = await supabase.from("students").select("id").eq("email", data.email).maybeSingle();
-  if (existing) throw new Error("A student with this email already exists");
-
-  if (nicNumber) {
-    const { data: byNic } = await supabase
-      .from("students")
-      .select("id")
-      .eq("nic_number", nicNumber)
-      .maybeSingle();
-    if (byNic) throw new Error("This NIC number is already registered.");
-  }
-
-  const tempPassword = data.password ?? `${BRAND.studentIdPrefix}-${crypto.randomUUID().slice(0, 8)}`;
-  const user = await signUpWithRole(data.email, tempPassword, data.displayName, "student");
-  if (!user) throw new Error("Failed to create auth user");
-
-  const admin = createAdminClient();
-  const studentId = `${BRAND.studentIdPrefix}-${Date.now()}`;
-  const { data: updated, error } = await admin
-    .from("students")
-    .update({
-      student_id: studentId,
-      display_name: data.displayName,
-      email: data.email,
-      course_id: primaryCourse.id,
-      course_name: primaryCourseName,
-      phone: normalizedWhatsApp,
-      school_name: schoolName,
-      nic_number: nicNumber,
-      exam_year: data.examYear ?? null,
-      ict_grade: data.ictGrade ?? null,
-      registration_status: data.registrationStatus ?? "approved",
-    })
-    .eq("user_id", user.id)
-    .select("id")
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  await admin
-    .from("courses")
-    .update({ student_count: primaryCourse.student_count + 1 })
-    .eq("id", primaryCourse.id);
-
-  const registrationStatus = data.registrationStatus ?? "approved";
-  if (registrationStatus === "approved") {
-    const { autoEnrollStudentForAdmin } = await import("@/lib/academics/registration-enrollment");
-    const enrollMeta = {
-      examYear: data.examYear ?? null,
-      ictGrade: data.ictGrade ?? null,
-      studyTrack: data.examYear ? ("al" as const) : data.ictGrade ? ("grade" as const) : undefined,
-    };
-    for (const course of courseRows) {
-      await autoEnrollStudentForAdmin(
-        admin,
-        updated.id,
-        course.id,
-        data.batchIds?.[course.id],
-        enrollMeta
-      );
-    }
-    for (const course of courseRows.slice(1)) {
-      const { data: extraCourse } = await admin
-        .from("courses")
-        .select("student_count")
-        .eq("id", course.id)
-        .maybeSingle();
-      if (extraCourse) {
-        await admin
-          .from("courses")
-          .update({ student_count: extraCourse.student_count + 1 })
-          .eq("id", course.id);
+    const nicRaw = data.nicNumber?.trim() ?? "";
+    let nicNumber: string | null = null;
+    if (nicRaw) {
+      nicNumber = normalizeNic(nicRaw);
+      if (!isValidNic(nicNumber)) {
+        return { ok: false, error: "Enter a valid NIC number (e.g. 123456789V or 200012345678)" };
       }
     }
+
+    const courseIds = data.courseIds?.length
+      ? data.courseIds
+      : data.courseId
+        ? [data.courseId]
+        : [];
+    if (!courseIds.length) return { ok: false, error: "Select at least one course" };
+
+    if (!isAdminClientConfigured()) {
+      return {
+        ok: false,
+        error: "Account creation is not configured. Contact support to set up the service role key.",
+      };
+    }
+
+    const supabase = await createClient();
+    const { data: courseRows } = await supabase
+      .from("courses")
+      .select("id, name, student_count")
+      .in("id", courseIds);
+    if (!courseRows?.length || courseRows.length !== courseIds.length) {
+      return { ok: false, error: "One or more selected courses were not found" };
+    }
+
+    const primaryCourse = courseRows[0]!;
+    const primaryCourseName = data.courseName ?? primaryCourse.name;
+
+    const { data: existing } = await supabase.from("students").select("id").eq("email", data.email).maybeSingle();
+    if (existing) return { ok: false, error: "A student with this email already exists" };
+
+    if (nicNumber) {
+      const { data: byNic } = await supabase
+        .from("students")
+        .select("id")
+        .eq("nic_number", nicNumber)
+        .maybeSingle();
+      if (byNic) return { ok: false, error: "This NIC number is already registered." };
+    }
+
+    const tempPassword = data.password ?? `${BRAND.studentIdPrefix}-${crypto.randomUUID().slice(0, 8)}`;
+    const user = await signUpWithRole(data.email, tempPassword, data.displayName, "student");
+    if (!user) return { ok: false, error: "Failed to create auth user" };
+
+    const admin = createAdminClient();
+    const studentId = `${BRAND.studentIdPrefix}-${Date.now()}`;
+    const { data: updated, error } = await admin
+      .from("students")
+      .update({
+        student_id: studentId,
+        display_name: data.displayName,
+        email: data.email,
+        course_id: primaryCourse.id,
+        course_name: primaryCourseName,
+        phone: normalizedWhatsApp,
+        school_name: schoolName,
+        nic_number: nicNumber,
+        exam_year: data.examYear ?? null,
+        ict_grade: data.ictGrade ?? null,
+        registration_status: data.registrationStatus ?? "approved",
+      })
+      .eq("user_id", user.id)
+      .select("id")
+      .single();
+
+    if (error) return { ok: false, error: error.message };
+
+    await admin
+      .from("courses")
+      .update({ student_count: primaryCourse.student_count + 1 })
+      .eq("id", primaryCourse.id);
+
+    const registrationStatus = data.registrationStatus ?? "approved";
+    if (registrationStatus === "approved") {
+      const { autoEnrollStudentForAdmin } = await import("@/lib/academics/registration-enrollment");
+      const enrollMeta = {
+        examYear: data.examYear ?? null,
+        ictGrade: data.ictGrade ?? null,
+        studyTrack: data.examYear ? ("al" as const) : data.ictGrade ? ("grade" as const) : undefined,
+      };
+      for (const course of courseRows) {
+        await autoEnrollStudentForAdmin(
+          admin,
+          updated.id,
+          course.id,
+          data.batchIds?.[course.id],
+          enrollMeta
+        );
+      }
+      for (const course of courseRows.slice(1)) {
+        const { data: extraCourse } = await admin
+          .from("courses")
+          .select("student_count")
+          .eq("id", course.id)
+          .maybeSingle();
+        if (extraCourse) {
+          await admin
+            .from("courses")
+            .update({ student_count: extraCourse.student_count + 1 })
+            .eq("id", course.id);
+        }
+      }
+    }
+
+    const emailResult = await sendStudentWelcomeEmail({
+      displayName: data.displayName,
+      studentId,
+      email: data.email,
+      tempPassword,
+      courseName: primaryCourseName,
+    });
+
+    const whatsappResult = await sendStudentWelcomeWhatsApp({
+      phone: normalizedWhatsApp,
+      displayName: data.displayName,
+      studentId,
+      courseName: primaryCourseName,
+      loginUrl: `${getAppUrl()}/login`,
+      selfRegistered: false,
+    });
+
+    revalidatePath("/admin/students");
+    revalidatePath("/academics/enrollments");
+    revalidateStudentPortalPaths();
+    return {
+      ok: true,
+      id: updated.id,
+      studentId,
+      email: data.email,
+      displayName: data.displayName,
+      courseName: primaryCourseName,
+      tempPassword: data.password ? undefined : tempPassword,
+      emailSent: emailResult.emailSent,
+      emailError: emailResult.error,
+      whatsappSent: whatsappResult.whatsappSent,
+      whatsappError: whatsappResult.error,
+    };
+  } catch (error) {
+    return actionFailure(error, "Failed to add student");
   }
-
-  const emailResult = await sendStudentWelcomeEmail({
-    displayName: data.displayName,
-    studentId,
-    email: data.email,
-    tempPassword,
-    courseName: primaryCourseName,
-  });
-
-  const whatsappResult = await sendStudentWelcomeWhatsApp({
-    phone: normalizedWhatsApp,
-    displayName: data.displayName,
-    studentId,
-    courseName: primaryCourseName,
-    loginUrl: `${getAppUrl()}/login`,
-    selfRegistered: false,
-  });
-
-  revalidatePath("/admin/students");
-  revalidatePath("/academics/enrollments");
-  revalidateStudentPortalPaths();
-  return {
-    id: updated.id,
-    studentId,
-    email: data.email,
-    displayName: data.displayName,
-    courseName: primaryCourseName,
-    tempPassword: data.password ? undefined : tempPassword,
-    emailSent: emailResult.emailSent,
-    emailError: emailResult.error,
-    whatsappSent: whatsappResult.whatsappSent,
-    whatsappError: whatsappResult.error,
-  };
 }
 
 export async function resendStudentWelcomeEmail(studentDbId: string) {

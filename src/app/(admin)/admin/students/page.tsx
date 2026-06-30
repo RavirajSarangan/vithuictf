@@ -6,15 +6,27 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { addStudent, deleteStudent } from "@/lib/actions/admin";
+import { bulkDeleteStudents } from "@/lib/actions/bulk-delete";
 import { useAdminCourses, useAdminStudents, useCurrentTeacher } from "@/hooks/use-data";
 import { useEnrollmentOverview } from "@/hooks/use-academics";
 import { ExportCsvButton } from "@/components/admin/export-csv-button";
+import { BulkActionBar } from "@/components/admin/bulk-action-bar";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { TableSummaryCards } from "@/components/admin/table-summary-cards";
+import { SelectionInsightsPanel } from "@/components/admin/selection-insights-panel";
+import { useTableSelection } from "@/hooks/use-table-selection";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import {
+  studentTableSummary,
+  studentSelectionInsights,
+} from "@/lib/table-insights";
 import { StudentSearchBar } from "@/components/academics/student-search-bar";
 import { StudentUpdateDrawer } from "@/components/academics/student-update-drawer";
 import { CourseMultiSelect } from "@/components/academics/course-multi-select";
 import { BatchPicker } from "@/components/academics/batch-picker";
 import { EnrollmentStatusBadge } from "@/components/academics/enrollment-status-badge";
 import { filterStudentsForTeacher } from "@/lib/teacher-scope";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   filterStudentsWithEnrollments,
   sortStudents,
@@ -72,6 +84,8 @@ export default function AdminStudentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [filters, setFilters] = useState<StudentSearchFilters>({});
   const [drawerStudent, setDrawerStudent] = useState<Student | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [batchByCourse, setBatchByCourse] = useState<Record<string, string>>({});
 
@@ -95,6 +109,48 @@ export default function AdminStudentsPage() {
     [filteredRows]
   );
 
+  const handleRefresh = () => {
+    refresh();
+    refreshOverview();
+  };
+
+  const selection = useTableSelection({ data: filteredStudents });
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeleteStudents, "student", handleRefresh);
+
+  const summaryItems = useMemo(
+    () =>
+      studentTableSummary(
+        filteredRows.map((r) => ({
+          student: r.student,
+          enrollmentCount: r.enrollments.filter((e) => e.active).length || r.enrollments.length,
+        }))
+      ),
+    [filteredRows]
+  );
+
+  const selectionInsights = useMemo(
+    () =>
+      studentSelectionInsights(
+        filteredRows
+          .filter((r) => selection.selectedIds.has(r.student.id))
+          .map((r) => ({
+            student: r.student,
+            enrollmentCount: r.enrollments.filter((e) => e.active).length || r.enrollments.length,
+          }))
+      ),
+    [filteredRows, selection.selectedIds]
+  );
+
+  const studentCsvColumns = [
+    { key: "displayName" as const, label: "Name" },
+    { key: "email" as const, label: "Email" },
+    { key: "phone" as const, label: "WhatsApp" },
+    { key: "schoolName" as const, label: "School" },
+    { key: "nicNumber" as const, label: "NIC" },
+    { key: "studentId" as const, label: "Student ID" },
+    { key: "courseName" as const, label: "Course" },
+  ];
+
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
@@ -107,9 +163,18 @@ export default function AdminStudentsPage() {
     },
   });
 
-  const handleRefresh = () => {
-    refresh();
-    refreshOverview();
+  const handleDelete = async (id: string) => {
+    setDeleting(true);
+    try {
+      await deleteStudent(id);
+      handleRefresh();
+      toast.success("Student deleted");
+      setDeleteTargetId(null);
+    } catch (e) {
+      toast.error(getActionErrorMessage(e, "Delete failed"));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleAdd = async (values: StudentFormValues) => {
@@ -132,6 +197,11 @@ export default function AdminStudentsPage() {
         schoolName: values.schoolName,
         nicNumber: values.nicNumber?.trim() || undefined,
       });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
 
       if (result.emailSent) {
         toast.success("Student registered and welcome email sent");
@@ -157,19 +227,9 @@ export default function AdminStudentsPage() {
       setSelectedCourseIds([]);
       setBatchByCourse({});
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add student");
+      toast.error(getActionErrorMessage(e, "Failed to add student"));
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteStudent(id);
-      handleRefresh();
-      toast.success("Student deleted");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
     }
   };
 
@@ -186,15 +246,7 @@ export default function AdminStudentsPage() {
             <ExportCsvButton
               rows={filteredStudents}
               filename="icvf-students.csv"
-              columns={[
-                { key: "displayName", label: "Name" },
-                { key: "email", label: "Email" },
-                { key: "phone", label: "WhatsApp" },
-                { key: "schoolName", label: "School" },
-                { key: "nicNumber", label: "NIC" },
-                { key: "studentId", label: "Student ID" },
-                { key: "courseName", label: "Course" },
-              ]}
+              columns={studentCsvColumns}
             />
             <Button  onClick={() => setOpen(true)}>
               <Plus className="mr-2 size-4" /> Register Student
@@ -203,11 +255,33 @@ export default function AdminStudentsPage() {
         }
       />
 
+      <TableSummaryCards items={summaryItems} />
+
       <StudentSearchBar
         filters={filters}
         onChange={setFilters}
         courses={courses}
         batches={batches}
+      />
+
+      <SelectionInsightsPanel
+        count={selection.selectedIds.size}
+        insights={selectionInsights}
+      />
+
+      <BulkActionBar
+        selectedCount={selection.selectedIds.size}
+        onClear={selection.clear}
+        entityLabel="student"
+        selectedIds={[...selection.selectedIds]}
+        onBulkDelete={handleBulkDelete}
+        deleteWarning="Related enrollments, attendance, and billing records will also be removed."
+        exportConfig={{
+          rows: selection.selectedRows,
+          columns: studentCsvColumns,
+          filename: "icvf-students-selected.csv",
+        }}
+        onActionComplete={handleRefresh}
       />
 
       {filteredStudents.length === 0 ? (
@@ -264,10 +338,27 @@ export default function AdminStudentsPage() {
             { key: "rank", label: "Rank" },
           ]}
           data={filteredStudents}
-          onDelete={handleDelete}
+          selectable
+          selectedIds={selection.selectedIds}
+          onSelectionChange={selection.toggle}
+          onSelectAll={() => selection.selectAll()}
+          isAllSelected={selection.isAllSelected}
+          isIndeterminate={selection.isIndeterminate}
+          onDelete={(id) => setDeleteTargetId(id)}
           viewHref={(row) => `/admin/students/${row.id}`}
         />
       )}
+
+      <DeleteConfirmDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+        entityLabel="this student"
+        warning="Related enrollments, attendance, and billing records will also be removed."
+        deleting={deleting}
+        onConfirm={() => {
+          if (deleteTargetId) void handleDelete(deleteTargetId);
+        }}
+      />
 
       <StudentUpdateDrawer
         student={drawerStudent}
