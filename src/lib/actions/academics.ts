@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import {
@@ -8,10 +7,9 @@ import {
   requireAcademicsStaff,
   requireAdmin,
 } from "@/lib/actions/auth";
-import { sendStudentWelcomeEmail } from "@/lib/actions/email";
-import { sendStudentWelcomeWhatsApp } from "@/lib/actions/whatsapp";
-import { getAppUrl } from "@/lib/email/resend";
+import { getActionFailureMessage, runDataAction, type DataActionResult } from "@/lib/actions/action-result";
 import { revalidateStudentPortalPaths } from "@/lib/revalidation-paths";
+import { safeRevalidatePath } from "@/lib/safe-revalidate";
 import { validateCanvaSlideUrl } from "@/lib/canva/url";
 import type { AttendanceStatus, ClassSessionStatus } from "@/types";
 import { isValidNic, normalizeNic } from "@/lib/validation/register-student";
@@ -28,19 +26,21 @@ import {
   notifyBatchStudentsPortal,
   notifyAbsentStudents,
   sendBatchManualMessage,
-  type DeliverySummary,
-  type MessageChannels,
+} from "@/lib/academics/batch-notifications";
+import type {
+  DeliverySummary,
+  MessageChannels,
 } from "@/lib/academics/batch-notifications";
 
 function revalidateAcademicsPaths() {
-  revalidatePath("/academics/dashboard");
-  revalidatePath("/academics/batches");
-  revalidatePath("/academics/students");
-  revalidatePath("/academics/enrollments");
-  revalidatePath("/academics/attendance");
-  revalidatePath("/academics/reports");
-  revalidatePath("/academics/calendar");
-  revalidatePath("/admin/students");
+  safeRevalidatePath("/academics/dashboard");
+  safeRevalidatePath("/academics/batches");
+  safeRevalidatePath("/academics/students");
+  safeRevalidatePath("/academics/enrollments");
+  safeRevalidatePath("/academics/attendance");
+  safeRevalidatePath("/academics/reports");
+  safeRevalidatePath("/academics/calendar");
+  safeRevalidatePath("/admin/students");
   revalidateStudentPortalPaths();
 }
 
@@ -310,74 +310,84 @@ export async function createBatch(data: {
   zoomLink?: string;
   studentIds?: string[];
   setAsCurrentCourse?: boolean;
-}) {
-  const profile = await requireAcademicsStaff();
-  if (!data.name.trim()) throw new Error("Batch name is required");
-  if (!data.classDays.length) throw new Error("Select at least one class day");
+}): Promise<
+  DataActionResult<{
+    id: string;
+    batchCode: string;
+    sessionsCreated: number;
+    enrolled: number;
+  }>
+> {
+  return runDataAction(async () => {
+    const profile = await requireAcademicsStaff();
+    if (!data.name.trim()) throw new Error("Batch name is required");
+    if (!data.classDays.length) throw new Error("Select at least one class day");
 
-  const start = parseDateOnly(data.startDate);
-  const end = parseDateOnly(data.endDate);
-  if (end < start) throw new Error("End date must be on or after start date");
+    const start = parseDateOnly(data.startDate);
+    const end = parseDateOnly(data.endDate);
+    if (end < start) throw new Error("End date must be on or after start date");
 
-  const totalClasses = computeTotalClasses({
-    startDate: data.startDate,
-    endDate: data.endDate,
-    startTime: data.startTime,
-    endTime: data.endTime,
-    classDays: data.classDays,
-  });
-  if (totalClasses === 0) {
-    throw new Error("No class days in the selected date range");
-  }
-
-  const supabase = await createClient();
-  const { data: course } = await supabase
-    .from("courses")
-    .select("name")
-    .eq("id", data.courseId)
-    .maybeSingle();
-  if (!course) throw new Error("Course not found");
-
-  const batchCode = await nextBatchCode(data.courseId, course.name);
-  const zoomLink = data.zoomLink?.trim() || null;
-
-  const { data: batch, error } = await supabase
-    .from("course_batches")
-    .insert({
-      course_id: data.courseId,
-      name: data.name.trim(),
-      batch_code: batchCode,
-      start_date: data.startDate,
-      end_date: data.endDate,
-      start_time: data.startTime,
-      end_time: data.endTime,
-      class_days: data.classDays,
-      total_classes: totalClasses,
-      zoom_link: zoomLink,
-      created_by: profile.id,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  const sessionResult = await generateClassSessions(batch.id);
-  let enrolled = 0;
-  if (data.studentIds?.length) {
-    const enrollFn = data.setAsCurrentCourse ? enrollStudentsInCourse : enrollStudentsInBatch;
-    const result = await enrollFn(batch.id, data.studentIds, {
-      deactivateOtherCourses: data.setAsCurrentCourse,
+    const totalClasses = computeTotalClasses({
+      startDate: data.startDate,
+      endDate: data.endDate,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      classDays: data.classDays,
     });
-    enrolled = result.enrolled;
-  }
+    if (totalClasses === 0) {
+      throw new Error("No class days in the selected date range");
+    }
 
-  revalidateAcademicsPaths();
-  return {
-    id: batch.id,
-    batchCode,
-    sessionsCreated: sessionResult.created,
-    enrolled,
-  };
+    const supabase = await createClient();
+    const { data: course } = await supabase
+      .from("courses")
+      .select("name")
+      .eq("id", data.courseId)
+      .maybeSingle();
+    if (!course) throw new Error("Course not found");
+
+    const batchCode = await nextBatchCode(data.courseId, course.name);
+    const zoomLink = data.zoomLink?.trim() || null;
+
+    const { data: batch, error } = await supabase
+      .from("course_batches")
+      .insert({
+        course_id: data.courseId,
+        name: data.name.trim(),
+        batch_code: batchCode,
+        start_date: data.startDate,
+        end_date: data.endDate,
+        start_time: data.startTime,
+        end_time: data.endTime,
+        class_days: data.classDays,
+        total_classes: totalClasses,
+        zoom_link: zoomLink,
+        created_by: profile.id,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw new Error(error.message || "Failed to create batch");
+
+    const sessionResult = await generateClassSessions(batch.id, { skipRevalidate: true });
+    let enrolled = 0;
+    if (data.studentIds?.length) {
+      const enrollFn = data.setAsCurrentCourse ? enrollStudentsInCourse : enrollStudentsInBatch;
+      const result = await enrollFn(batch.id, data.studentIds, {
+        deactivateOtherCourses: data.setAsCurrentCourse,
+        skipRevalidate: true,
+      });
+      enrolled = result.enrolled;
+    }
+
+    revalidateAcademicsPaths();
+    return {
+      id: batch.id,
+      batchCode,
+      sessionsCreated: sessionResult.created,
+      enrolled,
+    };
+  }, "Failed to create batch");
 }
 
 export async function updateBatchSchedule(
@@ -467,7 +477,10 @@ export async function archiveBatch(batchId: string) {
   await updateBatchSchedule(batchId, { active: false });
 }
 
-export async function generateClassSessions(batchId: string) {
+export async function generateClassSessions(
+  batchId: string,
+  options?: { skipRevalidate?: boolean }
+) {
   await requireAcademicsStaff();
   const supabase = await createClient();
 
@@ -501,9 +514,11 @@ export async function generateClassSessions(batchId: string) {
   }
 
   const { error } = await supabase.from("class_sessions").insert(sessions);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(error.message || "Failed to create class sessions");
 
-  revalidateAcademicsPaths();
+  if (!options?.skipRevalidate) {
+    revalidateAcademicsPaths();
+  }
   return { created: sessions.length };
 }
 
@@ -628,9 +643,11 @@ export async function sendBatchMessage(
   return summary;
 }
 
-export type { DeliverySummary, MessageChannels };
-
-export async function enrollStudentInBatch(batchId: string, studentId: string) {
+export async function enrollStudentInBatch(
+  batchId: string,
+  studentId: string,
+  options?: { skipRevalidate?: boolean }
+) {
   await requireAcademicsStaff();
   const supabase = await createClient();
 
@@ -656,10 +673,12 @@ export async function enrollStudentInBatch(batchId: string, studentId: string) {
 
   if (error) {
     if (error.code === "23505") throw new Error("Student is already enrolled in this batch");
-    throw new Error(error.message);
+    throw new Error(error.message || "Failed to enroll student");
   }
 
-  revalidateAcademicsPaths();
+  if (!options?.skipRevalidate) {
+    revalidateAcademicsPaths();
+  }
   return { id: data.id, enrollmentCode: data.enrollment_code };
 }
 
@@ -682,7 +701,11 @@ export async function setEnrollmentActive(enrollmentId: string, active: boolean)
   revalidateAcademicsPaths();
 }
 
-export async function enrollStudentsInBatch(batchId: string, studentIds: string[]) {
+export async function enrollStudentsInBatch(
+  batchId: string,
+  studentIds: string[],
+  options?: { skipRevalidate?: boolean }
+) {
   await requireAcademicsStaff();
   const uniqueIds = [...new Set(studentIds.filter(Boolean))];
   if (!uniqueIds.length) throw new Error("Select at least one student");
@@ -692,15 +715,19 @@ export async function enrollStudentsInBatch(batchId: string, studentIds: string[
 
   for (const studentId of uniqueIds) {
     try {
-      await enrollStudentInBatch(batchId, studentId);
+      await enrollStudentInBatch(batchId, studentId, { skipRevalidate: true });
       enrolled += 1;
     } catch (e) {
-      errors.push(e instanceof Error ? e.message : "Enrollment failed");
+      errors.push(getActionFailureMessage(e, "Enrollment failed"));
     }
   }
 
   if (enrolled === 0) {
     throw new Error(errors[0] ?? "No students were enrolled");
+  }
+
+  if (!options?.skipRevalidate) {
+    revalidateAcademicsPaths();
   }
 
   return { enrolled, failed: uniqueIds.length - enrolled, errors };
@@ -709,7 +736,7 @@ export async function enrollStudentsInBatch(batchId: string, studentIds: string[
 export async function enrollStudentInCourse(
   batchId: string,
   studentId: string,
-  options?: { deactivateOtherCourses?: boolean }
+  options?: { deactivateOtherCourses?: boolean; skipRevalidate?: boolean }
 ) {
   await requireAcademicsStaff();
   const supabase = await createClient();
@@ -761,7 +788,9 @@ export async function enrollStudentInCourse(
     enrollmentId = row.id;
     enrollmentCode = row.enrollment_code;
   } else {
-    const result = await enrollStudentInBatch(batchId, studentId);
+    const result = await enrollStudentInBatch(batchId, studentId, {
+      skipRevalidate: options?.skipRevalidate,
+    });
     enrollmentId = result.id;
     enrollmentCode = result.enrollmentCode;
   }
@@ -797,14 +826,16 @@ export async function enrollStudentInCourse(
     }
   }
 
-  revalidateAcademicsPaths();
+  if (!options?.skipRevalidate) {
+    revalidateAcademicsPaths();
+  }
   return { enrollmentId, enrollmentCode, courseId, courseName };
 }
 
 export async function enrollStudentsInCourse(
   batchId: string,
   studentIds: string[],
-  options?: { deactivateOtherCourses?: boolean }
+  options?: { deactivateOtherCourses?: boolean; skipRevalidate?: boolean }
 ) {
   await requireAcademicsStaff();
   const uniqueIds = [...new Set(studentIds.filter(Boolean))];
@@ -815,15 +846,22 @@ export async function enrollStudentsInCourse(
 
   for (const studentId of uniqueIds) {
     try {
-      await enrollStudentInCourse(batchId, studentId, options);
+      await enrollStudentInCourse(batchId, studentId, {
+        deactivateOtherCourses: options?.deactivateOtherCourses,
+        skipRevalidate: true,
+      });
       enrolled += 1;
     } catch (e) {
-      errors.push(e instanceof Error ? e.message : "Enrollment failed");
+      errors.push(getActionFailureMessage(e, "Enrollment failed"));
     }
   }
 
   if (enrolled === 0) {
     throw new Error(errors[0] ?? "No students were enrolled");
+  }
+
+  if (!options?.skipRevalidate) {
+    revalidateAcademicsPaths();
   }
 
   return { enrolled, failed: uniqueIds.length - enrolled, errors };
@@ -996,9 +1034,9 @@ export async function markAttendance(
   await syncChargesForSession(supabase, sessionId, records);
 
   revalidateAcademicsPaths();
-  revalidatePath("/admin/finance");
-  revalidatePath("/admin/finance/students");
-  revalidatePath("/admin/finance/ledger");
+  safeRevalidatePath("/admin/finance");
+  safeRevalidatePath("/admin/finance/students");
+  safeRevalidatePath("/admin/finance/ledger");
 }
 
 export async function updateStudent(
@@ -1242,6 +1280,13 @@ export async function approveStudentRegistration(
   if (error) throw new Error(error.message);
 
   try {
+    const [{ sendStudentWelcomeEmail }, { sendStudentWelcomeWhatsApp }, { getAppUrl }] =
+      await Promise.all([
+        import("@/lib/actions/email"),
+        import("@/lib/actions/whatsapp"),
+        import("@/lib/email/resend"),
+      ]);
+
     await sendStudentWelcomeEmail({
       displayName: student.display_name,
       studentId: student.student_id,
