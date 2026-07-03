@@ -391,11 +391,13 @@ export async function createBatch(data: {
     const sessionResult = await generateClassSessions(batch.id, { skipRevalidate: true });
     let enrolled = 0;
     if (data.studentIds?.length) {
-      const enrollFn = data.setAsCurrentCourse ? enrollStudentsInCourse : enrollStudentsInBatch;
-      const result = await enrollFn(batch.id, data.studentIds, {
-        deactivateOtherCourses: data.setAsCurrentCourse,
-        skipRevalidate: true,
-      });
+      const result = data.setAsCurrentCourse
+        ? await enrollStudentsInCourse(batch.id, data.studentIds, {
+            deactivateOtherCourses: true,
+            setAsCurrentCourse: true,
+            skipRevalidate: true,
+          })
+        : await enrollStudentsInBatch(batch.id, data.studentIds, { skipRevalidate: true });
       enrolled = result.enrolled;
     }
 
@@ -819,7 +821,11 @@ export async function enrollStudentsInBatch(
 export async function enrollStudentInCourse(
   batchId: string,
   studentId: string,
-  options?: { deactivateOtherCourses?: boolean; skipRevalidate?: boolean }
+  options?: {
+    deactivateOtherCourses?: boolean;
+    skipRevalidate?: boolean;
+    setAsCurrentCourse?: boolean;
+  }
 ) {
   await requireAcademicsStaff();
   const supabase = await createClient();
@@ -878,14 +884,19 @@ export async function enrollStudentInCourse(
     enrollmentCode = result.enrollmentCode;
   }
 
+  // Only replace the student's selected (current) course when explicitly
+  // requested, or when they have none yet — enrolling into an extra batch
+  // must not silently clobber the course the student chose.
   const previousCourseId = student.course_id;
-  const { error: studentError } = await supabase
-    .from("students")
-    .update({ course_id: courseId, course_name: courseName })
-    .eq("id", studentId);
-  if (studentError) throw new Error(studentError.message);
+  if (options?.setAsCurrentCourse || !previousCourseId) {
+    const { error: studentError } = await supabase
+      .from("students")
+      .update({ course_id: courseId, course_name: courseName })
+      .eq("id", studentId);
+    if (studentError) throw new Error(studentError.message);
 
-  await adjustCourseStudentCounts(supabase, previousCourseId, courseId);
+    await adjustCourseStudentCounts(supabase, previousCourseId, courseId);
+  }
 
   if (options?.deactivateOtherCourses) {
     const { data: otherEnrollments } = await supabase
@@ -918,7 +929,11 @@ export async function enrollStudentInCourse(
 export async function enrollStudentsInCourse(
   batchId: string,
   studentIds: string[],
-  options?: { deactivateOtherCourses?: boolean; skipRevalidate?: boolean }
+  options?: {
+    deactivateOtherCourses?: boolean;
+    skipRevalidate?: boolean;
+    setAsCurrentCourse?: boolean;
+  }
 ) {
   await requireAcademicsStaff();
   const uniqueIds = [...new Set(studentIds.filter(Boolean))];
@@ -931,6 +946,7 @@ export async function enrollStudentsInCourse(
     try {
       await enrollStudentInCourse(batchId, studentId, {
         deactivateOtherCourses: options?.deactivateOtherCourses,
+        setAsCurrentCourse: options?.setAsCurrentCourse,
         skipRevalidate: true,
       });
       enrolled += 1;

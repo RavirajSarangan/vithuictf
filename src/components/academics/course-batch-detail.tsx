@@ -138,8 +138,9 @@ export function CourseBatchDetail({
     if (!selectedStudentIds.length) return;
     setEnrolling(true);
     try {
-      const fn = setAsCurrentOnEnroll ? enrollStudentsInCourse : enrollStudentsInBatch;
-      const result = await fn(id, selectedStudentIds);
+      const result = setAsCurrentOnEnroll
+        ? await enrollStudentsInCourse(id, selectedStudentIds, { setAsCurrentCourse: true })
+        : await enrollStudentsInBatch(id, selectedStudentIds);
       refreshEnrollments();
       setSelectedStudentIds([]);
       toast.success(`Enrolled ${result.enrolled} student(s)`);

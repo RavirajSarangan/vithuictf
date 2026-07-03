@@ -55,6 +55,7 @@ export function CoursesMarqueeSection() {
                 category={course.category}
                 durationMonths={course.durationMonths}
                 classDaysPerWeek={course.classDaysPerWeek}
+                classDays={course.classDays}
                 teacherName={course.teacherName}
                 studentCount={course.studentCount}
               />

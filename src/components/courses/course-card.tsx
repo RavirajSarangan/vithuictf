@@ -1,8 +1,70 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ArrowRight, CalendarDays, Clock, Users } from "lucide-react";
 import { MarketingPanel } from "@/components/landing/marketing-layout";
 import { cn } from "@/lib/utils";
+
+const WEEKDAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+const WEEKDAY_LABELS: Record<string, string> = {
+  sun: "Sunday",
+  mon: "Monday",
+  tue: "Tuesday",
+  wed: "Wednesday",
+  thu: "Thursday",
+  fri: "Friday",
+  sat: "Saturday",
+};
+
+function nextClassInfo(classDays: string[], now: Date): { label: string; daysAway: number } | null {
+  const targets = new Set(
+    classDays
+      .map((day) => WEEKDAY_IDS.indexOf(day.toLowerCase() as (typeof WEEKDAY_IDS)[number]))
+      .filter((i) => i >= 0)
+  );
+  if (targets.size === 0) return null;
+  for (let offset = 0; offset < 7; offset++) {
+    const weekday = (now.getDay() + offset) % 7;
+    if (targets.has(weekday)) {
+      return { label: WEEKDAY_LABELS[WEEKDAY_IDS[weekday]!]!, daysAway: offset };
+    }
+  }
+  return null;
+}
+
+/** Renders only on the client so the countdown uses the visitor's local date. */
+function NextClassCountdown({ classDays }: { classDays: string[] }) {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setNow(new Date());
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!now) return null;
+  const next = nextClassInfo(classDays, now);
+  if (!next) return null;
+
+  const text =
+    next.daysAway === 0
+      ? "Class today"
+      : next.daysAway === 1
+        ? "Class tomorrow"
+        : `Next class ${next.label} · in ${next.daysAway} days`;
+
+  return (
+    <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-icvf-accent">
+      <span className="relative flex size-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-icvf-accent opacity-60" />
+        <span className="relative inline-flex size-2 rounded-full bg-icvf-accent" />
+      </span>
+      {text}
+    </span>
+  );
+}
 
 function courseInitials(title: string): string {
   const words = title.trim().split(/\s+/).filter(Boolean);
@@ -18,6 +80,7 @@ export interface CourseCardProps {
   category?: string;
   durationMonths?: number;
   classDaysPerWeek?: number;
+  classDays?: string[];
   teacherName?: string;
   studentCount?: number;
   href?: string;
@@ -62,6 +125,7 @@ export function CourseCard({
   category,
   durationMonths,
   classDaysPerWeek,
+  classDays,
   teacherName,
   studentCount,
   href,
@@ -117,6 +181,7 @@ export function CourseCard({
               </span>
             </div>
           ) : null}
+          {classDays?.length ? <NextClassCountdown classDays={classDays} /> : null}
         </div>
       </MarketingPanel>
     );
