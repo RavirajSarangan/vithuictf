@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -120,6 +120,12 @@ function FollowerMetricRow({
   const [performance, setPerformance] = useState<SocialPerformance | "">(
     metric.performance ?? ""
   );
+
+  useEffect(() => {
+    setPrevious(String(metric.previousCount));
+    setCurrent(String(metric.currentCount));
+    setPerformance(metric.performance ?? "");
+  }, [metric.previousCount, metric.currentCount, metric.performance, metric.updatedAt]);
 
   const platformMeta = getPlatformMeta(metric.platformSlug);
   const slug = metric.platformSlug;

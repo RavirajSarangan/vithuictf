@@ -44,6 +44,7 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
   const pathname = usePathname();
   const blogActive = pathname === "/blog" || pathname.startsWith("/blog/");
   const passPapersActive = pathname === "/pass-papers" || pathname.startsWith("/pass-papers/");
+  const ictfTeamActive = pathname === "/ictf-team" || pathname.startsWith("/ictf-team/");
 
   const programLinks = useMemo<NavItemType[]>(
     () => [
@@ -98,6 +99,18 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
             <MarketingSectionNavLink hash="#about">{t("nav.about")}</MarketingSectionNavLink>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <NavigationMenuLink asChild>
+            <Link
+              href="/ictf-team"
+              className={cn(navLinkClass, ictfTeamActive && "font-semibold text-white")}
+              aria-current={ictfTeamActive ? "page" : undefined}
+            >
+              ICTF Team
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
 

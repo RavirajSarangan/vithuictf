@@ -467,7 +467,9 @@ export type Database = {
           id: string
           level: Database["public"]["Enums"]["course_level"]
           name: string
+          show_on_home: boolean
           slug: string | null
+          sort_order: number
           student_count: number
           teacher_id: string | null
           teacher_name: string
@@ -481,7 +483,9 @@ export type Database = {
           id?: string
           level: Database["public"]["Enums"]["course_level"]
           name: string
+          show_on_home?: boolean
           slug?: string | null
+          sort_order?: number
           student_count?: number
           teacher_id?: string | null
           teacher_name?: string
@@ -495,7 +499,9 @@ export type Database = {
           id?: string
           level?: Database["public"]["Enums"]["course_level"]
           name?: string
+          show_on_home?: boolean
           slug?: string | null
+          sort_order?: number
           student_count?: number
           teacher_id?: string | null
           teacher_name?: string
@@ -582,6 +588,63 @@ export type Database = {
           score?: number
           sort_order?: number
           student_name?: string
+        }
+        Relationships: []
+      }
+      ictf_team_members: {
+        Row: {
+          bio: string
+          created_at: string
+          date_of_birth: string | null
+          email: string
+          facebook_url: string
+          id: string
+          instagram_url: string
+          is_lead: boolean
+          last_birthday_wish_sent: string | null
+          linkedin_url: string
+          name: string
+          photo_url: string
+          role: string
+          sort_order: number
+          whatsapp: string
+          youtube_url: string
+        }
+        Insert: {
+          bio?: string
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string
+          facebook_url?: string
+          id?: string
+          instagram_url?: string
+          is_lead?: boolean
+          last_birthday_wish_sent?: string | null
+          linkedin_url?: string
+          name: string
+          photo_url?: string
+          role: string
+          sort_order?: number
+          whatsapp?: string
+          youtube_url?: string
+        }
+        Update: {
+          bio?: string
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string
+          facebook_url?: string
+          id?: string
+          instagram_url?: string
+          is_lead?: boolean
+          last_birthday_wish_sent?: string | null
+          linkedin_url?: string
+          name?: string
+          photo_url?: string
+          role?: string
+          sort_order?: number
+          whatsapp?: string
+          youtube_url?: string
         }
         Relationships: []
       }
@@ -1823,7 +1886,14 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      course_schedule_summaries: {
+        Row: {
+          course_id: string
+          class_days_per_week: number
+          class_days: string[]
+        }
+        Relationships: []
+      }
     }
     Functions: {
       current_user_role: {

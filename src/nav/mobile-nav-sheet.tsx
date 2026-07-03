@@ -102,6 +102,18 @@ export function MobileNavSheet({
               {t("nav.about")}
             </MarketingSectionLink>
             <Link
+              href="/ictf-team"
+              onClick={close}
+              className={cn(
+                mobileNavLinkClass,
+                (pathname === "/ictf-team" || pathname.startsWith("/ictf-team/")) &&
+                  "font-semibold text-icvf-navy-dark"
+              )}
+              aria-current={pathname.startsWith("/ictf-team") ? "page" : undefined}
+            >
+              ICTF Team
+            </Link>
+            <Link
               href="/pass-papers"
               onClick={close}
               className={cn(

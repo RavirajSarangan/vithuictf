@@ -12,6 +12,7 @@ import { ONBOARDING_TOUR_KEY } from "@/components/onboarding/onboarding-gate";
 import { useStudentOnboarding } from "@/hooks/use-student-onboarding";
 import { updateStudentPassword } from "@/lib/actions/onboarding";
 import { GlassCard } from "@/components/shared/glass-card";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   StudentPageHeader,
   StudentPageLoading,
@@ -51,7 +52,7 @@ export default function SettingsPage() {
       setConfirmPassword("");
       toast.success("Password updated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to update password");
+      toast.error(getActionErrorMessage(e, "Failed to update password"));
     } finally {
       setSavingPassword(false);
     }
@@ -90,7 +91,7 @@ export default function SettingsPage() {
       if (url) window.location.href = url;
       else toast.error("Payment could not be started");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Payment unavailable");
+      toast.error(getActionErrorMessage(e, "Payment unavailable"));
     } finally {
       setPaying(false);
     }

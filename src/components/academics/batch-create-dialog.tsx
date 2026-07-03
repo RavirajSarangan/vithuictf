@@ -117,25 +117,25 @@ export function BatchCreateDialog({ open, onOpenChange, onCreated }: BatchCreate
       return;
     }
     setSubmitting(true);
-    try {
-      const result = await createBatch({
-        ...formValues,
-        studentIds: selectedStudentIds,
-        setAsCurrentCourse,
-      });
-      toast.success(
-        `Batch ${result.batchCode} created with ${result.sessionsCreated} class sessions${
-          result.enrolled ? ` · ${result.enrolled} students enrolled` : ""
-        }`
-      );
-      onCreated?.();
-      handleClose(false);
-      router.push(`/academics/batches/${result.id}`);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to create batch");
-    } finally {
+    const result = await createBatch({
+      ...formValues,
+      studentIds: selectedStudentIds,
+      setAsCurrentCourse,
+    });
+    if (!result.ok) {
+      toast.error(result.error);
       setSubmitting(false);
+      return;
     }
+    toast.success(
+      `Batch ${result.data.batchCode} created with ${result.data.sessionsCreated} class sessions${
+        result.data.enrolled ? ` · ${result.data.enrolled} students enrolled` : ""
+      }`
+    );
+    onCreated?.();
+    handleClose(false);
+    router.push(`/academics/courses/${formValues.courseId}`);
+    setSubmitting(false);
   };
 
   const canNextStep2 =

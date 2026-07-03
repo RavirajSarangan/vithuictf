@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shared/page-header";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { attendanceReportSummary } from "@/lib/table-insights";
 import {
   useBatchAttendanceSummary,
   useBatches,
@@ -40,6 +41,7 @@ export default function AcademicsReportsPage() {
 
   const activeBatches = useMemo(() => batches.filter((b) => b.active), [batches]);
   const batch = batches.find((b) => b.id === batchId);
+  const summaryItems = useMemo(() => attendanceReportSummary(summary), [summary]);
 
   const handleExportSummary = () => {
     const range = fromDate || toDate ? `-${fromDate || "start"}-to-${toDate || "end"}` : "";
@@ -100,7 +102,7 @@ export default function AcademicsReportsPage() {
               <Download className="mr-2 size-4" /> Export summary CSV
             </Button>
           </div>
-          <AdminTable
+          <AdminTableSection
             columns={[
               { key: "studentName", label: "Student" },
               { key: "enrollmentCode", label: "Enrollment ID" },
@@ -132,7 +134,22 @@ export default function AcademicsReportsPage() {
                 ),
               },
             ]}
-            data={summary}
+            data={summary.map((row) => ({ ...row, id: row.studentId }))}
+            getRowId={(row) => row.studentId}
+            summaryItems={summaryItems}
+            entityLabel="student"
+            exportConfig={{
+              filename: `${batch?.batchCode ?? "batch"}-attendance-summary.csv`,
+              columns: [
+                { key: "studentName", label: "Student" },
+                { key: "enrollmentCode", label: "Enrollment ID" },
+                { key: "present", label: "Present" },
+                { key: "late", label: "Late" },
+                { key: "absent", label: "Absent" },
+                { key: "unmarked", label: "Unmarked" },
+                { key: "attendancePercent", label: "Attendance %" },
+              ],
+            }}
             rowClassName={(row) =>
               cn(row.attendancePercent < 75 && "bg-destructive/5")
             }

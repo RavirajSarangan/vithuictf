@@ -17,6 +17,7 @@ import { isLoginErrorCode } from "@/lib/auth/login-errors";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const loginInputClassName = authFieldClassName;
 
 type PublicLoginTab = "studentId" | "staffLink";
@@ -56,7 +57,7 @@ export function StudentLoginForm() {
         } as const;
         toast.error(t(keyMap[err.message]));
       } else {
-        toast.error(err instanceof Error ? err.message : t("auth.loginFailed"));
+        toast.error(getActionErrorMessage(err, t("auth.loginFailed")));
       }
     } finally {
       setLoading(false);

@@ -9,6 +9,7 @@ import {
   mapContactInquiry,
   mapCourse,
   mapFeaturedRanking,
+  mapIctfTeamMember,
   mapMarketingAnnouncement,
   mapPaperCenter,
   mapPayment,
@@ -29,6 +30,7 @@ import type {
   ContactInquiry,
   Course,
   FeaturedRanking,
+  IctfTeamMember,
   MarketingAnnouncement,
   PaperCenter,
   Payment,
@@ -171,6 +173,24 @@ export function useAdminCourses() {
       .select("*")
       .order("name")
       .then(({ data: rows }) => setData((rows ?? []).map(mapCourse)));
+  }, [version]);
+
+  return { data, refresh };
+}
+
+
+export function useAdminIctfTeam() {
+  const [data, setData] = useState<IctfTeamMember[]>([]);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    createClient()
+      .from("ictf_team_members")
+      .select("*")
+      .order("sort_order")
+      .order("name")
+      .then(({ data: rows }) => setData((rows ?? []).map(mapIctfTeamMember)));
   }, [version]);
 
   return { data, refresh };

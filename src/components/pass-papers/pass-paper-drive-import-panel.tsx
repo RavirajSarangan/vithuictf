@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   ensurePassPaperExamTemplate,
   fullSyncPassPapersFromDrive,
@@ -79,7 +80,7 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
       );
       if (!dryRun) onComplete();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Drive import failed");
+      toast.error(getActionErrorMessage(error, "Drive import failed"));
     } finally {
       setRunning(false);
     }
@@ -87,19 +88,19 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
 
   const handleCreateTemplate = async (examType: Extract<PassPaperExamType, "al" | "ol">) => {
     setCreatingTemplate(examType);
-    try {
-      const result = await ensurePassPaperExamTemplate(examType);
-      toast.success(
-        `${examType === "al" ? "A/L" : "O/L"} template ready${
-          result.createdFolders > 0 ? ` (${result.createdFolders} folder(s) created)` : ""
-        }`
-      );
-      onComplete();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Template creation failed");
-    } finally {
+    const result = await ensurePassPaperExamTemplate(examType);
+    if (!result.ok) {
+      toast.error(result.error);
       setCreatingTemplate(null);
+      return;
     }
+    toast.success(
+      `${examType === "al" ? "A/L" : "O/L"} template ready${
+        result.data.createdFolders > 0 ? ` (${result.data.createdFolders} folder(s) created)` : ""
+      }`
+    );
+    onComplete();
+    setCreatingTemplate(null);
   };
 
   const handleFullSync = async () => {
@@ -118,7 +119,7 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
       );
       onComplete();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Full sync failed");
+      toast.error(getActionErrorMessage(error, "Full sync failed"));
     } finally {
       setFullSyncing(false);
     }
@@ -126,17 +127,17 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
 
   const handlePublishSubtree = async (folderId: string, label: string) => {
     setPublishing(true);
-    try {
-      const result = await publishPassPaperSubtreeComplete(folderId, true);
-      toast.success(
-        `${label}: published ${result.foldersUpdated} folder(s) and ${result.itemsUpdated} paper link(s)`
-      );
-      onComplete();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Publish failed");
-    } finally {
+    const result = await publishPassPaperSubtreeComplete(folderId, true);
+    if (!result.ok) {
+      toast.error(result.error);
       setPublishing(false);
+      return;
     }
+    toast.success(
+      `${label}: published ${result.data.foldersUpdated} folder(s) and ${result.data.itemsUpdated} paper link(s)`
+    );
+    onComplete();
+    setPublishing(false);
   };
 
   return (

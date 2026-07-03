@@ -1,8 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/server";
+import { safeRevalidatePath } from "@/lib/safe-revalidate";
 import { logAdminAction } from "@/lib/audit";
 import {
   allocatePaymentToCharges,
@@ -20,10 +20,10 @@ import type {
 } from "@/types";
 
 function revalidateFinancePaths() {
-  revalidatePath("/admin/finance");
-  revalidatePath("/admin/finance/students");
-  revalidatePath("/admin/finance/ledger");
-  revalidatePath("/admin/dashboard");
+  safeRevalidatePath("/admin/finance");
+  safeRevalidatePath("/admin/finance/students");
+  safeRevalidatePath("/admin/finance/ledger");
+  safeRevalidatePath("/admin/dashboard");
 }
 
 function monthLabel(dateStr: string): string {
@@ -278,7 +278,7 @@ export async function recordFinancePayment(data: {
   });
 
   revalidateFinancePaths();
-  revalidatePath("/admin/payments");
+  safeRevalidatePath("/admin/payments");
 
   return payment.id;
 }
@@ -322,7 +322,7 @@ export async function updatePerClassFee(perClassFeeLkr: number) {
   });
 
   revalidateFinancePaths();
-  revalidatePath("/admin/payments");
+  safeRevalidatePath("/admin/payments");
 }
 
 export async function getOutstandingSessionFeesTotal(): Promise<number> {

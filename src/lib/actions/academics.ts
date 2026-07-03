@@ -21,6 +21,7 @@ import {
   buildSessionScheduleFromRow,
   computeTotalClasses,
   countClassDaysInRange,
+  deriveEndDateFromCount,
 } from "@/lib/academics/schedule";
 import {
   notifyBatchStudentsPortal,
@@ -35,6 +36,8 @@ import type {
 function revalidateAcademicsPaths() {
   safeRevalidatePath("/academics/dashboard");
   safeRevalidatePath("/academics/batches");
+  safeRevalidatePath("/academics/courses");
+  safeRevalidatePath("/admin/courses");
   safeRevalidatePath("/academics/students");
   safeRevalidatePath("/academics/enrollments");
   safeRevalidatePath("/academics/attendance");
@@ -302,7 +305,8 @@ export async function createBatch(data: {
   courseId: string;
   name: string;
   startDate: string;
-  endDate: string;
+  /** Optional explicit end date. When omitted it is derived from startDate + totalClasses. */
+  endDate?: string;
   startTime: string;
   endTime: string;
   classDays: string[];
@@ -323,16 +327,31 @@ export async function createBatch(data: {
     if (!data.name.trim()) throw new Error("Batch name is required");
     if (!data.classDays.length) throw new Error("Select at least one class day");
 
+    const requestedTotal = data.totalClasses ?? 10;
+    // Count-driven scheduling: derive the end date from start + class count
+    // unless the caller supplied an explicit end date.
+    const endDate =
+      data.endDate ??
+      deriveEndDateFromCount({
+        startDate: data.startDate,
+        classDays: data.classDays,
+        totalClasses: requestedTotal,
+      });
+    if (!endDate) {
+      throw new Error("Could not schedule classes — select at least one class day");
+    }
+
     const start = parseDateOnly(data.startDate);
-    const end = parseDateOnly(data.endDate);
+    const end = parseDateOnly(endDate);
     if (end < start) throw new Error("End date must be on or after start date");
 
     const totalClasses = computeTotalClasses({
       startDate: data.startDate,
-      endDate: data.endDate,
+      endDate,
       startTime: data.startTime,
       endTime: data.endTime,
       classDays: data.classDays,
+      totalClasses: data.totalClasses,
     });
     if (totalClasses === 0) {
       throw new Error("No class days in the selected date range");
@@ -356,7 +375,7 @@ export async function createBatch(data: {
         name: data.name.trim(),
         batch_code: batchCode,
         start_date: data.startDate,
-        end_date: data.endDate,
+        end_date: endDate,
         start_time: data.startTime,
         end_time: data.endTime,
         class_days: data.classDays,
@@ -390,6 +409,53 @@ export async function createBatch(data: {
   }, "Failed to create batch");
 }
 
+/**
+ * Resolve the single batch for a course, creating a sensible default one if
+ * none exists yet. Enforces the "one batch per course" model at the app layer.
+ */
+export async function getOrCreateCourseBatch(
+  courseId: string
+): Promise<DataActionResult<{ batchId: string; created: boolean }>> {
+  return runDataAction(async () => {
+    await requireAcademicsStaff();
+    const supabase = await createClient();
+
+    const { data: existing } = await supabase
+      .from("course_batches")
+      .select("id, active, created_at")
+      .eq("course_id", courseId)
+      .order("active", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (existing) return { batchId: existing.id, created: false };
+
+    const { data: course } = await supabase
+      .from("courses")
+      .select("name")
+      .eq("id", courseId)
+      .maybeSingle();
+    if (!course) throw new Error("Course not found");
+
+    const today = new Date();
+    const startDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
+      today.getDate()
+    ).padStart(2, "0")}`;
+
+    const result = await createBatch({
+      courseId,
+      name: course.name,
+      startDate,
+      startTime: "09:00",
+      endTime: "12:00",
+      classDays: ["mon", "wed", "fri"],
+      totalClasses: 10,
+    });
+    if (!result.ok) throw new Error(result.error);
+    return { batchId: result.data.id, created: true };
+  }, "Failed to resolve course batch");
+}
+
 export async function updateBatchSchedule(
   batchId: string,
   data: {
@@ -415,7 +481,6 @@ export async function updateBatchSchedule(
   if (!before) throw new Error("Batch not found");
 
   const nextStart = data.startDate ?? before.start_date;
-  const nextEnd = data.endDate ?? before.end_date;
   const nextClassDays = data.classDays ?? before.class_days;
   const nextStartTime = data.startTime ?? before.start_time;
   const nextEndTime = data.endTime ?? before.end_time;
@@ -425,16 +490,33 @@ export async function updateBatchSchedule(
     data.endDate !== undefined ||
     data.classDays !== undefined ||
     data.startTime !== undefined ||
-    data.endTime !== undefined;
+    data.endTime !== undefined ||
+    data.totalClasses !== undefined;
 
   let computedTotal = before.total_classes;
+  let nextEnd = data.endDate ?? before.end_date;
   if (scheduleChanged) {
+    const requestedTotal = data.totalClasses ?? before.total_classes;
+    // Count-driven: when no explicit end date is supplied, derive it from
+    // start date + class count so exactly N classes are scheduled.
+    if (data.endDate === undefined) {
+      const derived = deriveEndDateFromCount({
+        startDate: nextStart,
+        classDays: nextClassDays,
+        totalClasses: requestedTotal,
+      });
+      if (!derived) {
+        throw new Error("Select at least one class day for the schedule");
+      }
+      nextEnd = derived;
+    }
     computedTotal = computeTotalClasses({
       startDate: nextStart,
       endDate: nextEnd,
       startTime: nextStartTime,
       endTime: nextEndTime,
       classDays: nextClassDays,
+      totalClasses: requestedTotal,
     });
     if (computedTotal === 0) {
       throw new Error("No class days in the selected date range");
@@ -444,12 +526,13 @@ export async function updateBatchSchedule(
   const updates: Record<string, unknown> = {};
   if (data.name !== undefined) updates.name = data.name.trim();
   if (data.startDate !== undefined) updates.start_date = data.startDate;
-  if (data.endDate !== undefined) updates.end_date = data.endDate;
   if (data.startTime !== undefined) updates.start_time = data.startTime;
   if (data.endTime !== undefined) updates.end_time = data.endTime;
   if (data.classDays !== undefined) updates.class_days = data.classDays;
-  if (scheduleChanged) updates.total_classes = computedTotal;
-  else if (data.totalClasses !== undefined) updates.total_classes = data.totalClasses;
+  if (scheduleChanged) {
+    updates.end_date = nextEnd;
+    updates.total_classes = computedTotal;
+  }
   if (data.active !== undefined) updates.active = data.active;
   if (data.zoomLink !== undefined) updates.zoom_link = data.zoomLink.trim() || null;
 
@@ -457,7 +540,7 @@ export async function updateBatchSchedule(
   if (error) throw new Error(error.message);
 
   let syncResult: { synced: number; preservedWithAttendance: number } | null = null;
-  if (scheduleFieldsChanged(before, { ...data, totalClasses: computedTotal })) {
+  if (scheduleFieldsChanged(before, { ...data, endDate: nextEnd, totalClasses: computedTotal })) {
     syncResult = await syncClassSessionsToSchedule(batchId);
   }
 

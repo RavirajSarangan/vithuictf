@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { addCalendarSession, deleteCalendarSession } from "@/lib/actions/calendar";
+import { bulkDeleteCalendarSessions } from "@/lib/actions/bulk-delete";
 import { useAdminCourses } from "@/hooks/use-data";
 import { useAdminSubjectCategories, useCalendarMinutesSummary, useCalendarSessions } from "@/hooks/use-calendar";
 import { useUnifiedCalendar } from "@/hooks/use-unified-calendar";
 import { CalendarBoard } from "@/components/calendar/calendar-board";
 import { UnifiedCalendarBoard } from "@/components/calendar/unified-calendar-board";
 import { GlassCard } from "@/components/shared/glass-card";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import {
+  calendarSessionTableSummary,
+  genericSelectionInsights,
+} from "@/lib/table-insights";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +27,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shared/page-header";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 function formatMonthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -30,12 +38,17 @@ export default function AdminCalendarPage() {
   const [unifiedFilter, setUnifiedFilter] = useState<"all" | "institute" | "batch">("all");
   const [month, setMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(undefined);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data: categories } = useAdminSubjectCategories();
   const { data: courses } = useAdminCourses();
   const { data: sessions, refresh } = useCalendarSessions(undefined, categoryFilter);
   const summary = useCalendarMinutesSummary(sessions, categories, categoryFilter);
   const { items: unifiedItems, loading: unifiedLoading } = useUnifiedCalendar(formatMonthKey(month));
+
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeleteCalendarSessions, "session", refresh);
+  const summaryItems = useMemo(() => calendarSessionTableSummary(sessions), [sessions]);
 
   const [form, setForm] = useState({
     title: "",
@@ -71,17 +84,22 @@ export default function AdminCalendarPage() {
       toast.success("Session added");
       setForm({ ...form, title: "" });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add session");
+      toast.error(getActionErrorMessage(e, "Failed to add session"));
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setDeleting(true);
     try {
-      await deleteCalendarSession(id);
+      await deleteCalendarSession(deleteTargetId);
       refresh();
       toast.success("Session deleted");
+      setDeleteTargetId(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+      toast.error(getActionErrorMessage(e, "Delete failed"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -178,7 +196,7 @@ export default function AdminCalendarPage() {
 
           <CalendarBoard sessions={sessions} categories={categories} categoryFilter={categoryFilter} onCategoryFilter={setCategoryFilter} variant="light" />
 
-          <AdminTable
+          <AdminTableSection
             columns={[
               { key: "title", label: "Title" },
               { key: "categoryName", label: "Category" },
@@ -186,7 +204,22 @@ export default function AdminCalendarPage() {
               { key: "durationMinutes", label: "Minutes" },
             ]}
             data={sessions}
-            onDelete={handleDelete}
+            summaryItems={summaryItems}
+            getSelectionInsights={(rows) =>
+              genericSelectionInsights(rows, (row) => (row as { categoryName?: string }).categoryName ?? "—")
+            }
+            entityLabel="session"
+            onBulkDelete={handleBulkDelete}
+            onDelete={setDeleteTargetId}
+            onActionComplete={refresh}
+          />
+
+          <DeleteConfirmDialog
+            open={!!deleteTargetId}
+            onOpenChange={(open) => !open && setDeleteTargetId(null)}
+            entityLabel="session"
+            deleting={deleting}
+            onConfirm={handleConfirmDelete}
           />
         </>
       )}

@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { useAdminParents, useAdminStudents, useCurrentTeacher } from "@/hooks/use-data";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { parentTableSummary } from "@/lib/table-insights";
 import { AddParentDialog } from "@/components/admin/add-parent-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -30,6 +31,8 @@ export default function AdminParentsPage() {
     return data.filter((p) => p.linkedStudentIds.some((id) => allowedStudentIds.has(id)));
   }, [data, students, teacher, user?.role]);
 
+  const summaryItems = useMemo(() => parentTableSummary(visibleParents), [visibleParents]);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -45,7 +48,7 @@ export default function AdminParentsPage() {
           
         />
       ) : (
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "displayName", label: "Name" },
             { key: "email", label: "Email" },
@@ -73,6 +76,15 @@ export default function AdminParentsPage() {
             },
           ]}
           data={visibleParents}
+          summaryItems={summaryItems}
+          entityLabel="parent"
+          exportConfig={{
+            columns: [
+              { key: "displayName", label: "Name" },
+              { key: "email", label: "Email" },
+            ],
+            filename: "icvf-parents.csv",
+          }}
         />
       )}
     </div>

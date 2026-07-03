@@ -1,7 +1,9 @@
 "use server";
 
 import crypto from "crypto";
-import { revalidatePath } from "next/cache";
+import { getActionFailureMessage } from "@/lib/actions/action-result";
+import { runDataAction, type DataActionResult } from "@/lib/actions/action-result";
+import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { requirePaperCenterStaff, requireSuperAdmin } from "@/lib/actions/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -34,7 +36,15 @@ function parsePaperMeta(raw: string): PaperMeta[] {
   });
 }
 
-export async function uploadExamPaperBatch(formData: FormData): Promise<{ ok: true; batchId: string }> {
+export async function uploadExamPaperBatch(
+  formData: FormData
+): Promise<DataActionResult<{ batchId: string }>> {
+  return runDataAction(() => uploadExamPaperBatchImpl(formData), "Upload failed");
+}
+
+async function uploadExamPaperBatchImpl(
+  formData: FormData
+): Promise<{ batchId: string }> {
   const profile = await requirePaperCenterStaff();
   const supabase = await createClient();
 
@@ -134,15 +144,15 @@ export async function uploadExamPaperBatch(formData: FormData): Promise<{ ok: tr
       await admin.storage.from("exam-papers").remove(uploadedPaths);
     }
     await supabase.from("exam_paper_batches").delete().eq("id", batch.id);
-    throw error instanceof Error ? error : new Error("Upload failed");
+    throw new Error(getActionFailureMessage(error, "Upload failed"));
   }
 
   revalidatePath("/paper-center/history");
   revalidatePath("/admin/exam-papers");
-  return { ok: true, batchId: batch.id };
+  return { batchId: batch.id };
 }
 
-export async function deleteExamPaperBatch(batchId: string) {
+async function deleteExamPaperBatchImpl(batchId: string): Promise<void> {
   await requireSuperAdmin();
   const admin = createAdminClient();
   const supabase = await createClient();
@@ -161,4 +171,10 @@ export async function deleteExamPaperBatch(batchId: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/exam-papers");
+}
+
+export async function deleteExamPaperBatch(
+  batchId: string
+): Promise<DataActionResult<void>> {
+  return runDataAction(() => deleteExamPaperBatchImpl(batchId), "Delete failed");
 }

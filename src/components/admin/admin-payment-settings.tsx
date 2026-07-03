@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { updatePlatformPaymentSettings } from "@/lib/actions/payments-admin";
 import { getStripeConfigured } from "@/lib/actions/payment-infra";
 import { usePlatformSettings } from "@/hooks/use-data";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   getOnlinePaymentsStatusLabel,
   isOnlinePaymentsAvailable,
@@ -75,7 +76,7 @@ export function AdminPaymentSettingsPanel() {
       refresh();
       toast.success(enabled ? "Online payments enabled" : "Online payments set to coming soon");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to save settings");
+      toast.error(getActionErrorMessage(e, "Failed to save settings"));
     } finally {
       setSaving(false);
     }

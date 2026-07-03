@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { addResource, deleteResource } from "@/lib/actions/admin";
+import { bulkDeleteResources } from "@/lib/actions/bulk-delete";
 import { useAdminCourses, useAdminResources } from "@/hooks/use-data";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import { resourceTableSummary, resourceSelectionInsights } from "@/lib/table-insights";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,6 +23,7 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/shared/empty-state";
 import type { ResourceCategory } from "@/types";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const resourceSchema = z.object({
   title: z.string().min(2, "Title is required"),
   courseId: z.string().min(1, "Select a course"),
@@ -34,6 +39,11 @@ export default function AdminResourcesPage() {
   const { data: courses } = useAdminCourses();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeleteResources, "resource", refresh);
+  const summaryItems = useMemo(() => resourceTableSummary(data), [data]);
 
   const form = useForm<ResourceFormValues>({
     resolver: zodResolver(resourceSchema),
@@ -68,19 +78,23 @@ export default function AdminResourcesPage() {
       form.reset();
       toast.success("Resource added");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add resource");
+      toast.error(getActionErrorMessage(e, "Failed to add resource"));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
+    setDeleting(true);
     try {
       await deleteResource(id);
       refresh();
       toast.success("Resource deleted");
+      setDeleteTargetId(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+      toast.error(getActionErrorMessage(e, "Delete failed"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -109,7 +123,8 @@ export default function AdminResourcesPage() {
           
         />
       ) : (
-        <AdminTable
+        <AdminTableSection
+          data={data}
           columns={[
             { key: "title", label: "Title" },
             { key: "category", label: "Category" },
@@ -117,10 +132,24 @@ export default function AdminResourcesPage() {
             { key: "type", label: "Type" },
             { key: "views", label: "Views" },
           ]}
-          data={data}
-          onDelete={handleDelete}
+          summaryItems={summaryItems}
+          getSelectionInsights={resourceSelectionInsights}
+          entityLabel="resource"
+          onBulkDelete={handleBulkDelete}
+          onDelete={(id) => setDeleteTargetId(id)}
+          onActionComplete={refresh}
         />
       )}
+
+      <DeleteConfirmDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+        entityLabel="this resource"
+        deleting={deleting}
+        onConfirm={() => {
+          if (deleteTargetId) void handleDelete(deleteTargetId);
+        }}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">

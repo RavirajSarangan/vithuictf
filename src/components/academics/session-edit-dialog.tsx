@@ -15,6 +15,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SESSION_STATUS_LABELS } from "@/lib/academics/constants";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const sessionSchema = z.object({
   scheduledDate: z.string().min(1),
   startTime: z.string().min(1),
@@ -68,7 +69,7 @@ export function SessionEditDialog({
       onOpenChange(false);
       toast.success("Session updated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+      toast.error(getActionErrorMessage(e, "Update failed"));
     }
   };
 

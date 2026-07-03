@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { recordFinancePayment, waiveCharge } from "@/lib/actions/finance";
-import { AdminTable } from "@/components/admin/admin-table";
-import { ExportCsvButton } from "@/components/admin/export-csv-button";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { financeLedgerSummary } from "@/lib/table-insights";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Dialog,
   DialogContent,
@@ -81,6 +82,7 @@ export function StudentFinanceDetailPanel({
   });
 
   const totalOutstanding = summaries.reduce((s, r) => s + r.totalOutstandingLkr, 0);
+  const summaryItems = useMemo(() => financeLedgerSummary(charges), [charges]);
 
   const onSubmit = async (values: PaymentFormValues) => {
     setSubmitting(true);
@@ -97,7 +99,7 @@ export function StudentFinanceDetailPanel({
       form.reset();
       onRefresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to record payment");
+      toast.error(getActionErrorMessage(e, "Failed to record payment"));
     } finally {
       setSubmitting(false);
     }
@@ -110,21 +112,11 @@ export function StudentFinanceDetailPanel({
       toast.success("Charge waived");
       onRefresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to waive charge");
+      toast.error(getActionErrorMessage(e, "Failed to waive charge"));
     } finally {
       setWaivingId(null);
     }
   };
-
-  const csvRows = charges.map((c) => ({
-    course: c.courseName ?? "",
-    batch: c.batchName ?? "",
-    session: c.sessionNumber ?? "",
-    date: c.scheduledDate ?? "",
-    amount: c.amountLkr,
-    status: c.status,
-    month: c.billingMonth,
-  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -138,19 +130,6 @@ export function StudentFinanceDetailPanel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ExportCsvButton
-            filename={`finance-${studentId}.csv`}
-            rows={csvRows}
-            columns={[
-              { key: "course", label: "Course" },
-              { key: "batch", label: "Batch" },
-              { key: "session", label: "Session" },
-              { key: "date", label: "Date" },
-              { key: "amount", label: "Amount (LKR)" },
-              { key: "status", label: "Status" },
-              { key: "month", label: "Billing month" },
-            ]}
-          />
           <Button onClick={() => setOpen(true)} disabled={totalOutstanding <= 0}>
             Record payment
           </Button>
@@ -186,8 +165,22 @@ export function StudentFinanceDetailPanel({
         ))}
       </div>
 
-      <AdminTable
+      <AdminTableSection
         data={charges}
+        summaryItems={summaryItems}
+        entityLabel="charge"
+        exportConfig={{
+          filename: `finance-${studentId}.csv`,
+          columns: [
+            { key: "courseName", label: "Course" },
+            { key: "batchName", label: "Batch" },
+            { key: "sessionNumber", label: "Session" },
+            { key: "scheduledDate", label: "Date" },
+            { key: "amountLkr", label: "Amount (LKR)" },
+            { key: "status", label: "Status" },
+            { key: "billingMonth", label: "Billing month" },
+          ],
+        }}
         emptyMessage="No session charges yet"
         columns={[
           { key: "courseName", label: "Course" },

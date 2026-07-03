@@ -1,6 +1,5 @@
 "use server";
 
-import { requireAdmin } from "@/lib/actions/auth";
 import { getResendConfig } from "@/lib/email/resend";
 import { sendEmail } from "@/lib/email/send";
 import {
@@ -152,6 +151,7 @@ export async function sendContactInquiryNotification(data: {
 }
 
 export async function sendResendTestEmail(to: string): Promise<{ emailSent: boolean; error?: string }> {
+  const { requireAdmin } = await import("@/lib/actions/auth");
   await requireAdmin();
 
   const config = getResendConfig();

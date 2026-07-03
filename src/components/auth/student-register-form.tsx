@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { checkUsernameAvailable } from "@/lib/actions/auth";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { getRegistrationBackendStatus } from "@/lib/actions/registration-status";
 import { useCourses } from "@/hooks/use-data";
 import { useMarketingText } from "@/hooks/use-marketing-text";
@@ -214,13 +215,7 @@ export function StudentRegisterForm({ idPrefix = "register" }: StudentRegisterFo
       toast.success(t("auth.registerSuccess"));
       router.push("/onboarding");
     } catch (err) {
-      const message =
-        err instanceof Error && err.message.includes("Server Components render")
-          ? t("auth.registerFailed")
-          : err instanceof Error
-            ? err.message
-            : t("auth.registerFailed");
-      toast.error(message);
+      toast.error(getActionErrorMessage(err, t("auth.registerFailed")));
     } finally {
       setLoading(false);
     }

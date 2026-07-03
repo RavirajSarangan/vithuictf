@@ -79,8 +79,8 @@ export default function AcademicsDashboardPage() {
             <Link href="/academics/students" className="text-icvf-navy underline-offset-4 hover:underline">
               Manage students
             </Link>
-            <Link href="/academics/batches" className="text-icvf-navy underline-offset-4 hover:underline">
-              Create batch
+            <Link href="/admin/courses" className="text-icvf-navy underline-offset-4 hover:underline">
+              Manage courses
             </Link>
             <Link href="/academics/attendance" className="text-icvf-navy underline-offset-4 hover:underline">
               Mark attendance
@@ -106,7 +106,7 @@ export default function AcademicsDashboardPage() {
             {activeBatches.slice(0, 6).map((batch) => (
               <Link
                 key={batch.id}
-                href={`/academics/batches/${batch.id}`}
+                href={`/academics/courses/${batch.courseId}`}
                 className="flex gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
               >
                 <CourseThumbnail

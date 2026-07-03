@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const slideSchema = z.object({
   title: z.string().optional(),
   url: z
@@ -73,7 +74,7 @@ export function SessionCanvaSlideDialog({
       onOpenChange(false);
       toast.success("Canva slides saved");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to save slides");
+      toast.error(getActionErrorMessage(e, "Failed to save slides"));
     }
   };
 
@@ -86,7 +87,7 @@ export function SessionCanvaSlideDialog({
       onOpenChange(false);
       toast.success("Slides removed");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to remove slides");
+      toast.error(getActionErrorMessage(e, "Failed to remove slides"));
     } finally {
       setClearing(false);
     }

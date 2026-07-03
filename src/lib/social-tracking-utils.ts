@@ -37,6 +37,9 @@ export function computeWeeklySummary(
     youtubeShorts: 0,
     tiktokVideos: 0,
     instaReels: 0,
+    facebookPosts: 0,
+    linkedinPosts: 0,
+    websiteBlogs: 0,
   };
 
   for (const entry of entries) {
@@ -48,6 +51,9 @@ export function computeWeeklySummary(
     else if (slug === "youtube_shorts") counts.youtubeShorts += count;
     else if (slug === "tiktok_video") counts.tiktokVideos += count;
     else if (slug === "insta_reel") counts.instaReels += count;
+    else if (slug === "facebook_post") counts.facebookPosts += count;
+    else if (slug === "linkedin_post") counts.linkedinPosts += count;
+    else if (slug === "website_blog") counts.websiteBlogs += count;
   }
 
   return counts;

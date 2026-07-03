@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { addResult, deleteResult } from "@/lib/actions/admin";
+import { bulkDeleteResults } from "@/lib/actions/bulk-delete";
 import { useAdminResults, useAdminStudents } from "@/hooks/use-data";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import { resultTableSummary, resultSelectionInsights } from "@/lib/table-insights";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +21,7 @@ import { FileText, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/shared/empty-state";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const resultSchema = z.object({
   studentId: z.string().min(1, "Select a student"),
   examTitle: z.string().min(2, "Exam title is required"),
@@ -36,6 +41,11 @@ export default function AdminResultsPage() {
   const { data: students } = useAdminStudents();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeleteResults, "result", refresh);
+  const summaryItems = useMemo(() => resultTableSummary(data), [data]);
 
   const form = useForm<ResultFormValues>({
     resolver: zodResolver(resultSchema),
@@ -61,19 +71,23 @@ export default function AdminResultsPage() {
       form.reset();
       toast.success("Result recorded");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add result");
+      toast.error(getActionErrorMessage(e, "Failed to add result"));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
+    setDeleting(true);
     try {
       await deleteResult(id);
       refresh();
       toast.success("Result deleted");
+      setDeleteTargetId(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+      toast.error(getActionErrorMessage(e, "Delete failed"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -102,7 +116,8 @@ export default function AdminResultsPage() {
           
         />
       ) : (
-        <AdminTable
+        <AdminTableSection
+          data={data}
           columns={[
             { key: "examTitle", label: "Exam" },
             { key: "subject", label: "Subject" },
@@ -111,10 +126,24 @@ export default function AdminResultsPage() {
             { key: "rank", label: "Rank" },
             { key: "term", label: "Term" },
           ]}
-          data={data}
-          onDelete={handleDelete}
+          summaryItems={summaryItems}
+          getSelectionInsights={resultSelectionInsights}
+          entityLabel="result"
+          onBulkDelete={handleBulkDelete}
+          onDelete={(id) => setDeleteTargetId(id)}
+          onActionComplete={refresh}
         />
       )}
+
+      <DeleteConfirmDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+        entityLabel="this result"
+        deleting={deleting}
+        onConfirm={() => {
+          if (deleteTargetId) void handleDelete(deleteTargetId);
+        }}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">

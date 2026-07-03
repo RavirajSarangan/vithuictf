@@ -286,6 +286,11 @@ export interface Course {
   durationMonths?: number;
   slug?: string;
   coverImageUrl?: string;
+  showOnHome: boolean;
+  sortOrder: number;
+  /** Derived from active batches via course_schedule_summaries; not a courses column. */
+  classDaysPerWeek?: number;
+  classDays?: string[];
 }
 
 export interface Exam {
@@ -533,6 +538,26 @@ export interface FAQ {
   answerSi?: string;
   category?: string;
   targetKeyword?: string;
+}
+
+
+export interface IctfTeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  photoUrl: string;
+  facebookUrl: string;
+  instagramUrl: string;
+  linkedinUrl: string;
+  youtubeUrl: string;
+  whatsapp: string;
+  email: string;
+  dateOfBirth: string;
+  lastBirthdayWishSent: string;
+  isLead: boolean;
+  sortOrder: number;
+  createdAt: string;
 }
 
 
@@ -826,6 +851,9 @@ export interface WeeklyTrackingSummary {
   youtubeShorts: number;
   tiktokVideos: number;
   instaReels: number;
+  facebookPosts: number;
+  linkedinPosts: number;
+  websiteBlogs: number;
 }
 
 export interface FollowerHistoryPoint {

@@ -1,3 +1,4 @@
+import { getActionFailureMessage } from "@/lib/actions/action-result";
 import { getResendClient, getResendConfig } from "@/lib/email/resend";
 import { htmlToPlainText } from "@/lib/email/escape";
 
@@ -57,7 +58,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
     return { emailSent: true, id: data?.id };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to send email";
+    const message = getActionFailureMessage(err, "Failed to send email");
     console.error("[email] Send failed:", message);
     return { emailSent: false, error: message };
   }

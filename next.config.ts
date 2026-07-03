@@ -110,18 +110,23 @@ const nextConfig: NextConfig = {
       `frame-ancestors 'none'`,
       `form-action 'self'`,
       // Stripe.js + Vercel analytics/insights scripts; inline needed for Next bootstrap.
-      `script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.vercel-scripts.com https://*.vercel-insights.com`,
-      // Tailwind/inline styles + Google Fonts stylesheet.
-      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-      `font-src 'self' https://fonts.gstatic.com data:`,
-      `img-src 'self' data: https: blob:`,
-      // Supabase REST/realtime, Stripe API, Vercel analytics beacons, Google OAuth.
-      `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://api.stripe.com https://*.vercel-insights.com https://*.vercel-scripts.com https://accounts.google.com`
+      // Vercel Live feedback/comments widget (preview deployments) loads from vercel.live.
+      // 'unsafe-eval' is only needed for the dev-mode HMR runtime; never emitted in production.
+      `script-src 'self' 'unsafe-inline' ${isProd ? "" : "'unsafe-eval'"} https://js.stripe.com https://*.vercel-scripts.com https://*.vercel-insights.com https://vercel.live`
         .replace(/\s+/g, " ")
         .trim(),
-      // Stripe Checkout/Elements iframes + Google Drive pass-paper previews.
-      `frame-src https://js.stripe.com https://hooks.stripe.com https://www.canva.com https://drive.google.com`,
-      `upgrade-insecure-requests`,
+      // Tailwind/inline styles + Google Fonts stylesheet + Vercel Live styles.
+      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live`,
+      `font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com data:`,
+      `img-src 'self' data: https: blob:`,
+      // Supabase REST/realtime, Stripe API, Vercel analytics beacons, Google OAuth, Vercel Live (Pusher websockets).
+      `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://api.stripe.com https://*.vercel-insights.com https://*.vercel-scripts.com https://accounts.google.com https://vercel.live wss://ws-us3.pusher.com`
+        .replace(/\s+/g, " ")
+        .trim(),
+      // Stripe Checkout/Elements iframes + Google Drive pass-paper previews + Vercel Live.
+      `frame-src https://js.stripe.com https://hooks.stripe.com https://www.canva.com https://drive.google.com https://vercel.live`,
+      // Ignored (and warned about) in report-only mode, so only emit it when enforcing in prod.
+      ...(isProd ? [`upgrade-insecure-requests`] : []),
     ].join("; ");
 
     const securityHeaders = [

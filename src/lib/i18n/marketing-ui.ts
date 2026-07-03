@@ -521,8 +521,8 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "programs.badge": { en: "Our Classes", ta: "எங்கள் வகுப்புகள்" },
   "programs.title": { en: "Programs you can join today", ta: "இன்றே சேரக்கூடிய திட்டங்கள்" },
   "programs.subtitle": {
-    en: "O/L & A/L ICT class programs, degree pathways, and partner paper centers across Sri Lanka — all managed through ICTF.",
-    ta: "O/L & A/L ICT வகுப்பு திட்டங்கள், பட்டப் பாதைகள் மற்றும் இலங்கை முழுவதும் கூட்டாளர் பேப்பர் மையங்கள் — அனைத்தும் ICTF மூலம் நிர்வகிக்கப்படுகின்றன.",
+    en: "O/L & A/L ICT class programs and partner paper centers across Sri Lanka — all managed through ICTF.",
+    ta: "O/L & A/L ICT வகுப்பு திட்டங்கள் மற்றும் இலங்கை முழுவதும் கூட்டாளர் பேப்பர் மையங்கள் — அனைத்தும் ICTF மூலம் நிர்வகிக்கப்படுகின்றன.",
   },
   "programs.ready": { en: "Want to join a class?", ta: "வகுப்பில் சேர விரும்புகிறீர்களா?" },
   "programs.readySub": {
@@ -532,7 +532,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "programs.registerNote": { en: "5 structured programs for exam excellence", ta: "தேர்வு சிறப்புக்கான 5 கட்டமைக்கப்பட்ட திட்டங்கள்" },
   "programs.tab.all": { en: "All", ta: "அனைத்தும்" },
   "programs.tab.classes": { en: "Class Programs", ta: "வகுப்பு திட்டங்கள்" },
-  "programs.tab.courses": { en: "Degree Courses", ta: "பட்டப் பாடங்கள்" },
+  "programs.tab.courses": { en: "Courses", ta: "பாடநெறிகள்" },
   "programs.tab.centers": { en: "Partner Centers", ta: "கூட்டாளர் மையங்கள்" },
   "programs.viewProgram": { en: "View Program", ta: "திட்டத்தைப் பார்க்க" },
   "programs.applyProgram": { en: "Register for a Program", ta: "திட்டத்திற்கு பதிவு செய்" },

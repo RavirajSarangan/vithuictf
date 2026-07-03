@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   addMarketingAnnouncement,
   deleteMarketingAnnouncement,
@@ -12,7 +13,11 @@ import {
 import { syncClientCachesAfterAdminSave } from "@/lib/client-cache-sync";
 import { useAdminMarketingAnnouncements } from "@/hooks/use-data";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import { bulkDeleteMarketingAnnouncements } from "@/lib/actions/bulk-delete";
+import { announcementTableSummary, genericSelectionInsights } from "@/lib/table-insights";
 import { MarketingAnnouncementPopup } from "@/components/landing/marketing-announcement-popup";
 import { Banner } from "@/components/ui/banner";
 import {
@@ -179,7 +184,16 @@ export function AdminAnnouncementsPanel() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [uploadFolder, setUploadFolder] = useState("announcements");
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeleteMarketingAnnouncements, "announcement", () => {
+    refresh();
+    syncClientCachesAfterAdminSave();
+    router.refresh();
+  });
+  const summaryItems = useMemo(() => announcementTableSummary(data), [data]);
 
   const handleFileUpload = async (file: File) => {
     if (file.size > 10 * 1024 * 1024) {
@@ -200,7 +214,7 @@ export function AdminAnnouncementsPanel() {
       }));
       toast.success("File uploaded and linked as CTA");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      toast.error(getActionErrorMessage(error, "Upload failed"));
     } finally {
       setUploadingFile(false);
     }
@@ -236,13 +250,14 @@ export function AdminAnnouncementsPanel() {
       syncClientCachesAfterAdminSave();
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save");
+      toast.error(getActionErrorMessage(error, "Failed to save"));
     } finally {
       setSaving(false);
     }
   };
 
   const onDelete = async (id: string) => {
+    setDeleting(true);
     try {
       await deleteMarketingAnnouncement(id);
       if (editingId === id) resetForm();
@@ -250,8 +265,11 @@ export function AdminAnnouncementsPanel() {
       syncClientCachesAfterAdminSave();
       router.refresh();
       toast.success("Announcement deleted");
+      setDeleteTargetId(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete");
+      toast.error(getActionErrorMessage(error, "Failed to delete"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -492,11 +510,25 @@ export function AdminAnnouncementsPanel() {
         </div>
       </GlassCard>
 
-      <AdminTable
+      <AdminTableSection
         data={data}
         emptyMessage="No announcements yet"
-        onDelete={(id) => void onDelete(id)}
+        summaryItems={summaryItems}
+        getSelectionInsights={(rows) =>
+          genericSelectionInsights(rows, (row) => {
+            const status = getAnnouncementStatus(row as MarketingAnnouncement);
+            return status.label;
+          })
+        }
+        entityLabel="announcement"
+        onBulkDelete={handleBulkDelete}
+        onDelete={setDeleteTargetId}
         onView={onEdit}
+        onActionComplete={() => {
+          refresh();
+          syncClientCachesAfterAdminSave();
+          router.refresh();
+        }}
         columns={[
           {
             key: "title",
@@ -528,6 +560,16 @@ export function AdminAnnouncementsPanel() {
             },
           },
         ]}
+      />
+
+      <DeleteConfirmDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+        entityLabel="announcement"
+        deleting={deleting}
+        onConfirm={() => {
+          if (deleteTargetId) void onDelete(deleteTargetId);
+        }}
       />
 
       {previewOpen && (

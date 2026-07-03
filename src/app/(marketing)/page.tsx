@@ -1,6 +1,6 @@
+import { CoursesMarqueeSection } from "@/components/landing/courses-marquee-section";
 import { HeroSection } from "@/components/landing/hero-section";
 import { MarketingHomeSections } from "@/components/landing/marketing-home-sections";
-import { MarketingSeoIntro } from "@/components/landing/marketing-seo-intro";
 import { HomePageJsonLd } from "@/components/seo/json-ld";
 import { MarketingDataProvider } from "@/contexts/marketing-data-context";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
@@ -15,7 +15,7 @@ export default async function HomePage({ locale = "en" }: { locale?: MarketingLo
     <MarketingDataProvider data={data}>
       <HomePageJsonLd faqs={faqsForSchema} locale={locale} />
       <HeroSection />
-      <MarketingSeoIntro locale={locale} />
+      <CoursesMarqueeSection />
       <MarketingHomeSections />
     </MarketingDataProvider>
   );

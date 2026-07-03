@@ -1,14 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { PageHeader } from "@/components/shared/page-header";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
 import { useAcademicsStudents, useBatches, useEnrollmentOverview } from "@/hooks/use-academics";
 import { useAdminCourses } from "@/hooks/use-data";
 import { setStudentActive } from "@/lib/actions/academics";
+import {
+  studentListSummary,
+  studentListSelectionInsights,
+} from "@/lib/table-insights";
 import { StudentSearchBar } from "@/components/academics/student-search-bar";
 import { StudentUpdateDrawer } from "@/components/academics/student-update-drawer";
 import { EnrollmentStatusBadge } from "@/components/academics/enrollment-status-badge";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   filterStudentsWithEnrollments,
   sortStudents,
@@ -42,10 +47,31 @@ export default function AcademicsStudentsPage() {
     return sortStudents(rows, "pending_first");
   }, [overviewRows, filters]);
 
+  const filteredStudents = useMemo(
+    () => filteredRows.map((r) => r.student),
+    [filteredRows]
+  );
+
+  const summaryItems = useMemo(() => studentListSummary(filteredStudents), [filteredStudents]);
+
   const handleRefresh = () => {
     refresh();
     refreshOverview();
   };
+
+  const handleBulkSetActive = useCallback(
+    async (ids: string[], active: boolean) => {
+      try {
+        await Promise.all(ids.map((id) => setStudentActive(id, active)));
+        handleRefresh();
+        toast.success(`${active ? "Enabled" : "Disabled"} ${ids.length} student${ids.length === 1 ? "" : "s"}`);
+      } catch (e) {
+        toast.error(getActionErrorMessage(e, "Failed to update status"));
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refresh, refreshOverview]
+  );
 
   const toggleActive = async (student: Student) => {
     try {
@@ -53,7 +79,7 @@ export default function AcademicsStudentsPage() {
       handleRefresh();
       toast.success(student.active === false ? "Student enabled" : "Student disabled");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to update status");
+      toast.error(getActionErrorMessage(e, "Failed to update status"));
     }
   };
 
@@ -73,7 +99,7 @@ export default function AcademicsStudentsPage() {
       ) : filteredRows.length === 0 ? (
         <EmptyState icon={Users} title="No students" description="Try different search filters" />
       ) : (
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "studentId", label: "ID", render: (row) => row.studentId },
             {
@@ -128,7 +154,35 @@ export default function AcademicsStudentsPage() {
               ),
             },
           ]}
-          data={filteredRows.map((r) => r.student)}
+          data={filteredStudents}
+          summaryItems={summaryItems}
+          getSelectionInsights={studentListSelectionInsights}
+          entityLabel="student"
+          renderBulkActions={
+            canDisable
+              ? (selectedIds) => (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void handleBulkSetActive(selectedIds, true)}
+                    >
+                      Enable selected
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void handleBulkSetActive(selectedIds, false)}
+                    >
+                      Disable selected
+                    </Button>
+                  </>
+                )
+              : undefined
+          }
+          onActionComplete={handleRefresh}
         />
       )}
 

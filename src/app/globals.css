@@ -456,13 +456,29 @@
 
 [data-marquee-in-view="false"] .hero-trust-marquee,
 [data-marquee-in-view="false"] .footer-ict-marquee,
-[data-marquee-in-view="false"] .hero-learning-chips-marquee {
+[data-marquee-in-view="false"] .hero-learning-chips-marquee,
+[data-marquee-in-view="false"] .courses-marquee {
   animation-play-state: paused;
 }
 
 .hero-learning-chips-marquee {
   animation: marquee 14s linear infinite;
   will-change: transform;
+}
+
+.courses-marquee {
+  animation: marquee 45s linear infinite;
+  will-change: transform;
+}
+
+.courses-marquee:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .courses-marquee {
+    animation: none;
+  }
 }
 
 .marketing-marquee-track {

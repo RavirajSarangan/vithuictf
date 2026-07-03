@@ -14,11 +14,14 @@ const cards = [
   { key: "yt-shorts", label: "Youtube Shorts", slug: "youtube_shorts", valueKey: "youtubeShorts" as const },
   { key: "tiktok", label: "Tiktok Videos", slug: "tiktok_video", valueKey: "tiktokVideos" as const },
   { key: "reels", label: "Insta Reels", slug: "insta_reel", valueKey: "instaReels" as const },
+  { key: "facebook", label: "Facebook Posts", slug: "facebook_post", valueKey: "facebookPosts" as const },
+  { key: "linkedin", label: "LinkedIn Posts", slug: "linkedin_post", valueKey: "linkedinPosts" as const },
+  { key: "blog", label: "Website Blogs", slug: "website_blog", valueKey: "websiteBlogs" as const },
 ] as const;
 
 export function WeeklyPerformanceCards({ summary }: WeeklyPerformanceCardsProps) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
       {cards.map((card) => {
         const { key, label, slug, valueKey } = card;
         const useUploadIcon = "useUploadIcon" in card && card.useUploadIcon;

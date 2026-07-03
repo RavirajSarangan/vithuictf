@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { FinanceSubNav } from "@/components/finance/finance-sub-nav";
-import { AdminTable } from "@/components/admin/admin-table";
-import { ExportCsvButton } from "@/components/admin/export-csv-button";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { financeLedgerSummary } from "@/lib/table-insights";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -47,36 +47,13 @@ export default function AdminFinanceLedgerPage() {
 
   const { charges, loading } = useFinanceLedger(filters);
 
-  const csvRows = charges.map((c) => ({
-    course: c.courseName ?? "",
-    batch: c.batchName ?? "",
-    session: c.sessionNumber ?? "",
-    date: c.scheduledDate ?? "",
-    amount: c.amountLkr,
-    status: c.status,
-    month: c.billingMonth,
-  }));
+  const summaryItems = useMemo(() => financeLedgerSummary(charges), [charges]);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Session charge ledger"
         description="All per-class charges generated from attendance"
-        action={
-          <ExportCsvButton
-            filename="finance-ledger.csv"
-            rows={csvRows}
-            columns={[
-              { key: "course", label: "Course" },
-              { key: "batch", label: "Batch" },
-              { key: "session", label: "Session" },
-              { key: "date", label: "Date" },
-              { key: "amount", label: "Amount (LKR)" },
-              { key: "status", label: "Status" },
-              { key: "month", label: "Billing month" },
-            ]}
-          />
-        }
       />
       <FinanceSubNav />
 
@@ -117,8 +94,22 @@ export default function AdminFinanceLedgerPage() {
       {loading ? (
         <Skeleton className="h-64 rounded-2xl" />
       ) : (
-        <AdminTable
+        <AdminTableSection
           data={charges}
+          summaryItems={summaryItems}
+          entityLabel="charge"
+          exportConfig={{
+            filename: "finance-ledger.csv",
+            columns: [
+              { key: "courseName", label: "Course" },
+              { key: "batchName", label: "Batch" },
+              { key: "sessionNumber", label: "Session" },
+              { key: "scheduledDate", label: "Date" },
+              { key: "amountLkr", label: "Amount (LKR)" },
+              { key: "status", label: "Status" },
+              { key: "billingMonth", label: "Billing month" },
+            ],
+          }}
           emptyMessage="No charges match these filters"
           columns={[
             { key: "courseName", label: "Course" },

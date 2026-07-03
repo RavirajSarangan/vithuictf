@@ -3,14 +3,19 @@
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import { bulkDeleteExamPaperBatches } from "@/lib/actions/bulk-delete";
+import { examPaperBatchTableSummary, genericTableSummary } from "@/lib/table-insights";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdminExamPaperBatches, usePaperCentersList } from "@/hooks/use-exam-papers";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { deleteExamPaperBatch } from "@/lib/actions/exam-papers";
-import { FileText, Loader2, Trash2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import { toast } from "sonner";
 
 function formatDate(value: string) {
@@ -30,7 +35,8 @@ export default function AdminExamPapersPage() {
   const [staffFilter, setStaffFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const filtered = useMemo(() => {
     return batches.filter((batch) => {
@@ -41,18 +47,28 @@ export default function AdminExamPapersPage() {
     });
   }, [batches, centerFilter, staffFilter, yearFilter]);
 
-  const handleDelete = async (batchId: string) => {
-    if (!confirm("Delete this batch and all uploaded papers?")) return;
-    setDeletingId(batchId);
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeleteExamPaperBatches, "batch", refresh);
+  const summaryItems = useMemo(() => examPaperBatchTableSummary(filtered), [filtered]);
+
+  const expandedBatch = filtered.find((b) => b.id === expandedId);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setDeleting(true);
     try {
-      await deleteExamPaperBatch(batchId);
+      const result = await deleteExamPaperBatch(deleteTargetId);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
       refresh();
       toast.success("Batch deleted");
-      if (expandedId === batchId) setExpandedId(null);
+      if (expandedId === deleteTargetId) setExpandedId(null);
+      setDeleteTargetId(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Delete failed");
+      toast.error(getActionErrorMessage(error, "Delete failed"));
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   };
 
@@ -96,77 +112,103 @@ export default function AdminExamPapersPage() {
         />
       ) : (
         <div className="space-y-4">
-          {filtered.map((batch) => {
-            const expanded = expandedId === batch.id;
-            return (
-              <div key={batch.id} className="rounded-lg border">
-                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium text-icvf-navy">{batch.centerName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {batch.staffName} · {batch.place} · {formatDate(batch.createdAt)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {batch.paperCount} paper{batch.paperCount === 1 ? "" : "s"}
-                      {batch.examYear ? ` · ${batch.examYear}` : ""}
-                      {batch.medium ? ` · ${batch.medium}` : ""}
-                      {batch.examType ? ` · ${batch.examType.toUpperCase()}` : ""}
-                    </p>
-                    {batch.notes && <p className="mt-1 text-sm">{batch.notes}</p>}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={() => setExpandedId(expanded ? null : batch.id)}>
-                      {expanded ? "Hide papers" : "View papers"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void handleDelete(batch.id)}
-                      disabled={deletingId === batch.id}
-                    >
-                      {deletingId === batch.id ? (
-                        <Loader2 className="mr-1 size-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="mr-1 size-4" />
-                      )}
-                      Delete
-                    </Button>
-                  </div>
-                </div>
+          <AdminTableSection
+            columns={[
+              { key: "centerName", label: "Center" },
+              { key: "staffName", label: "Staff" },
+              { key: "place", label: "Place" },
+              {
+                key: "createdAt",
+                label: "Uploaded",
+                render: (row) => formatDate(row.createdAt),
+              },
+              {
+                key: "paperCount",
+                label: "Papers",
+                render: (row) => {
+                  const parts = [`${row.paperCount}`];
+                  if (row.examYear) parts.push(String(row.examYear));
+                  if (row.medium) parts.push(row.medium);
+                  if (row.examType) parts.push(row.examType.toUpperCase());
+                  return parts.join(" · ");
+                },
+              },
+              {
+                key: "id",
+                label: "Actions",
+                render: (row) => (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
+                  >
+                    {expandedId === row.id ? "Hide papers" : "View papers"}
+                  </Button>
+                ),
+              },
+            ]}
+            data={filtered}
+            summaryItems={summaryItems}
+            entityLabel="batch"
+            onBulkDelete={handleBulkDelete}
+            deleteWarning="This will delete the batch and all uploaded papers."
+            onDelete={setDeleteTargetId}
+            onActionComplete={refresh}
+          />
 
-                {expanded && (
-                  <div className="border-t p-4">
-                    <AdminTable
-                      columns={[
-                        { key: "studentName", label: "Student" },
-                        { key: "studentIndex", label: "Index", render: (row) => row.studentIndex || "—" },
-                        { key: "fileName", label: "File" },
-                        { key: "fileSize", label: "Size", render: (row) => formatBytes(row.fileSize) },
-                        {
-                          key: "id",
-                          label: "Download",
-                          render: (row) => (
-                            <a
-                              href={`/api/admin/exam-papers/${row.id}/download`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-muted"
-                            >
-                              Download
-                            </a>
-                          ),
-                        },
-                      ]}
-                      data={batch.submissions}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {expandedBatch && (
+            <div className="rounded-lg border p-4">
+              <p className="mb-3 text-sm font-medium text-icvf-navy">
+                {expandedBatch.centerName} — {expandedBatch.staffName}
+                {expandedBatch.notes ? ` · ${expandedBatch.notes}` : ""}
+              </p>
+              <AdminTableSection
+                columns={[
+                  { key: "studentName", label: "Student" },
+                  { key: "studentIndex", label: "Index", render: (row) => row.studentIndex || "—" },
+                  { key: "fileName", label: "File" },
+                  { key: "fileSize", label: "Size", render: (row) => formatBytes(row.fileSize) },
+                  {
+                    key: "id",
+                    label: "Download",
+                    render: (row) => (
+                      <a
+                        href={`/api/admin/exam-papers/${row.id}/download`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-muted"
+                      >
+                        Download
+                      </a>
+                    ),
+                  },
+                ]}
+                data={expandedBatch.submissions}
+                summaryItems={genericTableSummary(expandedBatch.submissions, "Papers")}
+                entityLabel="paper"
+                exportConfig={{
+                  columns: [
+                    { key: "studentName", label: "Student" },
+                    { key: "studentIndex", label: "Index" },
+                    { key: "fileName", label: "File" },
+                  ],
+                  filename: "exam-papers.csv",
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
+
+      <DeleteConfirmDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+        entityLabel="batch"
+        warning="This will delete the batch and all uploaded papers."
+        deleting={deleting}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

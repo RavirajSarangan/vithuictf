@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Select,
   SelectContent,
@@ -85,7 +86,7 @@ export function BulkIssueWizard({ onComplete }: BulkIssueWizardProps) {
       if (!result.ok) throw new Error(result.error);
       setPreviewUrl(result.dataUrl);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Preview failed");
+      toast.error(getActionErrorMessage(e, "Preview failed"));
     } finally {
       setPreviewLoading(false);
     }
@@ -123,7 +124,7 @@ export function BulkIssueWizard({ onComplete }: BulkIssueWizardProps) {
         totalFailed += result.failedCount;
       } catch (e) {
         totalFailed += chunk.length;
-        toast.error(e instanceof Error ? e.message : "Batch generation failed");
+        toast.error(getActionErrorMessage(e, "Batch generation failed"));
       }
       setProgress({ done: Math.min(i + chunk.length, validRows.length), total: validRows.length, failed: totalFailed });
     }

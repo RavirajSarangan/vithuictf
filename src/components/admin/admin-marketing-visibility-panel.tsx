@@ -16,6 +16,7 @@ import { Eye, EyeOff, ExternalLink, Loader2, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import type { SitePublicMode } from "@/types";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const SITE_MODE_OPTIONS: {
   value: SitePublicMode;
   label: string;
@@ -89,7 +90,7 @@ export function AdminMarketingVisibilityPanel() {
       router.refresh();
       toast.success("Site visibility updated");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save");
+      toast.error(getActionErrorMessage(error, "Failed to save"));
     } finally {
       setSaving(false);
     }
@@ -105,7 +106,7 @@ export function AdminMarketingVisibilityPanel() {
       router.refresh();
       toast.success("Maintenance ended — site is live");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to end maintenance");
+      toast.error(getActionErrorMessage(error, "Failed to end maintenance"));
     } finally {
       setSaving(false);
     }

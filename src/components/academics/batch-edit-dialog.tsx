@@ -7,7 +7,7 @@ import { z } from "zod";
 import { updateBatchSchedule } from "@/lib/actions/academics";
 import { CLASS_DAYS } from "@/lib/academics/constants";
 import { SchedulePreview } from "@/components/academics/schedule-preview";
-import { scheduleSummary } from "@/lib/academics/schedule";
+import { deriveEndDateFromCount, scheduleSummary } from "@/lib/academics/schedule";
 import type { CourseBatch } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,10 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const editBatchSchema = z.object({
   name: z.string().min(2, "Batch name is required"),
   startDate: z.string().min(1),
-  endDate: z.string().min(1),
+  totalClasses: z.number().min(1, "At least 1 class").max(52, "Too many classes"),
   startTime: z.string().min(1),
   endTime: z.string().min(1),
   classDays: z.array(z.string()).min(1, "Select at least one day"),
@@ -49,7 +50,7 @@ export function BatchEditDialog({
     defaultValues: {
       name: batch.name,
       startDate: batch.startDate,
-      endDate: batch.endDate,
+      totalClasses: batch.totalClasses,
       startTime: batch.startTime.slice(0, 5),
       endTime: batch.endTime.slice(0, 5),
       classDays: batch.classDays,
@@ -61,12 +62,19 @@ export function BatchEditDialog({
   const classDays = watched.classDays;
 
   const preview = useMemo(() => {
-    if (!watched.startDate || !watched.endDate || !watched.classDays.length) {
+    if (!watched.startDate || !watched.totalClasses || !watched.classDays.length) {
       return { totalClasses: 0, firstDate: null, lastDate: null };
     }
+    // Derive the end date from start date + class count, then summarize.
+    const endDate = deriveEndDateFromCount({
+      startDate: watched.startDate,
+      classDays: watched.classDays,
+      totalClasses: watched.totalClasses,
+    });
+    if (!endDate) return { totalClasses: 0, firstDate: null, lastDate: null };
     return scheduleSummary({
       startDate: watched.startDate,
-      endDate: watched.endDate,
+      endDate,
       startTime: watched.startTime,
       endTime: watched.endTime,
       classDays: watched.classDays,
@@ -78,7 +86,7 @@ export function BatchEditDialog({
       form.reset({
         name: batch.name,
         startDate: batch.startDate,
-        endDate: batch.endDate,
+        totalClasses: batch.totalClasses,
         startTime: batch.startTime.slice(0, 5),
         endTime: batch.endTime.slice(0, 5),
         classDays: batch.classDays,
@@ -89,13 +97,18 @@ export function BatchEditDialog({
 
   const onSubmit = async (values: EditBatchValues) => {
     if (preview.totalClasses === 0) {
-      toast.error("No class days in the selected date range");
+      toast.error("Select at least one class day");
       return;
     }
     try {
       const syncResult = await updateBatchSchedule(batch.id, {
-        ...values,
-        totalClasses: preview.totalClasses,
+        name: values.name,
+        startDate: values.startDate,
+        startTime: values.startTime,
+        endTime: values.endTime,
+        classDays: values.classDays,
+        totalClasses: values.totalClasses,
+        zoomLink: values.zoomLink,
       });
       onSaved();
       onOpenChange(false);
@@ -109,7 +122,7 @@ export function BatchEditDialog({
         toast.success("Batch updated");
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+      toast.error(getActionErrorMessage(e, "Update failed"));
     }
   };
 
@@ -159,12 +172,18 @@ export function BatchEditDialog({
               />
               <FormField
                 control={form.control}
-                name="endDate"
+                name="totalClasses"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End date</FormLabel>
+                    <FormLabel>Number of classes</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={52}
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -227,7 +246,7 @@ export function BatchEditDialog({
             </FormItem>
             <SchedulePreview
               startDate={watched.startDate}
-              endDate={watched.endDate}
+              endDate={preview.lastDate ?? watched.startDate}
               startTime={watched.startTime}
               endTime={watched.endTime}
               classDays={classDays}

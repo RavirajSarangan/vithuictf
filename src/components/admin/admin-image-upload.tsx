@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { validateRasterImageFile } from "@/lib/images/validate-raster-image";
 import { BLOG_COVER_HEIGHT, BLOG_COVER_WIDTH, RASTER_IMAGE_ACCEPT } from "@/lib/images/admin-image-constants";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   checkStorageUrl,
   isStorageUrl,
@@ -105,7 +106,7 @@ export function AdminImageUpload({
       onChange(normalized);
       toast.success("Image uploaded");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      toast.error(getActionErrorMessage(error, "Upload failed"));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

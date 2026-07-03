@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 export default function AdminNotificationsPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -33,7 +34,7 @@ export default function AdminNotificationsPage() {
       setTitle("");
       setBody("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Broadcast failed");
+      toast.error(getActionErrorMessage(e, "Broadcast failed"));
     } finally {
       setSubmitting(false);
     }
@@ -62,7 +63,7 @@ export default function AdminNotificationsPage() {
       setTitle("");
       setBody("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Broadcast failed");
+      toast.error(getActionErrorMessage(e, "Broadcast failed"));
     } finally {
       setSubmitting(false);
     }

@@ -12,6 +12,7 @@ import { StudentFinderCombobox } from "@/components/academics/student-finder-com
 import { useEnrollmentOverview, useBatches } from "@/hooks/use-academics";
 import { useAdminCourses } from "@/hooks/use-data";
 import { enrollStudentsInCourse } from "@/lib/actions/academics";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   filterStudentsWithEnrollments,
   sortStudents,
@@ -85,7 +86,7 @@ export default function AcademicsEnrollmentsPage() {
       setQuickBatchByCourse({});
       refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Enrollment failed");
+      toast.error(getActionErrorMessage(e, "Enrollment failed"));
     } finally {
       setEnrolling(false);
     }
@@ -97,8 +98,8 @@ export default function AcademicsEnrollmentsPage() {
         title="Enrollments"
         description="Search students, manage multi-course enrollment, and review pending registrations"
         action={
-          <Button variant="outline" render={<Link href="/academics/batches" />}>
-            Manage batches
+          <Button variant="outline" render={<Link href="/admin/courses" />}>
+            Manage courses
           </Button>
         }
       />

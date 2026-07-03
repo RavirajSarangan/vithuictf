@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { safeRevalidatePath } from "@/lib/safe-revalidate";
 
 /** Student-facing routes that should refresh after admin content mutations. */
 export function revalidateStudentPortalPaths() {
@@ -16,22 +16,14 @@ export function revalidateStudentPortalPaths() {
   ] as const;
 
   for (const path of paths) {
-    try {
-      revalidatePath(path);
-    } catch {
-      // Cache refresh must not fail the mutation that triggered it.
-    }
+    safeRevalidatePath(path);
   }
 }
 
 /** Admin course catalog mutations. */
 export function revalidateCoursePaths() {
-  try {
-    revalidatePath("/admin/courses");
-    revalidatePath("/");
-  } catch {
-    // Ignore revalidation failures.
-  }
+  safeRevalidatePath("/admin/courses");
+  safeRevalidatePath("/");
   revalidateStudentPortalPaths();
 }
 
@@ -51,21 +43,21 @@ export function revalidateMarketingPaths() {
   ] as const;
 
   for (const path of paths) {
-    revalidatePath(path);
+    safeRevalidatePath(path);
   }
 }
 
 /** Blog listing and post detail pages. */
 export function revalidateBlogPaths(slugs: string[] = []) {
-  revalidatePath("/blog");
+  safeRevalidatePath("/blog");
   for (const slug of slugs) {
-    revalidatePath(`/blog/${slug}`);
+    safeRevalidatePath(`/blog/${slug}`);
   }
 }
 
 export function revalidateSitePublicPaths() {
   revalidateMarketingPaths();
-  revalidatePath("/admin/home");
-  revalidatePath("/parent");
-  revalidatePath("/verify");
+  safeRevalidatePath("/admin/home");
+  safeRevalidatePath("/parent");
+  safeRevalidatePath("/verify");
 }

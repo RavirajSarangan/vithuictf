@@ -15,6 +15,7 @@ import { EMAIL_PATTERN, isLoginErrorCode } from "@/lib/auth/login-errors";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const SOCIAL_TRACKING_REDIRECT = "/staff/tracking";
 const loginInputClassName = authFieldClassName;
 
@@ -58,7 +59,7 @@ export function ContentTeamLoginForm() {
         } as const;
         toast.error(t(keyMap[err.message]));
       } else {
-        toast.error(err instanceof Error ? err.message : t("auth.loginFailed"));
+        toast.error(getActionErrorMessage(err, t("auth.loginFailed")));
       }
     } finally {
       setLoading(false);

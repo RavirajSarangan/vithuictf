@@ -1,5 +1,6 @@
 "use server";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 import { createClient } from "@/lib/supabase/server";
 import { sendContactInquiryNotification } from "@/lib/actions/email";
 import { contactInquirySchema } from "@/lib/validation/contact-inquiry";
@@ -38,9 +39,10 @@ export async function submitContactInquiry(
     await assertRateLimit(`contact:ip:${ipKey}`, 5, 60 * 60);
     await assertRateLimit(`contact:email:${normalizedEmail}`, 5, 60 * 60);
   } catch (err) {
-    const rateMessage =
-      err instanceof Error ? err.message : "Too many messages. Please try again later.";
-    return { success: false, message: rateMessage };
+    return {
+      success: false,
+      message: getActionErrorMessage(err, "Too many messages. Please try again later."),
+    };
   }
 
   const supabase = await createClient();

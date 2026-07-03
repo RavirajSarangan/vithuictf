@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, RotateCcw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   resetCertificateTemplateToDefault,
   uploadCertificateTemplate,
@@ -37,7 +38,7 @@ export function CertificateTemplatePanel({ template, onUpdated }: CertificateTem
       toast.success("Template uploaded and activated");
       onUpdated();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Upload failed");
+      toast.error(getActionErrorMessage(e, "Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -51,7 +52,7 @@ export function CertificateTemplatePanel({ template, onUpdated }: CertificateTem
       toast.success("Reset to default ICTF template");
       onUpdated();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Reset failed");
+      toast.error(getActionErrorMessage(e, "Reset failed"));
     } finally {
       setResetting(false);
     }

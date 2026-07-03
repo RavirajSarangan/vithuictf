@@ -167,7 +167,9 @@ export function StudentOnboarding() {
               {course && (
                 <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                   {course.category && <p>Category: {course.category}</p>}
-                  {course.durationMonths && <p>Duration: {course.durationMonths} months</p>}
+                  {course.durationMonths && (
+                    <p>Duration: {course.durationMonths} {course.durationMonths === 1 ? "month" : "months"}</p>
+                  )}
                   {course.teacherName && <p>Lead teacher: {course.teacherName}</p>}
                   {course.description && <p className="pt-1">{course.description}</p>}
                 </div>

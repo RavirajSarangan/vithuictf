@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { sendBulkCertificateEmails } from "@/lib/actions/certificates";
 import type { CertificateBatch } from "@/types";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 interface CertificateBatchListProps {
   batches: CertificateBatch[];
   onRefresh: () => void;
@@ -27,7 +28,7 @@ export function CertificateBatchList({ batches, onRefresh }: CertificateBatchLis
       toast.success(`Sent ${result.sent} email${result.sent === 1 ? "" : "s"}${result.failed ? ` · ${result.failed} failed` : ""}`);
       onRefresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to send emails");
+      toast.error(getActionErrorMessage(e, "Failed to send emails"));
     } finally {
       setSendingId(null);
     }

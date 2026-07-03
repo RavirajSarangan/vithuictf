@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   mapClassProgram,
   mapCourse,
+  mergeCourseSchedules,
   mapFaq,
   mapFeaturedRanking,
   mapHomeAbout,
@@ -34,7 +35,17 @@ export function useCourses() {
     if (marketing) return;
 
     const supabase = createClient();
-    supabase.from("courses").select("*").then(({ data: rows }) => setData((rows ?? []).map(mapCourse)));
+    Promise.all([
+      supabase
+        .from("courses")
+        .select("*")
+        .eq("show_on_home", true)
+        .order("sort_order")
+        .order("name"),
+      supabase.from("course_schedule_summaries").select("*"),
+    ]).then(([{ data: rows }, { data: schedules }]) =>
+      setData(mergeCourseSchedules((rows ?? []).map(mapCourse), schedules))
+    );
   }, [marketing]);
 
   return marketing?.courses ?? data;

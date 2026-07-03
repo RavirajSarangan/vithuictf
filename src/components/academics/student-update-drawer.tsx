@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   approveStudentRegistration,
   rejectStudentRegistration,
@@ -89,7 +90,7 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
       toast.success("Student updated");
       onUpdated?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+      toast.error(getActionErrorMessage(e, "Update failed"));
     } finally {
       setSubmitting(false);
     }
@@ -102,7 +103,7 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
       toast.success("Registration approved and student enrolled");
       onUpdated?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Approval failed");
+      toast.error(getActionErrorMessage(e, "Approval failed"));
     }
   };
 
@@ -113,7 +114,7 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
       toast.success("Registration rejected");
       onUpdated?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Rejection failed");
+      toast.error(getActionErrorMessage(e, "Rejection failed"));
     }
   };
 
@@ -125,7 +126,7 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
       if (result.emailSent) toast.success("Welcome email resent");
       else toast.warning(result.error ?? "Email not sent");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      toast.error(getActionErrorMessage(e, "Failed"));
     } finally {
       setResending(false);
     }
@@ -258,7 +259,7 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
                         toast.success(student.active === false ? "Student enabled" : "Student disabled");
                         onUpdated?.();
                       } catch (e) {
-                        toast.error(e instanceof Error ? e.message : "Failed");
+                        toast.error(getActionErrorMessage(e, "Failed"));
                       }
                     }}
                   >

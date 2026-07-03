@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   enrollStudentInCourses,
   removeStudentFromBatch,
@@ -78,7 +79,7 @@ export function StudentEnrollmentPanel({ student, onUpdated }: Props) {
       setBatchByCourse({});
       onUpdated?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Enrollment failed");
+      toast.error(getActionErrorMessage(e, "Enrollment failed"));
     } finally {
       setSubmitting(false);
     }
@@ -95,7 +96,7 @@ export function StudentEnrollmentPanel({ student, onUpdated }: Props) {
       toast.success("Student transferred");
       onUpdated?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Transfer failed");
+      toast.error(getActionErrorMessage(e, "Transfer failed"));
     }
   };
 
@@ -122,7 +123,7 @@ export function StudentEnrollmentPanel({ student, onUpdated }: Props) {
                     </p>
                     <p className="mt-1 text-xs">
                       Batch:{" "}
-                      <Link href={`/academics/batches/${e.batch.id}`} className="underline">
+                      <Link href={`/academics/courses/${e.courseId}`} className="underline">
                         {e.batch.name}
                       </Link>{" "}
                       ({e.batch.batchCode})
@@ -148,7 +149,7 @@ export function StudentEnrollmentPanel({ student, onUpdated }: Props) {
                           toast.success("Primary course updated");
                           onUpdated?.();
                         } catch (err) {
-                          toast.error(err instanceof Error ? err.message : "Failed");
+                          toast.error(getActionErrorMessage(err, "Failed"));
                         }
                       }}
                     >
@@ -165,7 +166,7 @@ export function StudentEnrollmentPanel({ student, onUpdated }: Props) {
                         toast.success(e.active ? "Enrollment deactivated" : "Enrollment activated");
                         onUpdated?.();
                       } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Failed");
+                        toast.error(getActionErrorMessage(err, "Failed"));
                       }
                     }}
                   >
@@ -182,7 +183,7 @@ export function StudentEnrollmentPanel({ student, onUpdated }: Props) {
                           toast.success("Removed from batch");
                           onUpdated?.();
                         } catch (err) {
-                          toast.error(err instanceof Error ? err.message : "Failed");
+                          toast.error(getActionErrorMessage(err, "Failed"));
                         }
                       }}
                     >

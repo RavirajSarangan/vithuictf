@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { addPayment } from "@/lib/actions/admin";
 import { useAdminPayments, useAdminStudents } from "@/hooks/use-data";
 import { AdminPaymentSettingsPanel } from "@/components/admin/admin-payment-settings";
-import { ExportCsvButton } from "@/components/admin/export-csv-button";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import {
+  paymentTableSummary,
+  paymentSelectionInsights,
+} from "@/lib/table-insights";
 import { useAuth } from "@/providers/auth-provider";
-import { AdminTable } from "@/components/admin/admin-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,6 +24,7 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const paymentSchema = z.object({
   studentId: z.string().min(1, "Select a student"),
   amount: z.number().min(1, "Amount must be positive"),
@@ -36,6 +40,8 @@ export default function AdminPaymentsPage() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const summaryItems = useMemo(() => paymentTableSummary(data), [data]);
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
@@ -63,7 +69,7 @@ export default function AdminPaymentsPage() {
       form.reset();
       toast.success("Payment recorded");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to record payment");
+      toast.error(getActionErrorMessage(e, "Failed to record payment"));
     } finally {
       setSubmitting(false);
     }
@@ -77,22 +83,9 @@ export default function AdminPaymentsPage() {
         title="Payment records"
         description="Track institute fees and payments recorded manually or via Stripe"
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <ExportCsvButton
-              rows={data}
-              filename="icvf-payments.csv"
-              columns={[
-                { key: "studentName", label: "Student" },
-                { key: "amount", label: "Amount" },
-                { key: "status", label: "Status" },
-                { key: "method", label: "Method" },
-                { key: "date", label: "Date" },
-              ]}
-            />
-            <Button  onClick={() => setOpen(true)}>
-              <Plus className="mr-2 size-4" /> Record Payment
-            </Button>
-          </div>
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="mr-2 size-4" /> Record Payment
+          </Button>
         }
       />
 
@@ -109,7 +102,7 @@ export default function AdminPaymentsPage() {
           
         />
       ) : (
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "studentName", label: "Student" },
             {
@@ -138,6 +131,19 @@ export default function AdminPaymentsPage() {
             { key: "date", label: "Date" },
           ]}
           data={data}
+          summaryItems={summaryItems}
+          getSelectionInsights={paymentSelectionInsights}
+          entityLabel="payment"
+          exportConfig={{
+            columns: [
+              { key: "studentName", label: "Student" },
+              { key: "amount", label: "Amount" },
+              { key: "status", label: "Status" },
+              { key: "method", label: "Method" },
+              { key: "date", label: "Date" },
+            ],
+            filename: "icvf-payments.csv",
+          }}
         />
       )}
 

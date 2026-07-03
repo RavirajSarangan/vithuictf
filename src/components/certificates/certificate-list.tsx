@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Copy,
   Download,
@@ -73,7 +74,7 @@ export function CertificateList({ certificates, onRefresh }: CertificateListProp
       toast.success(`Email sent to ${cert.recipientEmail}`);
       onRefresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to send email");
+      toast.error(getActionErrorMessage(e, "Failed to send email"));
     } finally {
       setSendingId(null);
     }

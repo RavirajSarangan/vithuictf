@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { runDataAction, type DataActionResult } from "@/lib/actions/action-result";
+import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { mapStudent } from "@/lib/supabase/mappers";
 import { sendProfilePhotoWhatsApp } from "@/lib/actions/whatsapp";
@@ -26,7 +27,7 @@ function normalizeSocialLinks(links: StudentSocialLinks): StudentSocialLinks {
   return normalized;
 }
 
-export async function uploadStudentPhoto(formData: FormData): Promise<string> {
+async function uploadStudentPhotoImpl(formData: FormData): Promise<string> {
   const userId = await requireStudentUserId();
   const file = formData.get("file");
 
@@ -94,11 +95,17 @@ export async function uploadStudentPhoto(formData: FormData): Promise<string> {
   return photoUrl;
 }
 
-export async function updateStudentProfileCard(data: {
+export async function uploadStudentPhoto(
+  formData: FormData
+): Promise<DataActionResult<string>> {
+  return runDataAction(() => uploadStudentPhotoImpl(formData), "Upload failed");
+}
+
+async function updateStudentProfileCardImpl(data: {
   bio: string;
   socialLinks: StudentSocialLinks;
   cardPublic: boolean;
-}) {
+}): Promise<{ ok: true }> {
   const userId = await requireStudentUserId();
   const supabase = await createClient();
 
@@ -115,6 +122,14 @@ export async function updateStudentProfileCard(data: {
 
   revalidatePath("/profile-card");
   return { ok: true as const };
+}
+
+export async function updateStudentProfileCard(data: {
+  bio: string;
+  socialLinks: StudentSocialLinks;
+  cardPublic: boolean;
+}): Promise<DataActionResult<{ ok: true }>> {
+  return runDataAction(() => updateStudentProfileCardImpl(data), "Failed to save");
 }
 
 export async function getPublicStudentCard(studentId: string): Promise<FlipCardData | null> {

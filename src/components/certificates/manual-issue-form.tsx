@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { issueManualCertificate, previewCertificateImage } from "@/lib/actions/certificates";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 interface ManualIssueFormProps {
   onComplete: () => void;
 }
@@ -44,7 +45,7 @@ export function ManualIssueForm({ onComplete }: ManualIssueFormProps) {
       setPreviewUrl(result.dataUrl);
       setPreviewKey((k) => k + 1);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Preview failed");
+      toast.error(getActionErrorMessage(e, "Preview failed"));
     } finally {
       setPreviewLoading(false);
     }
@@ -74,7 +75,7 @@ export function ManualIssueForm({ onComplete }: ManualIssueFormProps) {
       setPreviewUrl(null);
       onComplete();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to issue certificate");
+      toast.error(getActionErrorMessage(e, "Failed to issue certificate"));
     } finally {
       setSubmitting(false);
     }

@@ -1,3 +1,4 @@
+import { getActionFailureMessage } from "@/lib/actions/action-result";
 import { getWhatsAppConfig } from "@/lib/whatsapp/config";
 import { normalizeSriLankaWhatsApp } from "@/lib/validation/sri-lanka-phone";
 
@@ -80,7 +81,7 @@ export async function sendWhatsAppTemplate(
       messageId: payload.messages?.[0]?.id,
     };
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "WhatsApp request failed";
+    const detail = getActionFailureMessage(error, "WhatsApp request failed");
     console.error("[whatsapp] Send error:", detail);
     return { whatsappSent: false, error: detail };
   }

@@ -16,6 +16,7 @@ import type {
   CourseBatch,
   Exam,
   FAQ,
+  IctfTeamMember,
   LeaderboardEntry,
   Notification,
   Parent,
@@ -138,6 +139,52 @@ export function mapCourse(row: Database["public"]["Tables"]["courses"]["Row"]): 
     durationMonths: row.duration_months ?? undefined,
     slug: row.slug ?? undefined,
     coverImageUrl: row.cover_image_url || undefined,
+    showOnHome: row.show_on_home ?? true,
+    sortOrder: row.sort_order ?? 0,
+  };
+}
+
+export type CourseScheduleSummaryRow =
+  Database["public"]["Views"]["course_schedule_summaries"]["Row"];
+
+/** Attaches auto-derived class-day info (from active batches) onto mapped courses. */
+export function mergeCourseSchedules(
+  courses: Course[],
+  summaries: CourseScheduleSummaryRow[] | null | undefined
+): Course[] {
+  if (!summaries?.length) return courses;
+  const byCourseId = new Map(summaries.map((s) => [s.course_id, s]));
+  return courses.map((course) => {
+    const summary = byCourseId.get(course.id);
+    if (!summary) return course;
+    return {
+      ...course,
+      classDaysPerWeek: summary.class_days_per_week,
+      classDays: summary.class_days,
+    };
+  });
+}
+
+export function mapIctfTeamMember(
+  row: Database["public"]["Tables"]["ictf_team_members"]["Row"]
+): IctfTeamMember {
+  return {
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    bio: row.bio,
+    photoUrl: row.photo_url,
+    facebookUrl: row.facebook_url,
+    instagramUrl: row.instagram_url,
+    linkedinUrl: row.linkedin_url,
+    youtubeUrl: row.youtube_url,
+    whatsapp: row.whatsapp,
+    email: row.email,
+    dateOfBirth: row.date_of_birth ?? "",
+    lastBirthdayWishSent: row.last_birthday_wish_sent ?? "",
+    isLead: row.is_lead,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
   };
 }
 

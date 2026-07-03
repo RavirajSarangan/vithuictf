@@ -13,7 +13,7 @@ import type { User, UserRole } from "@/types";
 import type { RegisterStudentInput } from "@/lib/validation/register-student";
 import { createClient } from "@/lib/supabase/client";
 import { mapProfile } from "@/lib/supabase/mappers";
-import { loginInstituteStaff, registerStudentAccount, resolveStudentLoginEmail, assertLoginRateLimit } from "@/lib/actions/auth";
+import { loginInstituteStaff, loginStudentPortal, registerStudentAccount, assertLoginRateLimit } from "@/lib/actions/auth";
 import { EMAIL_PATTERN, LOGIN_ERROR } from "@/lib/auth/login-errors";
 import { getComingSoonPath } from "@/lib/portal-access";
 
@@ -340,18 +340,31 @@ export function AuthProvider({
 
   const signInWithStudentId = useCallback(
     async (studentId: string, password: string): Promise<User> => {
-      const email = await resolveStudentLoginEmail(studentId);
-      const signedIn = await signIn(email, password);
-      if (signedIn.role !== "student") {
-        const supabase = createClient();
-        await supabase.auth.signOut();
-        applyUser(null);
-        throw new Error(LOGIN_ERROR.STUDENT_ID_ONLY);
+      const result = await loginStudentPortal(studentId, password);
+      if (!result.ok) {
+        throw new Error(result.code ?? result.error);
       }
 
-      return signedIn;
+      const supabase = createClient();
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      if (!authUser) throw new Error("Sign in failed");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", authUser.id)
+        .single();
+
+      if (!profile) throw new Error("Profile not found");
+
+      const mapped = mapProfile(profile);
+      applyUser(mapped);
+      setInitialized(true);
+      return mapped;
     },
-    [signIn, applyUser]
+    [applyUser]
   );
 
   const signUp = useCallback(async (input: RegisterStudentInput) => {

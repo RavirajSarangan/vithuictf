@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { addCourse, deleteCourse, updateCourse, uploadCourseImage } from "@/lib/actions/admin";
+import {
+  addCourse,
+  deleteCourse,
+  moveCourseOrder,
+  setCourseHomeVisibility,
+  updateCourse,
+  uploadCourseImage,
+} from "@/lib/actions/admin";
+import { createClient } from "@/lib/supabase/client";
+import { CLASS_DAYS } from "@/lib/academics/constants";
+import { bulkDeleteCourses } from "@/lib/actions/bulk-delete";
 import { useAdminCourses } from "@/hooks/use-data";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import { courseTableSummary, courseSelectionInsights } from "@/lib/table-insights";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { CourseThumbnail } from "@/components/courses/course-card";
 import { PageHeader } from "@/components/shared/page-header";
@@ -18,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +41,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BookOpen, Loader2, Pencil, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, Loader2, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { Course, CourseLevel } from "@/types";
 
@@ -36,7 +49,10 @@ const courseSchema = z.object({
   name: z.string().min(3, "Course name is required"),
   category: z.string().min(2, "Category is required"),
   description: z.string().min(10, "Description is required"),
-  durationMonths: z.number().min(1).max(36),
+  durationMonths: z
+    .number({ message: "Duration is required" })
+    .min(1, "Duration is required")
+    .max(36, "Duration must be 36 months or less"),
   level: z.enum(["OL", "AL", "University", "Professional"]),
   teacherName: z.string().min(2, "Staff name is required"),
   coverImageUrl: z.union([z.string().url(), z.literal("")]).optional(),
@@ -53,12 +69,167 @@ const CATEGORIES = [
   "Emerging Technologies",
 ];
 
+const DAY_LABELS = new Map<string, string>(CLASS_DAYS.map((day) => [day.id, day.label]));
+const DAY_ORDER = new Map<string, number>(CLASS_DAYS.map((day, index) => [day.id, index]));
+
+function formatClassDays(days: string[]): string {
+  return [...days]
+    .sort((a, b) => (DAY_ORDER.get(a) ?? 99) - (DAY_ORDER.get(b) ?? 99))
+    .map((day) => DAY_LABELS.get(day) ?? day)
+    .join(", ");
+}
+
+type CourseSchedule = { classDaysPerWeek: number; classDays: string[] };
+
 export default function AdminCoursesPage() {
   const { data, refresh } = useAdminCourses();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [schedules, setSchedules] = useState<Map<string, CourseSchedule>>(new Map());
+  const [reordering, setReordering] = useState(false);
+
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeleteCourses, "course", refresh);
+  const summaryItems = useMemo(() => courseTableSummary(data), [data]);
+
+  const sortedCourses = useMemo(
+    () => [...data].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)),
+    [data]
+  );
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("course_schedule_summaries")
+      .select("*")
+      .then(({ data: rows }) => {
+        setSchedules(
+          new Map(
+            (rows ?? []).map((row) => [
+              row.course_id,
+              { classDaysPerWeek: row.class_days_per_week, classDays: row.class_days },
+            ])
+          )
+        );
+      });
+  }, [data]);
+
+  const handleVisibilityToggle = async (course: Course, show: boolean) => {
+    const result = await setCourseHomeVisibility(course.id, show);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success(show ? `${course.name} shown on home page` : `${course.name} hidden from home page`);
+    refresh();
+  };
+
+  const handleMove = async (course: Course, direction: "up" | "down") => {
+    setReordering(true);
+    try {
+      const result = await moveCourseOrder(course.id, direction);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      refresh();
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const courseColumns = useMemo(
+    () => [
+      {
+        key: "coverImageUrl",
+        label: "",
+        render: (row: Course) => (
+          <CourseThumbnail title={row.name} coverImageUrl={row.coverImageUrl} className="size-10" />
+        ),
+      },
+      { key: "name", label: "Name", linkTo: (row: Course) => `/academics/courses/${row.id}` },
+      {
+        key: "category",
+        label: "Category",
+        render: (row: Course) => (
+          <Badge variant="outline">{row.category ?? "—"}</Badge>
+        ),
+      },
+      {
+        key: "durationMonths",
+        label: "Duration",
+        render: (row: Course) =>
+          row.durationMonths ? `${row.durationMonths} ${row.durationMonths === 1 ? "Month" : "Months"}` : "—",
+      },
+      {
+        key: "classDays",
+        label: "Class days",
+        render: (row: Course) => {
+          const schedule = schedules.get(row.id);
+          if (!schedule || schedule.classDaysPerWeek === 0) {
+            return <span className="text-muted-foreground">—</span>;
+          }
+          return (
+            <div className="flex flex-col">
+              <span>
+                {schedule.classDaysPerWeek} {schedule.classDaysPerWeek === 1 ? "day" : "days"}/week
+              </span>
+              <span className="text-xs text-muted-foreground">{formatClassDays(schedule.classDays)}</span>
+            </div>
+          );
+        },
+      },
+      { key: "teacherName", label: "Staff" },
+      { key: "studentCount", label: "Students" },
+      {
+        key: "showOnHome",
+        label: "Home",
+        render: (row: Course) => (
+          <span onClick={(e) => e.stopPropagation()}>
+            <Switch
+              checked={row.showOnHome}
+              onCheckedChange={(checked) => handleVisibilityToggle(row, checked)}
+              aria-label={`Show ${row.name} on home page`}
+            />
+          </span>
+        ),
+      },
+      {
+        key: "sortOrder",
+        label: "Order",
+        render: (row: Course) => {
+          const index = sortedCourses.findIndex((course) => course.id === row.id);
+          return (
+            <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                disabled={reordering || index <= 0}
+                onClick={() => handleMove(row, "up")}
+                aria-label={`Move ${row.name} up`}
+              >
+                <ArrowUp className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                disabled={reordering || index === sortedCourses.length - 1}
+                onClick={() => handleMove(row, "down")}
+                aria-label={`Move ${row.name} down`}
+              >
+                <ArrowDown className="size-3.5" />
+              </Button>
+            </span>
+          );
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [schedules, sortedCourses, reordering]
+  );
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
@@ -180,36 +351,18 @@ export default function AdminCoursesPage() {
           
         />
       ) : (
-        <AdminTable
-          columns={[
-            {
-              key: "coverImageUrl",
-              label: "",
-              render: (row) => (
-                <CourseThumbnail title={row.name} coverImageUrl={row.coverImageUrl} className="size-10" />
-              ),
-            },
-            { key: "name", label: "Name" },
-            {
-              key: "category",
-              label: "Category",
-              render: (row) => (
-                <Badge variant="outline" >
-                  {row.category ?? "—"}
-                </Badge>
-              ),
-            },
-            {
-              key: "durationMonths",
-              label: "Duration",
-              render: (row) => (row.durationMonths ? `${row.durationMonths} Months` : "—"),
-            },
-            { key: "teacherName", label: "Staff" },
-            { key: "studentCount", label: "Students" },
-          ]}
-          data={data}
+        <AdminTableSection
+          data={sortedCourses}
+          columns={courseColumns}
+          summaryItems={summaryItems}
+          getSelectionInsights={courseSelectionInsights}
+          entityLabel="course"
+          onBulkDelete={handleBulkDelete}
+          deleteWarning="Related batches, enrollments, and resources may also be removed."
           onDelete={(id) => setDeleteTarget(data.find((course) => course.id === id) ?? null)}
           onView={(row) => openEdit(row)}
+          rowHref={(row) => `/academics/courses/${row.id}`}
+          onActionComplete={refresh}
         />
       )}
 

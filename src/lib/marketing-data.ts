@@ -8,6 +8,7 @@ import {
   mapFaq,
   mapFeaturedRanking,
   mapHomeAbout,
+  mapIctfTeamMember,
   mapMarketingAnnouncement,
   mapNetworkStats,
   mapPaperCenter,
@@ -15,6 +16,7 @@ import {
   mapPassPaperItem,
   mapSiteStats,
   mapSuccessStory,
+  mergeCourseSchedules,
 } from "@/lib/supabase/mappers";
 import type {
   ClassProgram,
@@ -23,6 +25,7 @@ import type {
   FAQ,
   FeaturedRanking,
   HomeAbout,
+  IctfTeamMember,
   MarketingAnnouncement,
   NetworkStats,
   PaperCenter,
@@ -75,6 +78,7 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
     faqsRes,
     classProgramsRes,
     coursesRes,
+    courseSchedulesRes,
     companiesRes,
     platformSettingsRes,
   ] = await Promise.all([
@@ -86,7 +90,8 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
     supabase.from("success_stories").select("*"),
     supabase.from("faqs").select("*").order("sort_order"),
     supabase.from("class_programs").select("*").order("sort_order"),
-    supabase.from("courses").select("*"),
+    supabase.from("courses").select("*").eq("show_on_home", true).order("sort_order").order("name"),
+    supabase.from("course_schedule_summaries").select("*"),
     supabase.from("companies").select("*").order("sort_order"),
     supabase.from("platform_settings").select("marketing_coming_soon_enabled").eq("id", 1).maybeSingle(),
   ]);
@@ -100,7 +105,10 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
     successStories: (successStoriesRes.data ?? []).map(mapSuccessStory),
     faqs: (faqsRes.data ?? []).map(mapFaq),
     classPrograms: (classProgramsRes.data ?? []).map(mapClassProgram),
-    courses: (coursesRes.data ?? []).map(mapCourse),
+    courses: mergeCourseSchedules(
+      (coursesRes.data ?? []).map(mapCourse),
+      courseSchedulesRes.data
+    ),
     companies: (companiesRes.data ?? []).map(mapCompany),
     marketingComingSoonEnabled:
       platformSettingsRes.data?.marketing_coming_soon_enabled ?? false,
@@ -142,6 +150,33 @@ async function getPaperCentersOnlyUncached(): Promise<PaperCenter[]> {
 
 /** Lightweight fetch for SEO location / paper-center pages. */
 export const getPaperCentersOnly = cache(getPaperCentersOnlyUncached);
+
+async function getIctfTeamMembersUncached(): Promise<IctfTeamMember[]> {
+  try {
+    const result = await Promise.race([
+      (async () => {
+        const supabase = createPublicClient();
+        const { data, error } = await supabase
+          .from("ictf_team_members")
+          .select("*")
+          .order("sort_order")
+          .order("name");
+        if (error) throw error;
+        return (data ?? []).map(mapIctfTeamMember);
+      })(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("ictf team data timeout")), FETCH_TIMEOUT_MS);
+      }),
+    ]);
+    return result;
+  } catch (error) {
+    console.error("getIctfTeamMembers failed:", error);
+    return [];
+  }
+}
+
+/** Public ICTF Team member profiles for the marketing team page. */
+export const getIctfTeamMembers = cache(getIctfTeamMembersUncached);
 
 async function getHomeAboutOnlyUncached(): Promise<HomeAbout | null> {
   try {

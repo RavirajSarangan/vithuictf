@@ -36,10 +36,10 @@ export function DashboardAcademicsPanel({ stats, loading }: DashboardAcademicsPa
 
   const cards = [
     {
-      title: "Active batches",
+      title: "Active courses",
       value: stats.activeBatches,
-      hint: "Manage course batches",
-      href: "/academics/batches",
+      hint: "Manage course schedules",
+      href: "/admin/courses",
       icon: Layers,
     },
     {

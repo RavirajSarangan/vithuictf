@@ -73,6 +73,40 @@ export function buildSessionSchedule(input: BatchScheduleInput): PlannedSession[
   return sessions;
 }
 
+/**
+ * Walk forward from `startDate` over the selected `classDays` and return the
+ * date (YYYY-MM-DD) of the Nth class. This is the inverse of the range-based
+ * scheduler: callers supply a start date + class count and we derive the end
+ * date so the rest of the engine (which is range-based) keeps working unchanged.
+ *
+ * Returns null when no class days are selected or the count is non-positive.
+ */
+export function deriveEndDateFromCount(input: {
+  startDate: string;
+  classDays: string[];
+  totalClasses: number;
+}): string | null {
+  const classDays = new Set(input.classDays.map((d) => d.toLowerCase()));
+  if (classDays.size === 0 || input.totalClasses <= 0) return null;
+
+  const cursor = parseDateOnly(input.startDate);
+  // Safety cap so an unreachable schedule can never loop forever.
+  const hardStop = parseDateOnly(input.startDate);
+  hardStop.setFullYear(hardStop.getFullYear() + 2);
+
+  let matched = 0;
+  while (cursor <= hardStop) {
+    const dayKey = WEEKDAY_KEYS[cursor.getDay()];
+    if (classDays.has(dayKey)) {
+      matched += 1;
+      if (matched >= input.totalClasses) return formatDateOnly(cursor);
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return null;
+}
+
 export function computeTotalClasses(input: BatchScheduleInput): number {
   const inRange = countClassDaysInRange(input);
   if (inRange === 0) return 0;

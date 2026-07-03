@@ -1,6 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import {
+  getActionFailureMessage,
+  runDataAction,
+  type DataActionResult,
+} from "@/lib/actions/action-result";
+import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { logAdminAction } from "@/lib/audit";
 import { requireAdmin, requireTrackingStaff } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -100,7 +105,7 @@ async function initializeFollowerMetricsForWeek(
   });
 }
 
-export async function getOrCreateWeek(weekStart?: string): Promise<SocialTrackingWeek> {
+async function getOrCreateWeekImpl(weekStart?: string): Promise<SocialTrackingWeek> {
   const profile = await requireTrackingStaff();
   const supabase = await createClient();
   const start = weekStart ?? getMondayOfWeek();
@@ -133,7 +138,13 @@ export async function getOrCreateWeek(weekStart?: string): Promise<SocialTrackin
   return mapSocialTrackingWeek(created);
 }
 
-export async function listReferenceData(): Promise<{
+export async function getOrCreateWeek(
+  weekStart?: string
+): Promise<DataActionResult<SocialTrackingWeek>> {
+  return runDataAction(() => getOrCreateWeekImpl(weekStart), "Failed to load tracking week");
+}
+
+async function listReferenceDataImpl(): Promise<{
   platforms: SocialPlatform[];
   contentTypes: SocialContentType[];
   liveSyncPlatforms: LiveSyncPlatformSlug[];
@@ -154,7 +165,17 @@ export async function listReferenceData(): Promise<{
   };
 }
 
-export async function getContentEntries(weekId: string): Promise<SocialContentEntry[]> {
+export async function listReferenceData(): Promise<
+  DataActionResult<{
+    platforms: SocialPlatform[];
+    contentTypes: SocialContentType[];
+    liveSyncPlatforms: LiveSyncPlatformSlug[];
+  }>
+> {
+  return runDataAction(() => listReferenceDataImpl(), "Failed to load tracking reference data");
+}
+
+async function getContentEntriesImpl(weekId: string): Promise<SocialContentEntry[]> {
   await requireTrackingStaff();
   const supabase = await createClient();
 
@@ -167,7 +188,13 @@ export async function getContentEntries(weekId: string): Promise<SocialContentEn
   return (data ?? []).map(mapSocialContentEntry);
 }
 
-export async function getFollowerMetrics(weekId: string): Promise<SocialFollowerMetric[]> {
+export async function getContentEntries(
+  weekId: string
+): Promise<DataActionResult<SocialContentEntry[]>> {
+  return runDataAction(() => getContentEntriesImpl(weekId), "Failed to load content entries");
+}
+
+async function getFollowerMetricsImpl(weekId: string): Promise<SocialFollowerMetric[]> {
   await requireTrackingStaff();
   const supabase = await createClient();
 
@@ -202,7 +229,13 @@ export async function getFollowerMetrics(weekId: string): Promise<SocialFollower
   });
 }
 
-export async function updateContentEntry(input: {
+export async function getFollowerMetrics(
+  weekId: string
+): Promise<DataActionResult<SocialFollowerMetric[]>> {
+  return runDataAction(() => getFollowerMetricsImpl(weekId), "Failed to load follower metrics");
+}
+
+async function updateContentEntryImpl(input: {
   weekId: string;
   contentTypeId: string;
   dayOfWeek: number;
@@ -242,13 +275,22 @@ export async function updateContentEntry(input: {
   return mapSocialContentEntry(data);
 }
 
+export async function updateContentEntry(input: {
+  weekId: string;
+  contentTypeId: string;
+  dayOfWeek: number;
+  postCount: number;
+}): Promise<DataActionResult<SocialContentEntry>> {
+  return runDataAction(() => updateContentEntryImpl(input), "Failed to update content entry");
+}
+
 /** @deprecated Use updateContentEntry with postCount instead */
 export async function toggleContentEntry(input: {
   weekId: string;
   contentTypeId: string;
   dayOfWeek: number;
   posted: boolean;
-}): Promise<SocialContentEntry> {
+}): Promise<DataActionResult<SocialContentEntry>> {
   return updateContentEntry({
     weekId: input.weekId,
     contentTypeId: input.contentTypeId,
@@ -257,7 +299,7 @@ export async function toggleContentEntry(input: {
   });
 }
 
-export async function updateFollowerMetric(input: {
+async function updateFollowerMetricImpl(input: {
   weekId: string;
   platformId: string;
   previousCount: number;
@@ -301,6 +343,16 @@ export async function updateFollowerMetric(input: {
   return mapSocialFollowerMetric(data);
 }
 
+export async function updateFollowerMetric(input: {
+  weekId: string;
+  platformId: string;
+  previousCount: number;
+  currentCount: number;
+  performance?: SocialPerformance | null;
+}): Promise<DataActionResult<SocialFollowerMetric>> {
+  return runDataAction(() => updateFollowerMetricImpl(input), "Failed to update follower metric");
+}
+
 async function syncPlatformFollowerCount(
   weekId: string,
   platformSlug: string,
@@ -330,7 +382,7 @@ async function syncPlatformFollowerCount(
   const liveCount = await fetchLiveCount();
   const previousCount = existing?.current_count ?? existing?.previous_count ?? liveCount;
 
-  const result = await updateFollowerMetric({
+  const result = await updateFollowerMetricImpl({
     weekId,
     platformId: platform.id,
     previousCount,
@@ -347,7 +399,7 @@ async function syncPlatformFollowerCount(
   return result;
 }
 
-export async function syncYouTubeFollowerCount(weekId: string): Promise<SocialFollowerMetric> {
+async function syncYouTubeFollowerCountImpl(weekId: string): Promise<SocialFollowerMetric> {
   const { fetchYouTubeSubscriberCount } = await import("@/lib/youtube-api");
   const result = await syncPlatformFollowerCount(
     weekId,
@@ -359,7 +411,13 @@ export async function syncYouTubeFollowerCount(weekId: string): Promise<SocialFo
   return result;
 }
 
-export async function syncFacebookFollowerCount(weekId: string): Promise<SocialFollowerMetric> {
+export async function syncYouTubeFollowerCount(
+  weekId: string
+): Promise<DataActionResult<SocialFollowerMetric>> {
+  return runDataAction(() => syncYouTubeFollowerCountImpl(weekId), "YouTube follower sync failed");
+}
+
+async function syncFacebookFollowerCountImpl(weekId: string): Promise<SocialFollowerMetric> {
   const { fetchFacebookPageFollowerCount } = await import("@/lib/facebook-api");
   const result = await syncPlatformFollowerCount(
     weekId,
@@ -371,7 +429,16 @@ export async function syncFacebookFollowerCount(weekId: string): Promise<SocialF
   return result;
 }
 
-export async function syncLinkedInFollowerCount(weekId: string): Promise<SocialFollowerMetric> {
+export async function syncFacebookFollowerCount(
+  weekId: string
+): Promise<DataActionResult<SocialFollowerMetric>> {
+  return runDataAction(
+    () => syncFacebookFollowerCountImpl(weekId),
+    "Facebook follower sync failed"
+  );
+}
+
+async function syncLinkedInFollowerCountImpl(weekId: string): Promise<SocialFollowerMetric> {
   const { fetchLinkedInFollowerCount } = await import("@/lib/linkedin-api");
   const result = await syncPlatformFollowerCount(
     weekId,
@@ -383,32 +450,60 @@ export async function syncLinkedInFollowerCount(weekId: string): Promise<SocialF
   return result;
 }
 
-export async function syncLiveFollowerCounts(weekId: string): Promise<SocialFollowerMetric[]> {
+export async function syncLinkedInFollowerCount(
+  weekId: string
+): Promise<DataActionResult<SocialFollowerMetric>> {
+  return runDataAction(
+    () => syncLinkedInFollowerCountImpl(weekId),
+    "LinkedIn follower sync failed"
+  );
+}
+
+async function syncLiveFollowerCountsImpl(weekId: string): Promise<SocialFollowerMetric[]> {
   await requireTrackingStaff();
 
   const configured = await getConfiguredLiveSyncPlatforms();
   const syncTasks: Array<Promise<SocialFollowerMetric>> = [];
 
   if (configured.includes("youtube")) {
-    syncTasks.push(syncYouTubeFollowerCount(weekId));
+    syncTasks.push(syncYouTubeFollowerCountImpl(weekId));
   }
   if (configured.includes("facebook")) {
-    syncTasks.push(syncFacebookFollowerCount(weekId));
+    syncTasks.push(syncFacebookFollowerCountImpl(weekId));
   }
   if (configured.includes("linkedin")) {
-    syncTasks.push(syncLinkedInFollowerCount(weekId));
+    syncTasks.push(syncLinkedInFollowerCountImpl(weekId));
   }
 
   if (syncTasks.length === 0) return [];
 
   const results = await Promise.allSettled(syncTasks);
 
-  return results
+  const updated = results
     .filter((r): r is PromiseFulfilledResult<SocialFollowerMetric> => r.status === "fulfilled")
     .map((r) => r.value);
+
+  const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+  if (failures.length > 0) {
+    const messages = failures.map((r) =>
+      getActionFailureMessage(r.reason, "Live follower sync failed")
+    );
+    if (updated.length === 0) {
+      throw new Error(messages.join(" · "));
+    }
+    console.error("Live follower sync partial failure:", messages.join(" · "));
+  }
+
+  return updated;
 }
 
-export async function deleteTrackingWeek(weekId: string): Promise<void> {
+export async function syncLiveFollowerCounts(
+  weekId: string
+): Promise<DataActionResult<SocialFollowerMetric[]>> {
+  return runDataAction(() => syncLiveFollowerCountsImpl(weekId), "Live follower sync failed");
+}
+
+async function deleteTrackingWeekImpl(weekId: string): Promise<void> {
   await requireAdmin();
   const supabase = await createClient();
 
@@ -419,7 +514,11 @@ export async function deleteTrackingWeek(weekId: string): Promise<void> {
   revalidateTracking();
 }
 
-export async function getFollowerHistory(limitWeeks = 12): Promise<FollowerHistoryPoint[]> {
+export async function deleteTrackingWeek(weekId: string): Promise<DataActionResult<void>> {
+  return runDataAction(() => deleteTrackingWeekImpl(weekId), "Failed to delete tracking week");
+}
+
+async function getFollowerHistoryImpl(limitWeeks = 12): Promise<FollowerHistoryPoint[]> {
   await requireTrackingStaff();
   const supabase = await createClient();
 
@@ -454,7 +553,13 @@ export async function getFollowerHistory(limitWeeks = 12): Promise<FollowerHisto
   });
 }
 
-export async function exportTrackingWeekCsv(weekStart: string): Promise<string> {
+export async function getFollowerHistory(
+  limitWeeks = 12
+): Promise<DataActionResult<FollowerHistoryPoint[]>> {
+  return runDataAction(() => getFollowerHistoryImpl(limitWeeks), "Failed to load follower history");
+}
+
+async function exportTrackingWeekCsvImpl(weekStart: string): Promise<string> {
   await requireAdmin();
   const supabase = await createClient();
 
@@ -513,4 +618,10 @@ export async function exportTrackingWeekCsv(weekStart: string): Promise<string> 
   }
 
   return lines.join("\n");
+}
+
+export async function exportTrackingWeekCsv(
+  weekStart: string
+): Promise<DataActionResult<string>> {
+  return runDataAction(() => exportTrackingWeekCsvImpl(weekStart), "Export failed");
 }

@@ -7,6 +7,12 @@ import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin
 import { requireStaff, requireAdmin, requireSuperAdmin, signUpWithRole, getSessionProfile } from "@/lib/actions/auth";
 import { logAdminAction } from "@/lib/audit";
 import { sendStaffWelcomeEmail, sendStudentWelcomeEmail } from "@/lib/actions/email";
+import { sendEmail } from "@/lib/email/send";
+import {
+  buildTeamMessageEmailHtml,
+  buildTeamMessageEmailSubject,
+  buildTeamMessageEmailText,
+} from "@/lib/email/templates/team-message";
 import { sendStudentWelcomeWhatsApp } from "@/lib/actions/whatsapp";
 import { getAppUrl } from "@/lib/email/resend";
 import { BRAND } from "@/lib/constants";
@@ -369,6 +375,9 @@ export async function addCourse(data: {
   coverImageUrl?: string;
 }): Promise<ActionResult> {
   try {
+    if (!data.durationMonths || data.durationMonths < 1) {
+      return actionFailure(new Error("Duration is required"), "Duration is required");
+    }
     const profile = await requireStaff();
     const supabase = await getStaffCourseWriteClient(profile);
     const slug =
@@ -377,6 +386,13 @@ export async function addCourse(data: {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
+
+    const { data: maxRow } = await supabase
+      .from("courses")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     const { error } = await supabase.from("courses").insert({
       name: data.name,
@@ -388,6 +404,8 @@ export async function addCourse(data: {
       student_count: 0,
       slug,
       cover_image_url: data.coverImageUrl?.trim() ?? "",
+      show_on_home: true,
+      sort_order: (maxRow?.sort_order ?? 0) + 1,
     });
     if (error) return actionFailure(error, "Failed to add course");
     revalidateCoursePaths();
@@ -410,6 +428,9 @@ export async function updateCourse(
   }
 ): Promise<ActionResult> {
   try {
+    if (!data.durationMonths || data.durationMonths < 1) {
+      return actionFailure(new Error("Duration is required"), "Duration is required");
+    }
     const profile = await requireStaff();
     const supabase = await getStaffCourseWriteClient(profile);
     const { error } = await supabase
@@ -429,6 +450,63 @@ export async function updateCourse(
     return actionSuccess();
   } catch (error) {
     return actionFailure(error, "Failed to update course");
+  }
+}
+
+export async function setCourseHomeVisibility(id: string, show: boolean): Promise<ActionResult> {
+  try {
+    const profile = await requireStaff();
+    const supabase = await getStaffCourseWriteClient(profile);
+    const { error } = await supabase.from("courses").update({ show_on_home: show }).eq("id", id);
+    if (error) return actionFailure(error, "Failed to update visibility");
+    revalidateCoursePaths();
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Failed to update visibility");
+  }
+}
+
+export async function moveCourseOrder(id: string, direction: "up" | "down"): Promise<ActionResult> {
+  try {
+    const profile = await requireStaff();
+    const supabase = await getStaffCourseWriteClient(profile);
+
+    const { data: courses, error: listError } = await supabase
+      .from("courses")
+      .select("id, sort_order")
+      .order("sort_order")
+      .order("name");
+    if (listError) return actionFailure(listError, "Failed to reorder course");
+
+    const list = courses ?? [];
+    const index = list.findIndex((course) => course.id === id);
+    if (index === -1) return actionFailure(new Error("Course not found"), "Course not found");
+
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= list.length) return actionSuccess();
+
+    const current = list[index]!;
+    const neighbor = list[swapIndex]!;
+    // Normalize in case of duplicate sort_order values (e.g. legacy rows at 0).
+    const currentOrder =
+      current.sort_order === neighbor.sort_order ? neighbor.sort_order + 1 : current.sort_order;
+
+    const { error: neighborError } = await supabase
+      .from("courses")
+      .update({ sort_order: currentOrder })
+      .eq("id", neighbor.id);
+    if (neighborError) return actionFailure(neighborError, "Failed to reorder course");
+
+    const { error: currentError } = await supabase
+      .from("courses")
+      .update({ sort_order: neighbor.sort_order })
+      .eq("id", current.id);
+    if (currentError) return actionFailure(currentError, "Failed to reorder course");
+
+    revalidateCoursePaths();
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Failed to reorder course");
   }
 }
 
@@ -1395,6 +1473,191 @@ export async function uploadCourseImage(formData: FormData): Promise<string> {
   }
 
   const path = `courses/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+
+  const { uploadAdminStorageObject } = await import("@/lib/storage/upload-admin-object");
+  return uploadAdminStorageObject(path, buffer, uploadContentType);
+}
+
+// --- ICTF Team members (super admin only) ---
+
+export type IctfTeamMemberInput = {
+  name: string;
+  role: string;
+  bio?: string;
+  photoUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  linkedinUrl?: string;
+  youtubeUrl?: string;
+  whatsapp?: string;
+  email?: string;
+  dateOfBirth?: string;
+  isLead?: boolean;
+  sortOrder?: number;
+};
+
+function ictfTeamMemberRow(data: IctfTeamMemberInput) {
+  return {
+    name: data.name.trim(),
+    role: data.role.trim(),
+    bio: data.bio?.trim() ?? "",
+    photo_url: data.photoUrl?.trim() ?? "",
+    facebook_url: data.facebookUrl?.trim() ?? "",
+    instagram_url: data.instagramUrl?.trim() ?? "",
+    linkedin_url: data.linkedinUrl?.trim() ?? "",
+    youtube_url: data.youtubeUrl?.trim() ?? "",
+    whatsapp: data.whatsapp?.trim() ?? "",
+    email: data.email?.trim() ?? "",
+    date_of_birth: data.dateOfBirth?.trim() || null,
+    is_lead: data.isLead ?? false,
+    sort_order: data.sortOrder ?? 0,
+  };
+}
+
+function revalidateIctfTeamPaths() {
+  revalidatePath("/ictf-team");
+  revalidatePath("/admin/ictf-team");
+}
+
+export async function addIctfTeamMember(data: IctfTeamMemberInput): Promise<ActionResult> {
+  try {
+    await requireSuperAdmin();
+    const supabase = await createClient();
+    const { error } = await supabase.from("ictf_team_members").insert(ictfTeamMemberRow(data));
+    if (error) return actionFailure(error, "Failed to add team member");
+    revalidateIctfTeamPaths();
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Failed to add team member");
+  }
+}
+
+export async function updateIctfTeamMember(
+  id: string,
+  data: IctfTeamMemberInput
+): Promise<ActionResult> {
+  try {
+    await requireSuperAdmin();
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("ictf_team_members")
+      .update(ictfTeamMemberRow(data))
+      .eq("id", id);
+    if (error) return actionFailure(error, "Failed to update team member");
+    revalidateIctfTeamPaths();
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Failed to update team member");
+  }
+}
+
+export async function deleteIctfTeamMember(id: string): Promise<ActionResult> {
+  try {
+    await requireSuperAdmin();
+    const supabase = await createClient();
+    const { error } = await supabase.from("ictf_team_members").delete().eq("id", id);
+    if (error) return actionFailure(error, "Delete failed");
+    revalidateIctfTeamPaths();
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Delete failed");
+  }
+}
+
+export async function sendIctfTeamMemberEmail(
+  memberId: string,
+  subject: string,
+  message: string
+): Promise<ActionResult> {
+  try {
+    await requireSuperAdmin();
+    const trimmedSubject = subject.trim();
+    const trimmedMessage = message.trim();
+    if (!trimmedSubject || !trimmedMessage) {
+      return actionFailure(null, "Subject and message are required");
+    }
+
+    const supabase = await createClient();
+    const { data: member, error } = await supabase
+      .from("ictf_team_members")
+      .select("name, email")
+      .eq("id", memberId)
+      .single();
+    if (error || !member) return actionFailure(error, "Team member not found");
+    if (!member.email) return actionFailure(null, "This team member has no email address");
+
+    const emailData = { name: member.name, subject: trimmedSubject, message: trimmedMessage };
+    const result = await sendEmail({
+      to: member.email,
+      subject: buildTeamMessageEmailSubject(emailData),
+      html: buildTeamMessageEmailHtml(emailData),
+      text: buildTeamMessageEmailText(emailData),
+    });
+    if (!result.emailSent) return actionFailure(null, result.error ?? "Failed to send email");
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Failed to send email");
+  }
+}
+
+export async function uploadIctfTeamImage(formData: FormData): Promise<string> {
+  await requireSuperAdmin();
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("No file provided");
+  }
+
+  const { COURSE_IMAGE_ACCEPT, resolveImageContentType } = await import(
+    "@/lib/images/admin-image-constants"
+  );
+  const contentType = resolveImageContentType(file) || file.type;
+  const allowedTypes = new Set(COURSE_IMAGE_ACCEPT.split(",").map((t) => t.trim()));
+  if (!allowedTypes.has(contentType)) {
+    throw new Error("Upload a JPEG, PNG, WebP, SVG, or GIF image");
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("Image must be 10 MB or smaller");
+  }
+
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+
+  if (contentType !== "image/svg+xml" && contentType !== "image/gif") {
+    const sharp = (await import("sharp")).default;
+    const metadata = await sharp(inputBuffer).metadata();
+    const width = metadata.width ?? 0;
+    const height = metadata.height ?? 0;
+    if (width <= 0 || height <= 0) {
+      throw new Error("Could not read image dimensions");
+    }
+    const ratio = width / height;
+    if (Math.abs(ratio - 1) > 0.02) {
+      throw new Error(`Team photo must be square (1:1). Uploaded image is ${width}×${height}px.`);
+    }
+  }
+
+  const { prepareRasterBufferUpload } = await import("@/lib/images/process-raster-upload");
+
+  let buffer: Buffer;
+  let uploadContentType: string;
+  let ext: string;
+
+  if (contentType === "image/svg+xml") {
+    buffer = inputBuffer;
+    uploadContentType = contentType;
+    ext = "svg";
+  } else {
+    const processed = await prepareRasterBufferUpload(
+      inputBuffer,
+      contentType,
+      contentType === "image/gif" ? "general" : "square"
+    );
+    buffer = processed.buffer;
+    uploadContentType = processed.contentType;
+    ext = processed.ext;
+  }
+
+  const path = `ictf-team/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
   const { uploadAdminStorageObject } = await import("@/lib/storage/upload-admin-object");
   return uploadAdminStorageObject(path, buffer, uploadContentType);

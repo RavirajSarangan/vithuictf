@@ -16,7 +16,12 @@ import {
   updatePassPaperFolder,
   updatePassPaperItem,
 } from "@/lib/actions/pass-papers";
+import { bulkDeletePassPaperItems } from "@/lib/actions/bulk-delete";
 import { buildPassPaperUrl, getDriveLinkKind, isFolderDescendant } from "@/lib/pass-papers-utils";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import { passPaperItemTableSummary, genericSelectionInsights } from "@/lib/table-insights";
 import { PassPaperFolderTree } from "@/components/pass-papers/pass-paper-folder-tree";
 import { PassPaperFolderBreadcrumbs } from "@/components/pass-papers/pass-paper-folder-breadcrumbs";
 import {
@@ -26,13 +31,13 @@ import {
   parseLinkFormValues,
   type PassPaperLinkFormValues,
 } from "@/components/pass-papers/pass-paper-link-form";
+import { PassPaperUploadForm } from "@/components/pass-papers/pass-paper-upload-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { AdminTable } from "@/components/admin/admin-table";
 import { Badge } from "@/components/ui/badge";
 import type { PassPaperFolder, PassPaperItem, PassPaperLayout } from "@/types";
 import { PASS_PAPER_ICON_KEYS } from "@/lib/pass-papers/icon-map";
@@ -100,6 +105,11 @@ export default function AdminPassPapersPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [linkFormKey, setLinkFormKey] = useState(0);
   const [creatingTemplate, setCreatingTemplate] = useState<"al" | "ol" | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeletePassPaperItems, "link", refreshItems);
+  const itemSummaryItems = useMemo(() => passPaperItemTableSummary(items), [items]);
 
   const alRoot = folders.find((f) => f.slug === "a-l-past-papers" && !f.parentId);
   const olRoot = folders.find((f) => f.slug === "o-l-past-papers" && !f.parentId);
@@ -131,62 +141,62 @@ export default function AdminPassPapersPage() {
   const saveFolderDraft = async (nextDraft: FolderDraft) => {
     if (!selected) return;
     setSaving(true);
-    try {
-      await updatePassPaperFolder(selected.id, {
-        title: nextDraft.title,
-        description: nextDraft.description,
-        iconKey: nextDraft.iconKey,
-        accentColor: nextDraft.accentColor,
-        layout: nextDraft.layout,
-        published: nextDraft.published,
-        parentId: nextDraft.parentId,
-      });
-      patchFolder(selected.id, {
-        ...nextDraft,
-        parentId: nextDraft.parentId,
-      });
-      refresh();
-      toast.success("Folder saved");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+    const result = await updatePassPaperFolder(selected.id, {
+      title: nextDraft.title,
+      description: nextDraft.description,
+      iconKey: nextDraft.iconKey,
+      accentColor: nextDraft.accentColor,
+      layout: nextDraft.layout,
+      published: nextDraft.published,
+      parentId: nextDraft.parentId,
+    });
+    if (!result.ok) {
+      toast.error(result.error);
       setDraft(folderToDraft(selected));
-    } finally {
       setSaving(false);
+      return;
     }
+    patchFolder(selected.id, {
+      ...nextDraft,
+      parentId: nextDraft.parentId,
+    });
+    refresh();
+    toast.success("Folder saved");
+    setSaving(false);
   };
 
   const handleCreateExamTemplate = async (examType: "al" | "ol") => {
     setCreatingTemplate(examType);
-    try {
-      const result = await ensurePassPaperExamTemplate(examType);
-      refresh();
-      setSelectedId(result.rootId);
-      toast.success(
-        `${examType === "al" ? "A/L" : "O/L"} template created${
-          result.createdFolders > 0 ? ` (${result.createdFolders} folders)` : ""
-        }`
-      );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Template creation failed");
-    } finally {
+    const result = await ensurePassPaperExamTemplate(examType);
+    if (!result.ok) {
+      toast.error(result.error);
       setCreatingTemplate(null);
+      return;
     }
+    refresh();
+    setSelectedId(result.data.rootId);
+    toast.success(
+      `${examType === "al" ? "A/L" : "O/L"} template created${
+        result.data.createdFolders > 0 ? ` (${result.data.createdFolders} folders)` : ""
+      }`
+    );
+    setCreatingTemplate(null);
   };
 
   const handleCreateFolder = async (parentId: string | null) => {
     if (!newFolderTitle.trim()) return;
-    try {
-      const result = await createPassPaperFolder({
-        parentId,
-        title: newFolderTitle.trim(),
-      });
-      setNewFolderTitle("");
-      refresh();
-      setSelectedId(result.id);
-      toast.success(parentId ? "Subfolder created" : "Root folder created");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Create failed");
+    const result = await createPassPaperFolder({
+      parentId,
+      title: newFolderTitle.trim(),
+    });
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
     }
+    setNewFolderTitle("");
+    refresh();
+    setSelectedId(result.data.id);
+    toast.success(parentId ? "Subfolder created" : "Root folder created");
   };
 
   const handleDeleteFolder = async (folder?: PassPaperFolder) => {
@@ -194,16 +204,16 @@ export default function AdminPassPapersPage() {
     if (!target) return;
     if (!confirm(`Delete "${target.title}" and all nested folders and links?`)) return;
     const parentId = target.parentId;
-    try {
-      await deletePassPaperFolder(target.id);
-      if (selectedId === target.id) {
-        setSelectedId(parentId);
-      }
-      refresh();
-      toast.success("Folder deleted");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+    const result = await deletePassPaperFolder(target.id);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
     }
+    if (selectedId === target.id) {
+      setSelectedId(parentId);
+    }
+    refresh();
+    toast.success("Folder deleted");
   };
 
   const handleCopyPublicUrl = async (folder: PassPaperFolder) => {
@@ -219,90 +229,107 @@ export default function AdminPassPapersPage() {
 
   const handlePublishSubtree = async (published: boolean) => {
     if (!selected) return;
-    try {
-      const result = await publishPassPaperSubtreeComplete(selected.id, published);
-      refresh();
-      refreshItems();
-      toast.success(
-        `${published ? "Published" : "Unpublished"} ${result.foldersUpdated} folder${result.foldersUpdated === 1 ? "" : "s"} and ${result.itemsUpdated} paper link${result.itemsUpdated === 1 ? "" : "s"}`
-      );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+    const result = await publishPassPaperSubtreeComplete(selected.id, published);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
     }
+    refresh();
+    refreshItems();
+    toast.success(
+      `${published ? "Published" : "Unpublished"} ${result.data.foldersUpdated} folder${result.data.foldersUpdated === 1 ? "" : "s"} and ${result.data.itemsUpdated} paper link${result.data.itemsUpdated === 1 ? "" : "s"}`
+    );
   };
 
   const handlePublishAllLinks = async (published: boolean) => {
     if (!selected) return;
-    try {
-      await publishPassPaperItemsInFolder(selected.id, published);
-      refreshItems();
-      toast.success(published ? "All links in folder published" : "All links in folder unpublished");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+    const result = await publishPassPaperItemsInFolder(selected.id, published);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
     }
+    refreshItems();
+    toast.success(published ? "All links in folder published" : "All links in folder unpublished");
   };
 
   const handleAddLink = async (values: PassPaperLinkFormValues) => {
     if (!selected) return;
     setLinkSubmitting(true);
-    try {
-      const parsed = parseLinkFormValues(values, publishOnAdd);
-      await createPassPaperItem({
-        folderId: selected.id,
-        ...parsed,
-      });
-      refreshItems();
-      setLinkFormKey((k) => k + 1);
-      toast.success("Pass paper link added");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Add failed");
-    } finally {
+    const parsed = parseLinkFormValues(values, publishOnAdd);
+    const result = await createPassPaperItem({
+      folderId: selected.id,
+      ...parsed,
+    });
+    if (!result.ok) {
+      toast.error(result.error);
       setLinkSubmitting(false);
+      return;
     }
+    refreshItems();
+    setLinkFormKey((k) => k + 1);
+    toast.success("Pass paper link added");
+    setLinkSubmitting(false);
   };
 
   const handleEditLink = async (values: PassPaperLinkFormValues) => {
     if (!editingItem) return;
     setLinkSubmitting(true);
-    try {
-      const year = values.year.trim() ? Number(values.year) : null;
-      await updatePassPaperItem(editingItem.id, {
-        folderId: values.folderId || editingItem.folderId,
-        title: values.title.trim(),
-        driveUrl: values.driveUrl.trim(),
-        year: year && !Number.isNaN(year) ? year : null,
-        medium: values.medium || null,
-        examType: values.examType,
-        published: values.published,
-      });
-      refreshItems();
-      toast.success("Link updated");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
-    } finally {
+    const year = values.year.trim() ? Number(values.year) : null;
+    const result = await updatePassPaperItem(editingItem.id, {
+      folderId: values.folderId || editingItem.folderId,
+      title: values.title.trim(),
+      driveUrl: values.driveUrl.trim(),
+      year: year && !Number.isNaN(year) ? year : null,
+      medium: values.medium || null,
+      examType: values.examType,
+      published: values.published,
+    });
+    if (!result.ok) {
+      toast.error(result.error);
       setLinkSubmitting(false);
+      return;
+    }
+    refreshItems();
+    toast.success("Link updated");
+    setLinkSubmitting(false);
+  };
+
+  const handleConfirmDeleteItem = async () => {
+    if (!deleteTargetId) return;
+    setDeleting(true);
+    try {
+      const result = await deletePassPaperItem(deleteTargetId);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      refreshItems();
+      toast.success("Link deleted");
+      setDeleteTargetId(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
   const handleBulkYears = async (startYear: number, endYear: number) => {
     if (!selected) return;
     setBulkYearsSubmitting(true);
-    try {
-      const result = await bulkCreatePassPaperYearFolders(selected.id, startYear, endYear);
-      refresh();
-      toast.success(`Created ${result.created} year folder${result.created === 1 ? "" : "s"}`);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bulk create failed");
-    } finally {
+    const result = await bulkCreatePassPaperYearFolders(selected.id, startYear, endYear);
+    if (!result.ok) {
+      toast.error(result.error);
       setBulkYearsSubmitting(false);
+      return;
     }
+    refresh();
+    toast.success(`Created ${result.data.created} year folder${result.data.created === 1 ? "" : "s"}`);
+    setBulkYearsSubmitting(false);
   };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Pass Papers Network"
-        description="Manage folder structure, design, and Google Drive links (no uploads)"
+        description="Manage folder structure, design, Google Drive links, and direct file uploads to Drive"
       />
 
       <PassPaperDriveImportPanel
@@ -590,13 +617,18 @@ export default function AdminPassPapersPage() {
                   onSubmit={handleAddLink}
                   submitting={linkSubmitting}
                 />
-                <AdminTable
+                <PassPaperUploadForm
+                  folderId={selected.id}
+                  publishOnAdd={publishOnAdd}
+                  onUploaded={refreshItems}
+                />
+                <AdminTableSection
                   columns={[
                     { key: "title", label: "Title" },
                     {
                       key: "driveUrl",
                       label: "Type",
-                      render: (row) => (
+                      render: (row: PassPaperItem) => (
                         <Badge variant="outline">
                           {getDriveLinkKind(row.driveUrl) === "folder" ? "Folder link" : "File"}
                         </Badge>
@@ -605,7 +637,7 @@ export default function AdminPassPapersPage() {
                     {
                       key: "published",
                       label: "Status",
-                      render: (row) => (
+                      render: (row: PassPaperItem) => (
                         <Badge variant={row.published ? "default" : "outline"}>
                           {row.published ? "Published" : "Draft"}
                         </Badge>
@@ -614,7 +646,7 @@ export default function AdminPassPapersPage() {
                     {
                       key: "id",
                       label: "Actions",
-                      render: (row) => (
+                      render: (row: PassPaperItem) => (
                         <div className="flex flex-wrap gap-2">
                           <a
                             href={row.driveUrl}
@@ -640,38 +672,33 @@ export default function AdminPassPapersPage() {
                             size="sm"
                             variant="outline"
                             onClick={async () => {
-                              try {
-                                await updatePassPaperItem(row.id, { published: !row.published });
-                                refreshItems();
-                              } catch (e) {
-                                toast.error(e instanceof Error ? e.message : "Update failed");
+                              const result = await updatePassPaperItem(row.id, {
+                                published: !row.published,
+                              });
+                              if (!result.ok) {
+                                toast.error(result.error);
+                                return;
                               }
+                              refreshItems();
                             }}
                           >
                             {row.published ? "Unpublish" : "Publish"}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={async () => {
-                              if (!confirm(`Delete link "${row.title}"?`)) return;
-                              try {
-                                await deletePassPaperItem(row.id);
-                                refreshItems();
-                                toast.success("Link deleted");
-                              } catch (e) {
-                                toast.error(e instanceof Error ? e.message : "Delete failed");
-                              }
-                            }}
-                          >
-                            Delete
                           </Button>
                         </div>
                       ),
                     },
                   ]}
                   data={items}
+                  summaryItems={itemSummaryItems}
+                  getSelectionInsights={(rows) =>
+                    genericSelectionInsights(rows, (row) =>
+                      (row as PassPaperItem).published ? "Published" : "Draft"
+                    )
+                  }
+                  entityLabel="link"
+                  onBulkDelete={handleBulkDelete}
+                  onDelete={setDeleteTargetId}
+                  onActionComplete={refreshItems}
                 />
               </section>
 
@@ -700,6 +727,14 @@ export default function AdminPassPapersPage() {
         onOpenChange={setEditDialogOpen}
         onSubmit={handleEditLink}
         submitting={linkSubmitting}
+      />
+
+      <DeleteConfirmDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+        entityLabel="pass paper link"
+        deleting={deleting}
+        onConfirm={handleConfirmDeleteItem}
       />
     </div>
   );

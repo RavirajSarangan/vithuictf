@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   countPaperCenterStaffRecipients,
   sendPaperCenterStaffMessage,
@@ -86,7 +87,7 @@ export function PaperCenterStaffMessageDialog({
       setBody("");
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Send failed");
+      toast.error(getActionErrorMessage(e, "Send failed"));
     } finally {
       setSubmitting(false);
     }

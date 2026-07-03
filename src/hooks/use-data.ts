@@ -31,6 +31,7 @@ export {
   useAdminStats,
   useAdminStudents,
   useAdminCourses,
+  useAdminIctfTeam,
   useAdminTeachers,
   useAdminStaff,
   useAdminParents,

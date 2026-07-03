@@ -1,9 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { requireSuperAdmin } from "@/lib/actions/auth";
-import { actionFailure, type ActionResult } from "@/lib/actions/action-result";
+import { actionFailure, runDataAction, type ActionResult, type DataActionResult } from "@/lib/actions/action-result";
 import { isAllowedDriveHost, isFolderDescendant, getFolderDescendantIds } from "@/lib/pass-papers-utils";
 import { isGoogleDriveConfigured, type DriveSyncReport } from "@/lib/pass-papers/drive-sync-types";
 import type { PassPaperExamType, PassPaperLayout, PassPaperMedium } from "@/types";
@@ -65,7 +65,7 @@ async function assertValidParentMove(
   }
 }
 
-export async function createPassPaperFolder(data: {
+async function createPassPaperFolderImpl(data: {
   parentId?: string | null;
   title: string;
   description?: string;
@@ -102,7 +102,7 @@ export async function createPassPaperFolder(data: {
   return { id: row.id };
 }
 
-export async function updatePassPaperFolder(
+async function updatePassPaperFolderImpl(
   id: string,
   data: {
     title?: string;
@@ -140,7 +140,7 @@ export async function updatePassPaperFolder(
   revalidatePassPaperPaths();
 }
 
-export async function deletePassPaperFolder(id: string) {
+async function deletePassPaperFolderImpl(id: string) {
   await requireSuperAdmin();
   const supabase = await createClient();
   const { error } = await supabase.from("pass_paper_folders").delete().eq("id", id);
@@ -148,7 +148,7 @@ export async function deletePassPaperFolder(id: string) {
   revalidatePassPaperPaths();
 }
 
-export async function bulkCreatePassPaperYearFolders(
+async function bulkCreatePassPaperYearFoldersImpl(
   parentId: string,
   startYear: number,
   endYear: number
@@ -193,7 +193,7 @@ export async function bulkCreatePassPaperYearFolders(
   return { created };
 }
 
-export async function publishPassPaperFolderWithDescendants(
+async function publishPassPaperFolderWithDescendantsImpl(
   folderId: string,
   published: boolean
 ) {
@@ -213,7 +213,7 @@ export async function publishPassPaperFolderWithDescendants(
   return { updated: ids.length };
 }
 
-export async function publishPassPaperSubtreeComplete(folderId: string, published: boolean) {
+async function publishPassPaperSubtreeCompleteImpl(folderId: string, published: boolean) {
   await requireSuperAdmin();
   const supabase = await createClient();
   const folders = await loadAllFolders(supabase);
@@ -239,7 +239,7 @@ export async function publishPassPaperSubtreeComplete(folderId: string, publishe
   return { foldersUpdated: folderIds.length, itemsUpdated: itemRows?.length ?? 0 };
 }
 
-export async function publishPassPaperItemsInFolder(folderId: string, published: boolean) {
+async function publishPassPaperItemsInFolderImpl(folderId: string, published: boolean) {
   await requireSuperAdmin();
   const supabase = await createClient();
   const { error } = await supabase
@@ -251,7 +251,7 @@ export async function publishPassPaperItemsInFolder(folderId: string, published:
   revalidatePassPaperPaths();
 }
 
-export async function createPassPaperItem(data: {
+async function createPassPaperItemImpl(data: {
   folderId: string;
   title: string;
   driveUrl: string;
@@ -285,7 +285,7 @@ export async function createPassPaperItem(data: {
   return { id: row.id };
 }
 
-export async function updatePassPaperItem(
+async function updatePassPaperItemImpl(
   id: string,
   data: {
     folderId?: string;
@@ -315,7 +315,7 @@ export async function updatePassPaperItem(
   revalidatePassPaperPaths();
 }
 
-export async function deletePassPaperItem(id: string) {
+async function deletePassPaperItemImpl(id: string) {
   await requireSuperAdmin();
   const supabase = await createClient();
   const { error } = await supabase.from("pass_paper_items").delete().eq("id", id);
@@ -323,7 +323,7 @@ export async function deletePassPaperItem(id: string) {
   revalidatePassPaperPaths();
 }
 
-export async function ensurePassPaperExamTemplate(
+async function ensurePassPaperExamTemplateImpl(
   examType: Extract<PassPaperExamType, "al" | "ol">
 ) {
   await requireSuperAdmin();
@@ -332,6 +332,119 @@ export async function ensurePassPaperExamTemplate(
   const result = await ensurePassPaperExamTemplateInternal(supabase, examType);
   revalidatePassPaperPaths();
   return result;
+}
+
+export async function createPassPaperFolder(data: {
+  parentId?: string | null;
+  title: string;
+  description?: string;
+  iconKey?: string;
+  accentColor?: string;
+  layout?: PassPaperLayout;
+  sortOrder?: number;
+  published?: boolean;
+}): Promise<DataActionResult<{ id: string }>> {
+  return runDataAction(() => createPassPaperFolderImpl(data), "Failed to create folder");
+}
+
+export async function updatePassPaperFolder(
+  id: string,
+  data: {
+    title?: string;
+    description?: string;
+    iconKey?: string;
+    accentColor?: string;
+    layout?: PassPaperLayout;
+    sortOrder?: number;
+    published?: boolean;
+    parentId?: string | null;
+  }
+): Promise<DataActionResult<void>> {
+  return runDataAction(() => updatePassPaperFolderImpl(id, data), "Save failed");
+}
+
+export async function deletePassPaperFolder(id: string): Promise<DataActionResult<void>> {
+  return runDataAction(() => deletePassPaperFolderImpl(id), "Delete failed");
+}
+
+export async function bulkCreatePassPaperYearFolders(
+  parentId: string,
+  startYear: number,
+  endYear: number
+): Promise<DataActionResult<{ created: number }>> {
+  return runDataAction(
+    () => bulkCreatePassPaperYearFoldersImpl(parentId, startYear, endYear),
+    "Failed to create year folders"
+  );
+}
+
+export async function publishPassPaperFolderWithDescendants(
+  folderId: string,
+  published: boolean
+): Promise<DataActionResult<{ updated: number }>> {
+  return runDataAction(
+    () => publishPassPaperFolderWithDescendantsImpl(folderId, published),
+    "Publish failed"
+  );
+}
+
+export async function publishPassPaperSubtreeComplete(
+  folderId: string,
+  published: boolean
+): Promise<DataActionResult<{ foldersUpdated: number; itemsUpdated: number }>> {
+  return runDataAction(
+    () => publishPassPaperSubtreeCompleteImpl(folderId, published),
+    "Publish failed"
+  );
+}
+
+export async function publishPassPaperItemsInFolder(
+  folderId: string,
+  published: boolean
+): Promise<DataActionResult<void>> {
+  return runDataAction(
+    () => publishPassPaperItemsInFolderImpl(folderId, published),
+    "Publish failed"
+  );
+}
+
+export async function createPassPaperItem(data: {
+  folderId: string;
+  title: string;
+  driveUrl: string;
+  year?: number;
+  medium?: PassPaperMedium;
+  examType?: PassPaperExamType;
+  sortOrder?: number;
+  published?: boolean;
+}): Promise<DataActionResult<{ id: string }>> {
+  return runDataAction(() => createPassPaperItemImpl(data), "Failed to create item");
+}
+
+export async function updatePassPaperItem(
+  id: string,
+  data: {
+    folderId?: string;
+    title?: string;
+    driveUrl?: string;
+    year?: number | null;
+    medium?: PassPaperMedium | null;
+    examType?: PassPaperExamType;
+    sortOrder?: number;
+    published?: boolean;
+  }
+): Promise<DataActionResult<void>> {
+  return runDataAction(() => updatePassPaperItemImpl(id, data), "Save failed");
+}
+
+export async function deletePassPaperItem(id: string): Promise<DataActionResult<void>> {
+  return runDataAction(() => deletePassPaperItemImpl(id), "Delete failed");
+}
+
+export async function ensurePassPaperExamTemplate(
+  examType: Extract<PassPaperExamType, "al" | "ol">
+): Promise<DataActionResult<Awaited<ReturnType<typeof ensurePassPaperExamTemplateImpl>>>> {
+  return runDataAction(() => ensurePassPaperExamTemplateImpl(examType), "Template creation failed");
 }
 
 export async function getGoogleDriveImportStatus(): Promise<{ configured: boolean }> {
@@ -424,7 +537,7 @@ export async function fullSyncPassPapersFromDrive(options?: {
     } = { al: null, ol: null };
 
     for (const root of roots ?? []) {
-      const result = await publishPassPaperSubtreeComplete(root.id, true);
+      const result = await publishPassPaperSubtreeCompleteImpl(root.id, true);
       if (root.slug === "a-l-past-papers") {
         published.al = result;
       } else if (root.slug === "o-l-past-papers") {

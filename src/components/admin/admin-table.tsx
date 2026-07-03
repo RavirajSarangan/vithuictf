@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,8 +28,16 @@ interface AdminTableProps<T extends { id: string }> {
   onDelete?: (id: string) => void;
   onView?: (row: T) => void;
   viewHref?: (row: T) => string;
+  rowHref?: (row: T) => string;
   emptyMessage?: string;
   rowClassName?: (row: T) => string | undefined;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (id: string) => void;
+  onSelectAll?: () => void;
+  isAllSelected?: boolean;
+  isIndeterminate?: boolean;
+  getRowId?: (row: T) => string;
 }
 
 export function AdminTable<T extends { id: string }>({
@@ -37,8 +46,16 @@ export function AdminTable<T extends { id: string }>({
   onDelete,
   onView,
   viewHref,
+  rowHref,
   emptyMessage = "No records found",
   rowClassName,
+  selectable = false,
+  selectedIds,
+  onSelectionChange,
+  onSelectAll,
+  isAllSelected = false,
+  isIndeterminate = false,
+  getRowId = (row) => row.id,
 }: AdminTableProps<T>) {
   const router = useRouter();
 
@@ -50,11 +67,27 @@ export function AdminTable<T extends { id: string }>({
     );
   }
 
+  const showSelection = selectable && selectedIds && onSelectionChange;
+
   return (
     <GlassCard className="overflow-hidden p-0">
       <Table>
         <TableHeader>
           <TableRow>
+            {showSelection && (
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={
+                    isIndeterminate
+                      ? (false as boolean)
+                      : isAllSelected
+                  }
+                  data-state={isIndeterminate ? "indeterminate" : isAllSelected ? "checked" : "unchecked"}
+                  onCheckedChange={() => onSelectAll?.()}
+                  aria-label="Select all rows"
+                />
+              </TableHead>
+            )}
             {columns.map((c) => (
               <TableHead key={String(c.key)} className="text-muted-foreground">
                 {c.label}
@@ -67,9 +100,31 @@ export function AdminTable<T extends { id: string }>({
         </TableHeader>
         <TableBody>
           {data.map((row) => {
+            const rowId = getRowId(row);
             const href = viewHref?.(row);
+            const navHref = rowHref?.(row);
+            const isSelected = showSelection && selectedIds.has(rowId);
             return (
-              <TableRow key={row.id} className={cn("group", rowClassName?.(row))}>
+              <TableRow
+                key={row.id}
+                onClick={navHref ? () => router.push(navHref) : undefined}
+                className={cn(
+                  "group",
+                  navHref && "cursor-pointer",
+                  isSelected && "bg-muted/40",
+                  rowClassName?.(row)
+                )}
+              >
+                {showSelection && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(rowId)}
+                      onCheckedChange={() => onSelectionChange(rowId)}
+                      aria-label={`Select row ${rowId}`}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </TableCell>
+                )}
                 {columns.map((c) => {
                   const cellLink = c.linkTo?.(row);
                   const content = c.render
@@ -81,6 +136,7 @@ export function AdminTable<T extends { id: string }>({
                       {cellLink ? (
                         <Link
                           href={cellLink}
+                          onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
                         >
                           {content}
@@ -93,7 +149,7 @@ export function AdminTable<T extends { id: string }>({
                   );
                 })}
                 {(onDelete || onView || viewHref) && (
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={
@@ -116,7 +172,7 @@ export function AdminTable<T extends { id: string }>({
                         {onDelete && (
                           <DropdownMenuItem
                             variant="destructive"
-                            onClick={() => onDelete(row.id)}
+                            onClick={() => onDelete(rowId)}
                           >
                             <Trash2 className={cn("mr-2 size-4")} />
                             Delete

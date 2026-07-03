@@ -259,6 +259,14 @@ CRON_SECRET=...                              # batch notification cron auth
 
 # Optional — scripts/supabase-bootstrap.sh
 # SUPABASE_DB_PASSWORD=...
+
+# YouTube Data API v3 — auto-sync subscriber count on Social Media Tracking
+# Google Cloud: enable YouTube Data API v3, create API key (server-side).
+# If the key is restricted to HTTP referrers, set YOUTUBE_API_REFERER to your site origin.
+YOUTUBE_API_KEY=...
+YOUTUBE_CHANNEL_HANDLE=ictfinstitute
+# YOUTUBE_CHANNEL_ID=UC...           # optional; overrides handle lookup
+# YOUTUBE_API_REFERER=https://ictf.lk
 ```
 
 All three Supabase keys (URL, anon/publishable, service role) are required for real registration. With only URL + anon, the app runs in partial demo mode and **Apply Now** shows a configuration warning.

@@ -1,3 +1,4 @@
+import { getActionErrorMessage } from "@/lib/action-error";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, signature, secret);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Invalid signature";
+    const message = getActionErrorMessage(err, "Invalid signature");
     return NextResponse.json({ error: message }, { status: 400 });
   }
 

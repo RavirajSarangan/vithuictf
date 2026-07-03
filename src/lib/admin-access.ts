@@ -18,6 +18,7 @@ export const SUPER_ADMIN_ONLY_ROUTES = [
   "/admin/pass-papers",
   "/admin/exam-papers",
   "/admin/paper-centers",
+  "/admin/ictf-team",
 ] as const;
 
 const adminOnlyHrefs = new Set<string>(ADMIN_ONLY_ROUTES);

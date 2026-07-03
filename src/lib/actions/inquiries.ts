@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { requireStaff } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAdminAction } from "@/lib/audit";

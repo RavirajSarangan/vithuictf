@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { sendBatchMessage } from "@/lib/actions/academics";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Dialog,
   DialogContent,
@@ -59,7 +60,7 @@ export function BatchMessageDialog({
       setBody("");
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Send failed");
+      toast.error(getActionErrorMessage(e, "Send failed"));
     } finally {
       setSubmitting(false);
     }

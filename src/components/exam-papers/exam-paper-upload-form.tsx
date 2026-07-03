@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { uploadExamPaperBatch } from "@/lib/actions/exam-papers";
 import type { PassPaperExamType, PassPaperMedium } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -110,6 +111,10 @@ export function ExamPaperUploadForm({
       }
 
       const result = await uploadExamPaperBatch(formData);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
       toast.success(`Uploaded ${validRows.length} exam paper${validRows.length === 1 ? "" : "s"}`);
       setRows([newRow()]);
       setExamYear("");
@@ -119,7 +124,7 @@ export function ExamPaperUploadForm({
       onSuccess?.();
       return result;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      toast.error(getActionErrorMessage(error, "Upload failed"));
     } finally {
       setSubmitting(false);
     }

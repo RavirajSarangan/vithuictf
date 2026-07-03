@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const schema = z.object({
   displayName: z.string().min(2),
   email: z.string().email(),
@@ -51,7 +52,7 @@ export function AddParentDialog({ onCreated }: { onCreated: () => void }) {
       form.reset();
       onCreated();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to create parent");
+      toast.error(getActionErrorMessage(e, "Failed to create parent"));
     } finally {
       setSubmitting(false);
     }

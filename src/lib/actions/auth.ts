@@ -1,8 +1,8 @@
 "use server";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { sendStudentRegistrationPendingEmail } from "@/lib/actions/email";
 import {
   buildGeneratedIndexNumber,
   normalizeIndexNumber,
@@ -383,8 +383,10 @@ export async function registerStudentAccount(
     await signUpWithRole(input.email, input.password, input.displayName, "student", input);
     return { ok: true };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
-    return { ok: false, error: message };
+    return {
+      ok: false,
+      error: getActionErrorMessage(err, "Registration failed. Please try again."),
+    };
   }
 }
 
@@ -502,6 +504,7 @@ export async function signUpWithRole(
     );
 
     if (studentMeta && registration) {
+      const { sendStudentRegistrationPendingEmail } = await import("@/lib/actions/email");
       await sendStudentRegistrationPendingEmail({
         displayName: normalizedName,
         studentId: registration.studentId,
@@ -521,11 +524,16 @@ export async function getSessionProfile() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getSessionProfile]", error.message);
+    return null;
+  }
 
   return profile;
 }
@@ -758,6 +766,82 @@ export async function resolveStudentLoginEmail(studentId: string): Promise<strin
   return data.email.trim().toLowerCase();
 }
 
+/** Client-safe student portal login — returns readable errors in production. */
+export async function loginStudentPortal(
+  studentId: string,
+  password: string
+): Promise<LoginActionResult> {
+  try {
+    if (!isAdminClientConfigured()) {
+      return { ok: false, error: "Login is temporarily unavailable. Please try again later." };
+    }
+
+    const normalized = normalizeStudentLoginId(studentId);
+    if (!normalized || normalized === `${BRAND.studentIdPrefix}-` || normalized === "ICVF-") {
+      return loginActionFailure(new Error(LOGIN_ERROR.STUDENT_ID_INVALID));
+    }
+
+    await assertLoginRateLimit(normalized);
+
+    const admin = createAdminClient();
+    const { data: studentRow, error: studentError } = await admin
+      .from("students")
+      .select("email, active, user_id")
+      .eq("student_id", normalized)
+      .maybeSingle();
+
+    if (studentError || !studentRow?.email) {
+      return loginActionFailure(new Error(LOGIN_ERROR.STUDENT_ID_NOT_FOUND));
+    }
+
+    if (studentRow.active === false) {
+      return {
+        ok: false,
+        error: "Your account has been disabled. Contact the institute for assistance.",
+      };
+    }
+
+    const email = studentRow.email.trim().toLowerCase();
+    const supabase = await createClient();
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      const message = error.message.toLowerCase();
+      if (message.includes("invalid login credentials")) {
+        return { ok: false, error: "Invalid Student ID or password." };
+      }
+      return loginActionFailure(error);
+    }
+    if (!authData.user) {
+      return { ok: false, error: "Sign in failed" };
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (!profile) {
+      await supabase.auth.signOut();
+      return { ok: false, error: "Profile not found" };
+    }
+
+    const mapped = mapProfile(profile);
+    if (mapped.role !== "student") {
+      await supabase.auth.signOut();
+      return loginActionFailure(new Error(LOGIN_ERROR.STUDENT_ID_ONLY));
+    }
+
+    return { ok: true, redirectTo: "/dashboard" };
+  } catch (error) {
+    return loginActionFailure(error);
+  }
+}
+
 export type LoginActionResult =
   | { ok: true; redirectTo: string }
   | { ok: false; error: string; code?: LoginErrorCode; redirectTo?: string };
@@ -861,7 +945,7 @@ function loginActionFailure(error: unknown): Extract<LoginActionResult, { ok: fa
     return { ok: false, error: code, code, redirectTo };
   }
 
-  const message = error instanceof Error ? error.message : "Login failed";
+  const message = getActionErrorMessage(error, "Login failed");
   if (message.toLowerCase().includes("invalid login credentials")) {
     return { ok: false, error: "Invalid email or password." };
   }

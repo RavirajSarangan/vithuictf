@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cancelClassSession } from "@/lib/actions/academics";
 import type { ClassSession } from "@/types";
 import { Button } from "@/components/ui/button";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +48,7 @@ export function SessionCancelDialog({
       onOpenChange(false);
       onCancelled?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Cancel failed");
+      toast.error(getActionErrorMessage(e, "Cancel failed"));
     } finally {
       setSubmitting(false);
     }

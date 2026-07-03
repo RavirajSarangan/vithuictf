@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
+import { Readable } from "stream";
 import type { drive_v3 } from "googleapis";
 
 export type DriveFileNode = {
@@ -8,6 +9,13 @@ export type DriveFileNode = {
   mimeType: string;
   webViewLink: string | null;
 };
+
+/** MIME types accepted for direct pass-paper uploads. */
+export const ALLOWED_UPLOAD_MIME = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+]);
 
 type GoogleApisModule = typeof import("googleapis");
 
@@ -67,6 +75,67 @@ export async function createDriveClient(): Promise<drive_v3.Drive> {
     scopes: ["https://www.googleapis.com/auth/drive.readonly"],
   });
   return google.drive({ version: "v3", auth });
+}
+
+/** Drive client with write scope, used for admin uploads into a Shared Drive folder. */
+export async function createDriveWriteClient(): Promise<drive_v3.Drive> {
+  const { google } = await loadGoogleApis();
+  const credentials = loadServiceAccountCredentials();
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ["https://www.googleapis.com/auth/drive"],
+  });
+  return google.drive({ version: "v3", auth });
+}
+
+/**
+ * Upload a file into a Drive folder and make it readable by anyone with the link.
+ * The parent must live in a Shared Drive — service accounts have no My Drive quota.
+ */
+export async function uploadFileToDrive(options: {
+  name: string;
+  mimeType: string;
+  buffer: Buffer;
+  parentFolderId: string;
+}): Promise<{ fileId: string; webViewLink: string | null }> {
+  const drive = await createDriveWriteClient();
+
+  let created;
+  try {
+    created = await drive.files.create({
+      requestBody: {
+        name: options.name,
+        parents: [options.parentFolderId],
+      },
+      media: {
+        mimeType: options.mimeType,
+        body: Readable.from(options.buffer),
+      },
+      fields: "id, webViewLink",
+      supportsAllDrives: true,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.toLowerCase().includes("storage quota")) {
+      throw new Error(
+        "Upload failed: the Drive service account has no storage quota. The upload folder must be inside a Shared Drive with the service account added as a Content Manager."
+      );
+    }
+    throw new Error(`Drive upload failed: ${message}`);
+  }
+
+  const fileId = created.data.id;
+  if (!fileId) {
+    throw new Error("Drive upload failed: no file ID returned");
+  }
+
+  await drive.permissions.create({
+    fileId,
+    requestBody: { type: "anyone", role: "reader" },
+    supportsAllDrives: true,
+  });
+
+  return { fileId, webViewLink: created.data.webViewLink ?? null };
 }
 
 export async function listDriveChildren(

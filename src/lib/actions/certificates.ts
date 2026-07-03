@@ -1,8 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { requireStaff, getSessionProfile } from "@/lib/actions/auth";
-import { actionFailure } from "@/lib/actions/action-result";
+import { actionFailure, getActionFailureMessage } from "@/lib/actions/action-result";
 import { logAdminAction } from "@/lib/audit";
 import { allocateCertificateNumber } from "@/lib/certificates/numbering";
 import {
@@ -357,7 +357,7 @@ async function issueOneCertificate(params: {
     return {
       rowIndex: params.row.rowIndex,
       success: false,
-      error: error instanceof Error ? error.message : "Failed to generate certificate",
+      error: getActionFailureMessage(error, "Failed to generate certificate"),
     };
   }
 }

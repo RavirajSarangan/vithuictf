@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   useAdminClassPrograms,
   useAdminCompanies,
@@ -23,7 +24,16 @@ import {
   updateNetworkStats,
   updateSiteStats,
 } from "@/lib/actions/admin";
-import { AdminTable } from "@/components/admin/admin-table";
+import {
+  bulkDeleteCompanies,
+  bulkDeleteClassPrograms,
+  bulkDeletePaperCenters,
+  bulkDeleteFeaturedRankings,
+} from "@/lib/actions/bulk-delete";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import { genericTableSummary } from "@/lib/table-insights";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { AdminMarketingVisibilityPanel } from "@/components/admin/admin-marketing-visibility-panel";
 import { AdminAnnouncementsPanel } from "@/components/admin/admin-announcements-panel";
@@ -48,6 +58,18 @@ export default function AdminHomePage() {
   const [siteForm, setSiteForm] = useState<Record<string, number>>({});
   const [networkForm, setNetworkForm] = useState<Record<string, string | number>>({});
   const [aboutForm, setAboutForm] = useState<Record<string, string | number>>({});
+  const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleBulkDeleteCompanies = useBulkDeleteHandler(bulkDeleteCompanies, "company", companies.refresh);
+  const handleBulkDeletePrograms = useBulkDeleteHandler(bulkDeleteClassPrograms, "program", programs.refresh);
+  const handleBulkDeleteCenters = useBulkDeleteHandler(bulkDeletePaperCenters, "center", centers.refresh);
+  const handleBulkDeleteRankings = useBulkDeleteHandler(bulkDeleteFeaturedRankings, "ranking", rankings.refresh);
+
+  const companiesSummary = useMemo(() => genericTableSummary(companies.data, "Companies"), [companies.data]);
+  const programsSummary = useMemo(() => genericTableSummary(programs.data, "Programs"), [programs.data]);
+  const centersSummary = useMemo(() => genericTableSummary(centers.data, "Centers"), [centers.data]);
+  const rankingsSummary = useMemo(() => genericTableSummary(rankings.data, "Rankings"), [rankings.data]);
 
   const crud = async (fn: () => Promise<void>, refresh: () => void, label: string) => {
     try {
@@ -55,7 +77,28 @@ export default function AdminHomePage() {
       refresh();
       toast.success(`${label} updated`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      toast.error(getActionErrorMessage(e, "Failed"));
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      if (deleteTarget.type === "company") await deleteCompany(deleteTarget.id);
+      else if (deleteTarget.type === "program") await deleteClassProgram(deleteTarget.id);
+      else if (deleteTarget.type === "center") await deletePaperCenter(deleteTarget.id);
+      else if (deleteTarget.type === "ranking") await deleteFeaturedRanking(deleteTarget.id);
+      if (deleteTarget.type === "company") companies.refresh();
+      else if (deleteTarget.type === "program") programs.refresh();
+      else if (deleteTarget.type === "center") centers.refresh();
+      else if (deleteTarget.type === "ranking") rankings.refresh();
+      toast.success("Deleted");
+      setDeleteTarget(null);
+    } catch (e) {
+      toast.error(getActionErrorMessage(e, "Delete failed"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -220,13 +263,20 @@ export default function AdminHomePage() {
             Add
           </Button>
         </div>
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "name", label: "Name" },
             { key: "location", label: "Location" },
           ]}
           data={companies.data}
-          onDelete={(id) => crud(() => deleteCompany(id), companies.refresh, "Company")}
+          summaryItems={companiesSummary}
+          entityLabel="company"
+          onBulkDelete={handleBulkDeleteCompanies}
+          onDelete={(id) => {
+            const row = companies.data.find((c) => c.id === id);
+            if (row) setDeleteTarget({ type: "company", id, label: row.name });
+          }}
+          onActionComplete={companies.refresh}
         />
       </TabsContent>
       <TabsContent value="programs">
@@ -245,13 +295,20 @@ export default function AdminHomePage() {
             Add
           </Button>
         </div>
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "title", label: "Title" },
             { key: "description", label: "Description" },
           ]}
           data={programs.data}
-          onDelete={(id) => crud(() => deleteClassProgram(id), programs.refresh, "Program")}
+          summaryItems={programsSummary}
+          entityLabel="program"
+          onBulkDelete={handleBulkDeletePrograms}
+          onDelete={(id) => {
+            const row = programs.data.find((p) => p.id === id);
+            if (row) setDeleteTarget({ type: "program", id, label: row.title });
+          }}
+          onActionComplete={programs.refresh}
         />
       </TabsContent>
       <TabsContent value="centers">
@@ -270,13 +327,20 @@ export default function AdminHomePage() {
             Add
           </Button>
         </div>
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "name", label: "Name" },
             { key: "district", label: "District" },
           ]}
           data={centers.data}
-          onDelete={(id) => crud(() => deletePaperCenter(id), centers.refresh, "Center")}
+          summaryItems={centersSummary}
+          entityLabel="center"
+          onBulkDelete={handleBulkDeleteCenters}
+          onDelete={(id) => {
+            const row = centers.data.find((c) => c.id === id);
+            if (row) setDeleteTarget({ type: "center", id, label: row.name });
+          }}
+          onActionComplete={centers.refresh}
         />
       </TabsContent>
       <TabsContent value="rankings">
@@ -300,17 +364,32 @@ export default function AdminHomePage() {
             Add
           </Button>
         </div>
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "studentName", label: "Student" },
             { key: "rankType", label: "Type" },
             { key: "score", label: "Score" },
           ]}
           data={rankings.data}
-          onDelete={(id) => crud(() => deleteFeaturedRanking(id), rankings.refresh, "Ranking")}
+          summaryItems={rankingsSummary}
+          entityLabel="ranking"
+          onBulkDelete={handleBulkDeleteRankings}
+          onDelete={(id) => {
+            const row = rankings.data.find((r) => r.id === id);
+            if (row) setDeleteTarget({ type: "ranking", id, label: row.studentName });
+          }}
+          onActionComplete={rankings.refresh}
         />
       </TabsContent>
     </Tabs>
+
+    <DeleteConfirmDialog
+      open={!!deleteTarget}
+      onOpenChange={(open) => !open && setDeleteTarget(null)}
+      entityLabel={deleteTarget?.label ?? "item"}
+      deleting={deleting}
+      onConfirm={handleConfirmDelete}
+    />
     </div>
   );
 }

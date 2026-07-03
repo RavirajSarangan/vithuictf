@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   addBlogCategory,
   addBlogPost,
@@ -14,7 +15,19 @@ import {
   useAdminBlogCategories,
   useAdminBlogPosts,
 } from "@/hooks/use-data";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import {
+  bulkDeleteBlogPosts,
+  bulkDeleteBlogCategories,
+} from "@/lib/actions/bulk-delete";
+import {
+  blogPostTableSummary,
+  blogPostSelectionInsights,
+  blogCategoryTableSummary,
+  blogCategorySelectionInsights,
+} from "@/lib/table-insights";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { AdminRichTextEditor } from "@/components/admin/admin-rich-text-editor";
 import { PageHeader } from "@/components/shared/page-header";
@@ -28,16 +41,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { ExternalLink, FileText, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { slugifyBlogTitle } from "@/lib/blog/slug";
@@ -98,6 +101,19 @@ export default function AdminBlogPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleBulkDeletePosts = useBulkDeleteHandler(bulkDeleteBlogPosts, "post", refreshPosts);
+  const handleBulkDeleteCategories = useBulkDeleteHandler(
+    bulkDeleteBlogCategories,
+    "category",
+    () => {
+      refreshCategories();
+      refreshPosts();
+    }
+  );
+  const postSummaryItems = useMemo(() => blogPostTableSummary(posts), [posts]);
+  const categorySummaryItems = useMemo(() => blogCategoryTableSummary(categories), [categories]);
 
   const openCreatePost = () => {
     setEditingPost(null);
@@ -179,7 +195,7 @@ export default function AdminBlogPage() {
       refreshPosts();
       setPostOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save post");
+      toast.error(getActionErrorMessage(error, "Failed to save post"));
     } finally {
       setSubmitting(false);
     }
@@ -206,7 +222,7 @@ export default function AdminBlogPage() {
       refreshCategories();
       setCategoryOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save category");
+      toast.error(getActionErrorMessage(error, "Failed to save category"));
     } finally {
       setSubmitting(false);
     }
@@ -214,28 +230,32 @@ export default function AdminBlogPage() {
 
   const confirmDeletePost = async () => {
     if (!deletePostId) return;
+    setDeleting(true);
     try {
       await deleteBlogPost(deletePostId);
       refreshPosts();
       toast.success("Post deleted");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Delete failed");
-    } finally {
       setDeletePostId(null);
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Delete failed"));
+    } finally {
+      setDeleting(false);
     }
   };
 
   const confirmDeleteCategory = async () => {
     if (!deleteCategoryId) return;
+    setDeleting(true);
     try {
       await deleteBlogCategory(deleteCategoryId);
       refreshCategories();
       refreshPosts();
       toast.success("Category deleted");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Delete failed");
-    } finally {
       setDeleteCategoryId(null);
+    } catch (error) {
+      toast.error(getActionErrorMessage(error, "Delete failed"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -349,11 +369,16 @@ export default function AdminBlogPage() {
               }
             />
           ) : (
-            <AdminTable
+            <AdminTableSection
               columns={postColumns}
               data={posts}
+              summaryItems={postSummaryItems}
+              getSelectionInsights={blogPostSelectionInsights}
+              entityLabel="post"
+              onBulkDelete={handleBulkDeletePosts}
               onView={openEditPost}
               onDelete={setDeletePostId}
+              onActionComplete={refreshPosts}
             />
           )}
         </TabsContent>
@@ -377,11 +402,20 @@ export default function AdminBlogPage() {
               }
             />
           ) : (
-            <AdminTable
+            <AdminTableSection
               columns={categoryColumns}
               data={categories}
+              summaryItems={categorySummaryItems}
+              getSelectionInsights={blogCategorySelectionInsights}
+              entityLabel="category"
+              onBulkDelete={handleBulkDeleteCategories}
+              deleteWarning="Posts in deleted categories will lose their category assignment."
               onView={openEditCategory}
               onDelete={setDeleteCategoryId}
+              onActionComplete={() => {
+                refreshCategories();
+                refreshPosts();
+              }}
             />
           )}
         </TabsContent>
@@ -637,35 +671,23 @@ export default function AdminBlogPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletePostId} onOpenChange={() => setDeletePostId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete post?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove the blog post from the public site.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeletePost}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        open={!!deletePostId}
+        onOpenChange={(open) => !open && setDeletePostId(null)}
+        entityLabel="post"
+        warning="This will permanently remove the blog post from the public site."
+        deleting={deleting}
+        onConfirm={confirmDeletePost}
+      />
 
-      <AlertDialog open={!!deleteCategoryId} onOpenChange={() => setDeleteCategoryId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete category?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Posts in this category will remain but lose their category assignment.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteCategory}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        open={!!deleteCategoryId}
+        onOpenChange={(open) => !open && setDeleteCategoryId(null)}
+        entityLabel="category"
+        warning="Posts in this category will remain but lose their category assignment."
+        deleting={deleting}
+        onConfirm={confirmDeleteCategory}
+      />
     </div>
   );
 }

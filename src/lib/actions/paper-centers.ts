@@ -1,7 +1,7 @@
 "use server";
 
 import crypto from "crypto";
-import { revalidatePath } from "next/cache";
+import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { requireSuperAdmin } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/server";
 import { paperCenterLoginPath, slugifyPaperCenterName } from "@/lib/paper-center-slug";

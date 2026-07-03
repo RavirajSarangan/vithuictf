@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useMemo, useState, type ReactNode } from "react";
+import { Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   addAdmin,
   addStaffMember,
@@ -32,7 +33,15 @@ import {
 import { useAdminCourses } from "@/hooks/use-data";
 import { usePeopleRoster } from "@/hooks/use-people-roster";
 import { usePaperCentersList } from "@/hooks/use-exam-papers";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { bulkDeletePeople } from "@/lib/actions/bulk-delete";
+import {
+  peopleTableSummary,
+  peopleTabCountsSummary,
+  peopleSelectionInsights,
+  formatBulkDeleteToast,
+} from "@/lib/table-insights";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -209,6 +218,8 @@ function PeoplePageContent() {
   const [paperCenterOpen, setPaperCenterOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<PeopleRosterEntry | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<PeopleRosterEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const staffForm = useForm<z.infer<typeof staffSchema>>({
     resolver: zodResolver(staffSchema),
@@ -309,7 +320,7 @@ function PeoplePageContent() {
         toast.warning(`Email not sent: ${result.emailError}`, { duration: 10000 });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add staff member");
+      toast.error(getActionErrorMessage(e, "Failed to add staff member"));
     } finally {
       setSubmitting(false);
     }
@@ -329,7 +340,7 @@ function PeoplePageContent() {
       setEditStaff(null);
       toast.success("Staff member updated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+      toast.error(getActionErrorMessage(e, "Update failed"));
     } finally {
       setSubmitting(false);
     }
@@ -355,7 +366,7 @@ function PeoplePageContent() {
         toast.info(`Temporary password: ${result.tempPassword}`, { duration: 12000 });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add admin");
+      toast.error(getActionErrorMessage(e, "Failed to add admin"));
     } finally {
       setSubmitting(false);
     }
@@ -377,7 +388,7 @@ function PeoplePageContent() {
         toast.info(`Temporary password: ${result.tempPassword}`, { duration: 12000 });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add content team member");
+      toast.error(getActionErrorMessage(e, "Failed to add content team member"));
     } finally {
       setSubmitting(false);
     }
@@ -411,40 +422,55 @@ function PeoplePageContent() {
         toast.info(`Temporary password: ${result.tempPassword}`, { duration: 12000 });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add paper center staff");
+      toast.error(getActionErrorMessage(e, "Failed to add paper center staff"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (entry: PeopleRosterEntry) => {
-    const label =
-      entry.role === "admin"
-        ? "administrator"
-        : entry.role === "content_manager"
-          ? "content team member"
-          : entry.role === "paper_center_staff"
-            ? "paper center staff member"
-            : "staff member";
-    if (!confirm(`Remove this ${label}?`)) return;
+  const performDelete = async (entry: PeopleRosterEntry) => {
+    if (entry.role === "teacher") await deleteStaffMember(entry.id);
+    else if (entry.role === "admin") await deleteAdmin(entry.userId);
+    else if (entry.role === "super_admin") {
+      toast.error("Super administrators cannot be removed from this screen");
+      return;
+    } else if (entry.role === "content_manager") {
+      await deleteContentManager(entry.id);
+    } else if (entry.role === "paper_center_staff") {
+      await deletePaperCenterStaff(entry.id);
+    }
+    refresh();
+    toast.success("Account removed");
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      if (entry.role === "teacher") await deleteStaffMember(entry.id);
-      else if (entry.role === "admin") await deleteAdmin(entry.userId);
-      else if (entry.role === "super_admin") {
-        toast.error("Super administrators cannot be removed from this screen");
-        return;
-      }
-      else if (entry.role === "content_manager") {
-        await deleteContentManager(entry.id);
-      } else if (entry.role === "paper_center_staff") {
-        await deletePaperCenterStaff(entry.id);
-      }
-      refresh();
-      toast.success("Account removed");
+      await performDelete(deleteTarget);
+      setDeleteTarget(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+      toast.error(getActionErrorMessage(e, "Delete failed"));
+    } finally {
+      setDeleting(false);
     }
   };
+
+  const handleBulkDeletePeople = useCallback(
+    async (ids: string[]) => {
+      const entries = filtered
+        .filter((e) => ids.includes(e.id) && e.role !== "super_admin")
+        .map((e) => ({ id: e.id, userId: e.userId, role: e.role }));
+      const result = await bulkDeletePeople(entries);
+      const { type, message } = formatBulkDeleteToast(result, "account");
+      if (type === "success") toast.success(message);
+      else if (type === "warning") toast.warning(message);
+      else toast.error(message);
+      refresh();
+      return result;
+    },
+    [filtered, refresh]
+  );
 
   const handleToggleActive = async (entry: PeopleRosterEntry) => {
     try {
@@ -460,7 +486,7 @@ function PeoplePageContent() {
       refresh();
       toast.success(entry.active ? "Account deactivated" : "Account activated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+      toast.error(getActionErrorMessage(e, "Update failed"));
     }
   };
 
@@ -495,7 +521,7 @@ function PeoplePageContent() {
         }
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Password reset failed");
+      toast.error(getActionErrorMessage(e, "Password reset failed"));
     }
   };
 
@@ -506,7 +532,7 @@ function PeoplePageContent() {
       refresh();
       toast.success("Promoted to admin");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Promotion failed");
+      toast.error(getActionErrorMessage(e, "Promotion failed"));
     }
   };
 
@@ -517,7 +543,7 @@ function PeoplePageContent() {
       refresh();
       toast.success("Demoted to staff");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Demotion failed");
+      toast.error(getActionErrorMessage(e, "Demotion failed"));
     }
   };
 
@@ -703,6 +729,11 @@ function PeoplePageContent() {
 
   const emptyCopy = emptyStateCopy();
 
+  const summaryItems = useMemo(
+    () => (tab === "all" ? peopleTabCountsSummary(data) : peopleTableSummary(filtered)),
+    [tab, data, filtered]
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -731,13 +762,37 @@ function PeoplePageContent() {
               action={actionButton()}
             />
           ) : (
-            <AdminTable columns={columns} data={filtered} onDelete={(id) => {
-              const entry = filtered.find((e) => e.id === id);
-              if (entry) void handleDelete(entry);
-            }} />
+            <AdminTableSection
+              columns={columns}
+              data={filtered}
+              summaryItems={summaryItems}
+              getSelectionInsights={peopleSelectionInsights}
+              entityLabel="account"
+              onBulkDelete={handleBulkDeletePeople}
+              deleteWarning="Super administrators are excluded from bulk delete."
+              onDelete={(id) => {
+                const entry = filtered.find((e) => e.id === id);
+                if (entry) {
+                  if (entry.role === "super_admin") {
+                    toast.error("Super administrators cannot be removed from this screen");
+                    return;
+                  }
+                  setDeleteTarget(entry);
+                }
+              }}
+              onActionComplete={refresh}
+            />
           )}
         </TabsContent>
       </Tabs>
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        entityLabel={deleteTarget?.displayName ?? "account"}
+        deleting={deleting}
+        onConfirm={handleConfirmDelete}
+      />
 
       <Dialog open={staffOpen} onOpenChange={setStaffOpen}>
         <DialogContent className="sm:max-w-md">

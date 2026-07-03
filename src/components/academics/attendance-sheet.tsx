@@ -10,6 +10,7 @@ import { exportToCsv } from "@/lib/export/csv";
 import { ClipboardCheck, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 const STATUSES: AttendanceStatus[] = ["present", "absent", "late"];
 
 export type AttendanceSheetProps = {
@@ -66,7 +67,7 @@ export function AttendanceSheet({
       );
       onSaved?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(getActionErrorMessage(e, "Save failed"));
     } finally {
       setSaving(false);
     }
@@ -86,7 +87,7 @@ export function AttendanceSheet({
         onSaved?.();
         toast.success(`All marked ${status} and saved`);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Save failed");
+        toast.error(getActionErrorMessage(e, "Save failed"));
       } finally {
         setSaving(false);
       }
@@ -107,7 +108,7 @@ export function AttendanceSheet({
       onSaved?.();
       toast.success("Attendance saved");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(getActionErrorMessage(e, "Save failed"));
     } finally {
       setSaving(false);
     }
@@ -127,7 +128,7 @@ export function AttendanceSheet({
       onSaved?.();
       toast.success(`All marked ${status} and saved`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(getActionErrorMessage(e, "Save failed"));
     } finally {
       setSaving(false);
     }

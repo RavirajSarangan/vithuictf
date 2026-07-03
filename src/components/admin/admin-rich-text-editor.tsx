@@ -88,6 +88,7 @@ export function AdminRichTextEditor({
   const fileRef = useRef<HTMLInputElement>(null);
   const uploadQueueRef = useRef<Promise<void>>(Promise.resolve());
   const queueImagesRef = useRef<(files: File[]) => void>(() => {});
+  const editorRef = useRef<Editor | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
 
   const queueImageUploads = useCallback((files: File[]) => {
@@ -122,10 +123,6 @@ export function AdminRichTextEditor({
         setUploadingCount(0);
       });
   }, []);
-
-  queueImagesRef.current = queueImageUploads;
-
-  const editorRef = useRef<Editor | null>(null);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -190,7 +187,8 @@ export function AdminRichTextEditor({
 
   useEffect(() => {
     editorRef.current = editor;
-  }, [editor]);
+    queueImagesRef.current = queueImageUploads;
+  }, [editor, queueImageUploads]);
 
   useEffect(() => {
     if (!editor) return;

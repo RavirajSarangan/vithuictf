@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseThumbnail } from "@/components/courses/course-card";
-import { Layers, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export function DashboardActiveBatches() {
   const { data, loading } = useActiveBatchesOverview();
@@ -25,7 +25,7 @@ export function DashboardActiveBatches() {
               <Plus className="mr-2 size-4" />
               Add batch
             </Button>
-            <Link href="/academics/batches" className="text-xs font-medium text-icvf-accent hover:underline self-center">
+            <Link href="/admin/courses" className="text-xs font-medium text-icvf-accent hover:underline self-center">
               View all
             </Link>
           </div>
@@ -49,7 +49,7 @@ export function DashboardActiveBatches() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/academics/batches/${batch.id}`} className="font-semibold text-icvf-navy hover:underline">
+                    <Link href={`/academics/courses/${batch.courseId}`} className="font-semibold text-icvf-navy hover:underline">
                       {batch.name}
                     </Link>
                     <Badge variant="outline">{batch.batchCode}</Badge>
@@ -66,7 +66,7 @@ export function DashboardActiveBatches() {
                       : " · No upcoming classes"}
                   </p>
                   <Link
-                    href={`/academics/batches/${batch.id}#enrolled`}
+                    href={`/academics/courses/${batch.courseId}#enrolled`}
                     className="text-xs text-icvf-accent hover:underline"
                   >
                     View students

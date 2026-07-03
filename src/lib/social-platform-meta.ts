@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { Globe } from "lucide-react";
 import {
   RiFacebookFill,
   RiInstagramFill,
@@ -69,6 +70,13 @@ export const PLATFORM_META: Record<string, PlatformMeta> = {
     color: "#0A66C2",
     url: BRAND.contact.social.linkedin,
   },
+  website: {
+    slug: "website",
+    label: "Website",
+    icon: Globe,
+    color: "#273461",
+    url: "https://ictf.lk/blog",
+  },
 };
 
 export const CONTENT_TYPE_META: Record<string, ContentTypeMeta> = {
@@ -99,6 +107,27 @@ export const CONTENT_TYPE_META: Record<string, ContentTypeMeta> = {
     icon: RiInstagramFill,
     color: "#E4405F",
     platformSlug: "instagram",
+  },
+  facebook_post: {
+    slug: "facebook_post",
+    label: "Facebook Post",
+    icon: RiFacebookFill,
+    color: "#1877F2",
+    platformSlug: "facebook",
+  },
+  linkedin_post: {
+    slug: "linkedin_post",
+    label: "LinkedIn Post",
+    icon: RiLinkedinFill,
+    color: "#0A66C2",
+    platformSlug: "linkedin",
+  },
+  website_blog: {
+    slug: "website_blog",
+    label: "Website Blog",
+    icon: Globe,
+    color: "#273461",
+    platformSlug: "website",
   },
 };
 

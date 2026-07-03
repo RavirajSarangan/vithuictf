@@ -5,15 +5,23 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   addManagedPaperCenter,
   deleteManagedPaperCenter,
   setManagedPaperCenterActive,
   updateManagedPaperCenter,
 } from "@/lib/actions/paper-centers";
+import { bulkDeleteManagedPaperCenters } from "@/lib/actions/bulk-delete";
 import { paperCenterLoginPath } from "@/lib/paper-center-slug";
 import { useAdminPaperCenters } from "@/hooks/use-admin-data";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { DeleteConfirmDialog } from "@/components/admin/bulk-delete-dialog";
+import { useBulkDeleteHandler } from "@/hooks/use-bulk-delete";
+import {
+  paperCenterTableSummary,
+  paperCenterSelectionInsights,
+} from "@/lib/table-insights";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -59,6 +67,10 @@ export default function AdminPaperCentersPage() {
   const [editing, setEditing] = useState<PaperCenter | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [messageTarget, setMessageTarget] = useState<MessageTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PaperCenter | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleBulkDelete = useBulkDeleteHandler(bulkDeleteManagedPaperCenters, "paper center", refresh);
 
   const form = useForm<CenterFormValues>({
     resolver: zodResolver(centerSchema),
@@ -77,6 +89,8 @@ export default function AdminPaperCentersPage() {
     () => [...centers].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)),
     [centers]
   );
+
+  const summaryItems = useMemo(() => paperCenterTableSummary(sorted), [sorted]);
 
   const openCreate = () => {
     setEditing(null);
@@ -128,20 +142,24 @@ export default function AdminPaperCentersPage() {
       toast.success(editing ? "Paper center updated" : "Paper center created");
       toast.info(`Staff login URL: ${result.loginUrl}`, { duration: 12000 });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Save failed");
+      toast.error(getActionErrorMessage(error, "Save failed"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (center: PaperCenter) => {
-    if (!confirm(`Delete ${center.name}?`)) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteManagedPaperCenter(center.id);
+      await deleteManagedPaperCenter(deleteTarget.id);
       refresh();
       toast.success("Paper center deleted");
+      setDeleteTarget(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Delete failed");
+      toast.error(getActionErrorMessage(error, "Delete failed"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -151,7 +169,7 @@ export default function AdminPaperCentersPage() {
       refresh();
       toast.success(center.isActive ? "Center deactivated" : "Center activated");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Update failed");
+      toast.error(getActionErrorMessage(error, "Update failed"));
     }
   };
 
@@ -193,7 +211,7 @@ export default function AdminPaperCentersPage() {
           }
         />
       ) : (
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "name", label: "Center" },
             { key: "district", label: "District" },
@@ -289,12 +307,25 @@ export default function AdminPaperCentersPage() {
             },
           ]}
           data={sorted}
+          summaryItems={summaryItems}
+          getSelectionInsights={paperCenterSelectionInsights}
+          entityLabel="paper center"
+          onBulkDelete={handleBulkDelete}
           onDelete={(id) => {
             const center = sorted.find((item) => item.id === id);
-            if (center) void handleDelete(center);
+            if (center) setDeleteTarget(center);
           }}
+          onActionComplete={refresh}
         />
       )}
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        entityLabel={deleteTarget?.name ?? "paper center"}
+        deleting={deleting}
+        onConfirm={handleConfirmDelete}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">

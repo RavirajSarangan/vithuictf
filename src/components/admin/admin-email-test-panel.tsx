@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+import { getActionErrorMessage } from "@/lib/action-error";
 export function AdminEmailTestPanel() {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -30,7 +31,7 @@ export function AdminEmailTestPanel() {
         toast.error(result.error ?? "Failed to send test email");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to send");
+      toast.error(getActionErrorMessage(error, "Failed to send"));
     } finally {
       setSending(false);
     }

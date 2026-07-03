@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,7 +80,7 @@ export default function AdminStudentDetailPage() {
         toast.warning(`WhatsApp not sent: ${result.whatsappError}`, { duration: 10000 });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to resend email");
+      toast.error(getActionErrorMessage(e, "Failed to resend email"));
     } finally {
       setResending(false);
     }
@@ -91,7 +92,7 @@ export default function AdminStudentDetailPage() {
       toast.success("Student deleted");
       router.push("/admin/students");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+      toast.error(getActionErrorMessage(e, "Delete failed"));
     }
   };
 
@@ -145,7 +146,7 @@ export default function AdminStudentDetailPage() {
                       const row = await getStudent(id);
                       setStudent(row ? mapStudent(row) : null);
                     } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Failed");
+                      toast.error(getActionErrorMessage(e, "Failed"));
                     }
                   }}
                 >
@@ -160,7 +161,7 @@ export default function AdminStudentDetailPage() {
                       const row = await getStudent(id);
                       setStudent(row ? mapStudent(row) : null);
                     } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Failed");
+                      toast.error(getActionErrorMessage(e, "Failed"));
                     }
                   }}
                 >

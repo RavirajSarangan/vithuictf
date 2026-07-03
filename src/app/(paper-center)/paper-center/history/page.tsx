@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { AdminTable } from "@/components/admin/admin-table";
+import { AdminTableSection } from "@/components/admin/admin-table-section";
+import { examPaperBatchTableSummary } from "@/lib/table-insights";
 import { StudentPageLoading } from "@/components/student/portal/student-portal-states";
 import { useStaffExamPaperBatches } from "@/hooks/use-exam-papers";
 import { FileText } from "lucide-react";
@@ -13,6 +15,7 @@ function formatDate(value: string) {
 
 export default function PaperCenterHistoryPage() {
   const { batches, loading } = useStaffExamPaperBatches();
+  const summaryItems = useMemo(() => examPaperBatchTableSummary(batches), [batches]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -30,7 +33,7 @@ export default function PaperCenterHistoryPage() {
           description="Uploaded batches will appear here with paper counts and exam details."
         />
       ) : (
-        <AdminTable
+        <AdminTableSection
           columns={[
             { key: "createdAt", label: "Uploaded", render: (row) => formatDate(row.createdAt) },
             { key: "centerName", label: "Center" },
@@ -42,6 +45,21 @@ export default function PaperCenterHistoryPage() {
             { key: "paperCount", label: "Papers" },
           ]}
           data={batches}
+          summaryItems={summaryItems}
+          entityLabel="batch"
+          exportConfig={{
+            filename: "paper-center-uploads.csv",
+            columns: [
+              { key: "createdAt", label: "Uploaded" },
+              { key: "centerName", label: "Center" },
+              { key: "staffName", label: "Staff" },
+              { key: "place", label: "Place" },
+              { key: "examYear", label: "Year" },
+              { key: "medium", label: "Medium" },
+              { key: "examType", label: "Exam" },
+              { key: "paperCount", label: "Papers" },
+            ],
+          }}
         />
       )}
     </div>

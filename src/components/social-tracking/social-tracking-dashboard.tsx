@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSocialTracking } from "@/hooks/use-social-tracking";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { deleteTrackingWeek, exportTrackingWeekCsv } from "@/lib/actions/social-tracking";
 
 interface SocialTrackingDashboardProps {
@@ -48,7 +49,7 @@ export function SocialTrackingDashboard({ mode }: SocialTrackingDashboardProps) 
     try {
       await handleUpdateEntryCount(contentTypeId, dayOfWeek, postCount);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save poster count");
+      toast.error(getActionErrorMessage(err, "Failed to save poster count"));
     }
   };
 
@@ -61,35 +62,35 @@ export function SocialTrackingDashboard({ mode }: SocialTrackingDashboardProps) 
     try {
       await handleUpdateFollower(platformId, previousCount, currentCount, performance);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save follower count");
+      toast.error(getActionErrorMessage(err, "Failed to save follower count"));
     }
   };
 
   const handleExport = async () => {
-    try {
-      const csv = await exportTrackingWeekCsv(selectedWeekStart);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `ictf-tracking-${selectedWeekStart}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success("Export downloaded");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Export failed");
+    const result = await exportTrackingWeekCsv(selectedWeekStart);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
     }
+    const blob = new Blob([result.data], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ictf-tracking-${selectedWeekStart}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Export downloaded");
   };
 
   const handleDeleteWeek = async () => {
     if (!week || !confirm("Delete this week and all its tracking data?")) return;
-    try {
-      await deleteTrackingWeek(week.id);
-      toast.success("Week deleted");
-      void refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
+    const result = await deleteTrackingWeek(week.id);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
     }
+    toast.success("Week deleted");
+    void refresh();
   };
 
   if (loading && !week) {

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { getActionErrorMessage } from "@/lib/action-error";
 import { uploadStudentPhoto, updateStudentProfileCard } from "@/lib/actions/profile-card";
 import { GlassCard } from "@/components/shared/glass-card";
 import { FlipCard, studentToFlipCardData } from "@/components/student/flip-card";
@@ -57,11 +58,15 @@ export function ProfileCardEditor({ student }: ProfileCardEditorProps) {
     try {
       const formData = new FormData();
       formData.set("file", file);
-      const url = await uploadStudentPhoto(formData);
-      setPhotoURL(url);
+      const result = await uploadStudentPhoto(formData);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setPhotoURL(result.data);
       toast.success("Photo uploaded");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      toast.error(getActionErrorMessage(error, "Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -70,10 +75,14 @@ export function ProfileCardEditor({ student }: ProfileCardEditorProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateStudentProfileCard({ bio, socialLinks, cardPublic });
+      const result = await updateStudentProfileCard({ bio, socialLinks, cardPublic });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
       toast.success("Profile card saved");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save");
+      toast.error(getActionErrorMessage(error, "Failed to save"));
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, Users } from "lucide-react";
 import { MarketingPanel } from "@/components/landing/marketing-layout";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +17,12 @@ export interface CourseCardProps {
   coverImageUrl?: string;
   category?: string;
   durationMonths?: number;
+  classDaysPerWeek?: number;
   teacherName?: string;
+  studentCount?: number;
   href?: string;
   compact?: boolean;
+  showStats?: boolean;
   index?: number;
   footer?: React.ReactNode;
   className?: string;
@@ -58,14 +61,20 @@ export function CourseCard({
   coverImageUrl,
   category,
   durationMonths,
+  classDaysPerWeek,
   teacherName,
+  studentCount,
   href,
   compact = false,
+  showStats = false,
   index,
   footer,
   className,
 }: CourseCardProps) {
-  const durationLabel = durationMonths ? `${durationMonths} months` : null;
+  const durationLabel = durationMonths ? `${durationMonths} ${durationMonths === 1 ? "month" : "months"}` : null;
+  const classDaysLabel = classDaysPerWeek
+    ? `${classDaysPerWeek} ${classDaysPerWeek === 1 ? "day" : "days"}/week`
+    : null;
 
   if (compact) {
     return (
@@ -89,6 +98,24 @@ export function CourseCard({
           ) : null}
           {teacherName ? (
             <p className="mt-2 text-xs text-icvf-text-light">Staff: {teacherName}</p>
+          ) : null}
+          {showStats ? (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-icvf-border pt-3 text-xs text-icvf-text-light">
+              <span className="flex items-center gap-1.5">
+                <Clock className="size-3.5" />
+                {durationLabel ?? "Duration TBA"}
+              </span>
+              {classDaysLabel ? (
+                <span className="flex items-center gap-1.5">
+                  <CalendarDays className="size-3.5" />
+                  {classDaysLabel}
+                </span>
+              ) : null}
+              <span className="flex items-center gap-1.5">
+                <Users className="size-3.5" />
+                {studentCount ?? 0} students
+              </span>
+            </div>
           ) : null}
         </div>
       </MarketingPanel>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { getActionErrorMessage } from "@/lib/action-error";
 import {
   getContentEntries,
   getFollowerHistory,
@@ -49,6 +51,7 @@ export function useSocialTracking(weekStart?: string) {
   const [liveSyncState, setLiveSyncState] = useState<LiveSyncState>(createInitialLiveSyncState);
   const [liveSyncPlatforms, setLiveSyncPlatforms] = useState<LiveSyncPlatformSlug[]>([]);
   const syncInFlightRef = useRef(false);
+  const syncErrorToastShownRef = useRef(false);
 
   const refresh = useCallback(async () => {
     const isFirstLoad = !hasLoadedRef.current;
@@ -59,23 +62,45 @@ export function useSocialTracking(weekStart?: string) {
     }
     setError(null);
     try {
-      const weekData = await getOrCreateWeek(selectedWeekStart);
-      const [refs, entryRows, metricRows, historyRows] = await Promise.all([
+      const weekResult = await getOrCreateWeek(selectedWeekStart);
+      if (!weekResult.ok) {
+        setError(weekResult.error);
+        return;
+      }
+
+      const [refsResult, entriesResult, metricsResult, historyResult] = await Promise.all([
         listReferenceData(),
-        getContentEntries(weekData.id),
-        getFollowerMetrics(weekData.id),
+        getContentEntries(weekResult.data.id),
+        getFollowerMetrics(weekResult.data.id),
         getFollowerHistory(12),
       ]);
 
-      setWeek(weekData);
-      setPlatforms(refs.platforms);
-      setContentTypes(refs.contentTypes);
-      setLiveSyncPlatforms(refs.liveSyncPlatforms);
-      setEntries(entryRows);
-      setFollowerMetrics(metricRows);
-      setHistory(historyRows);
+      if (!refsResult.ok) {
+        setError(refsResult.error);
+        return;
+      }
+      if (!entriesResult.ok) {
+        setError(entriesResult.error);
+        return;
+      }
+      if (!metricsResult.ok) {
+        setError(metricsResult.error);
+        return;
+      }
+      if (!historyResult.ok) {
+        setError(historyResult.error);
+        return;
+      }
+
+      setWeek(weekResult.data);
+      setPlatforms(refsResult.data.platforms);
+      setContentTypes(refsResult.data.contentTypes);
+      setLiveSyncPlatforms(refsResult.data.liveSyncPlatforms);
+      setEntries(entriesResult.data);
+      setFollowerMetrics(metricsResult.data);
+      setHistory(historyResult.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load tracking data");
+      setError(getActionErrorMessage(err, "Failed to load tracking data"));
     } finally {
       hasLoadedRef.current = true;
       setInitialLoading(false);
@@ -117,7 +142,21 @@ export function useSocialTracking(weekStart?: string) {
       });
 
       try {
-        const updated = await syncLiveFollowerCounts(targetWeekId);
+        const result = await syncLiveFollowerCounts(targetWeekId);
+        if (!result.ok) {
+          if (!syncErrorToastShownRef.current) {
+            syncErrorToastShownRef.current = true;
+            toast.error(result.error, {
+              description: "Check YOUTUBE_API_KEY and channel settings in Vercel / .env.local",
+            });
+          }
+          if (!options?.silent) {
+            throw new Error(result.error);
+          }
+          return [];
+        }
+
+        const updated = result.data;
         const now = new Date().toISOString();
 
         setLiveSyncState((prev) => {
@@ -143,7 +182,9 @@ export function useSocialTracking(weekStart?: string) {
             }
             return next;
           });
-          void getFollowerHistory(12).then(setHistory);
+          void getFollowerHistory(12).then((historyResult) => {
+            if (historyResult.ok) setHistory(historyResult.data);
+          });
         }
 
         return updated;
@@ -155,6 +196,13 @@ export function useSocialTracking(weekStart?: string) {
           }
           return next;
         });
+        const message = getActionErrorMessage(err, "Live follower sync failed");
+        if (!syncErrorToastShownRef.current) {
+          syncErrorToastShownRef.current = true;
+          toast.error(message, {
+            description: "Check YOUTUBE_API_KEY and channel settings in Vercel / .env.local",
+          });
+        }
         if (!options?.silent) throw err;
         return [];
       } finally {
@@ -204,22 +252,22 @@ export function useSocialTracking(weekStart?: string) {
         ];
       });
 
-      try {
-        const updated = await updateContentEntry({
-          weekId: week.id,
-          contentTypeId,
-          dayOfWeek,
-          postCount,
-        });
-        setEntries((prev) => {
-          const filtered = prev.filter(
-            (e) => !(e.contentTypeId === contentTypeId && e.dayOfWeek === dayOfWeek)
-          );
-          return [...filtered, updated];
-        });
-      } catch {
+      const result = await updateContentEntry({
+        weekId: week.id,
+        contentTypeId,
+        dayOfWeek,
+        postCount,
+      });
+      if (!result.ok) {
         void refresh();
+        throw new Error(result.error);
       }
+      setEntries((prev) => {
+        const filtered = prev.filter(
+          (e) => !(e.contentTypeId === contentTypeId && e.dayOfWeek === dayOfWeek)
+        );
+        return [...filtered, result.data];
+      });
     },
     [week, refresh]
   );
@@ -232,18 +280,23 @@ export function useSocialTracking(weekStart?: string) {
       performance?: SocialPerformance | null
     ) => {
       if (!week) return;
-      const updated = await updateFollowerMetric({
+      const result = await updateFollowerMetric({
         weekId: week.id,
         platformId,
         previousCount,
         currentCount,
         performance,
       });
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
       setFollowerMetrics((prev) => {
         const filtered = prev.filter((m) => m.platformId !== platformId);
-        return [...filtered, updated];
+        return [...filtered, result.data];
       });
-      void getFollowerHistory(12).then(setHistory);
+      void getFollowerHistory(12).then((historyResult) => {
+        if (historyResult.ok) setHistory(historyResult.data);
+      });
     },
     [week]
   );
