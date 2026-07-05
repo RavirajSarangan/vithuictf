@@ -135,6 +135,7 @@ export function useNotifications({ enabled = true }: { enabled?: boolean } = {})
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
+      .limit(50)
       .then(({ data: rows }) => setData((rows ?? []).map(mapNotification)));
   }, [enabled, user]);
 

@@ -10,8 +10,10 @@ import {
   Brain,
   CalendarDays,
   ChevronRight,
+  ClipboardList,
   Flame,
   IdCard,
+  ListChecks,
   Medal,
   Sparkles,
   Trophy,
@@ -29,6 +31,7 @@ import {
   useAchievements,
   useActivities,
   useExams,
+  useStudentAssignments,
   useStudentBilling,
   useStudentData,
   useStudentResults,
@@ -44,6 +47,8 @@ import type { ActivityItem, Exam, Result, Student } from "@/types";
 const QUICK_ACTIONS = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/resources", label: "Resources", icon: BookOpen },
+  { href: "/assignments", label: "Assignments", icon: ClipboardList },
+  { href: "/quizzes", label: "Quizzes", icon: ListChecks },
   { href: "/results", label: "Results", icon: BarChart3 },
   { href: "/ai-assistant", label: "AI Help", icon: Brain },
 ] as const;
@@ -367,6 +372,15 @@ export function StudentDashboardView() {
     () => billingSummaries.reduce((sum, s) => sum + s.totalOutstandingLkr, 0),
     [billingSummaries]
   );
+  const { assignments } = useStudentAssignments(studentId);
+  const pendingAssignments = useMemo(
+    () =>
+      assignments
+        .filter((a) => !a.mySubmission)
+        .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
+        .slice(0, 3),
+    [assignments]
+  );
   const { data: batchTodaySessions, loading: batchTodayLoading } = useStudentBatchTodaySessions(
     studentId ?? null,
     courseId
@@ -409,7 +423,7 @@ export function StudentDashboardView() {
     <div className="flex w-full min-w-0 flex-col gap-4 pb-2 sm:gap-6">
       <HeroBanner student={student} courseName={activeCourseName ?? student.courseName} />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
         {QUICK_ACTIONS.map((action) => {
           const Icon = action.icon;
           return (
@@ -479,6 +493,52 @@ export function StudentDashboardView() {
                 : activeCourseName ?? student.courseName}
             </p>
           </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Assignments due"
+          description="Work waiting for your submission"
+          icon={ClipboardList}
+          actionLabel="All assignments"
+          actionHref="/assignments"
+        >
+          {pendingAssignments.length === 0 ? (
+            <EmptyRow message="Nothing due — you're all caught up." />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {pendingAssignments.map((assignment) => {
+                const overdue = new Date(assignment.dueAt).getTime() < Date.now();
+                return (
+                  <li key={assignment.id}>
+                    <Link
+                      href="/assignments"
+                      className="flex min-h-11 items-center justify-between gap-2 rounded-xl border border-icvf-border bg-icvf-surface/50 px-3 py-2.5 transition-colors hover:border-icvf-navy/20 hover:bg-icvf-navy/5 sm:gap-3 sm:px-4 sm:py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-icvf-navy">
+                          {assignment.title}
+                        </p>
+                        <p className="text-xs text-icvf-text-light">
+                          Due {format(parseISO(assignment.dueAt), "MMM d, HH:mm")}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0",
+                          overdue
+                            ? "border-red-200 bg-red-50 text-red-700"
+                            : "border-sky-200 bg-sky-50 text-sky-700"
+                        )}
+                      >
+                        {overdue ? "Overdue" : "To do"}
+                      </Badge>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </SectionCard>
 
         <SectionCard title="Upcoming exams" description="Prepare ahead" icon={CalendarDays}>

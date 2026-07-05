@@ -44,6 +44,11 @@ export async function GET(request: Request) {
     lastClassDay: 0,
   };
 
+  // Housekeeping: drop portal notifications older than 90 days.
+  const purgeBefore = new Date();
+  purgeBefore.setDate(purgeBefore.getDate() - 90);
+  await supabase.from("notifications").delete().lt("created_at", purgeBefore.toISOString());
+
   const { data: todaySessions } = await supabase
     .from("class_sessions")
     .select(
