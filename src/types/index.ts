@@ -288,7 +288,7 @@ export interface Course {
   coverImageUrl?: string;
   showOnHome: boolean;
   sortOrder: number;
-  /** Derived from active batches via course_schedule_summaries; not a courses column. */
+  /** Admin-set days on the course, overridden by active-batch schedules when present. */
   classDaysPerWeek?: number;
   classDays?: string[];
 }

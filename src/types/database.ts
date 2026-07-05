@@ -460,6 +460,7 @@ export type Database = {
       courses: {
         Row: {
           category: string
+          class_days: string[]
           cover_image_url: string
           created_at: string
           description: string
@@ -476,6 +477,7 @@ export type Database = {
         }
         Insert: {
           category?: string
+          class_days?: string[]
           cover_image_url?: string
           created_at?: string
           description?: string
@@ -492,6 +494,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          class_days?: string[]
           cover_image_url?: string
           created_at?: string
           description?: string

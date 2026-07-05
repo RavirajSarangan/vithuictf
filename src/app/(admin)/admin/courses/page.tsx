@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +54,7 @@ const courseSchema = z.object({
     .number({ message: "Duration is required" })
     .min(1, "Duration is required")
     .max(36, "Duration must be 36 months or less"),
+  classDays: z.array(z.string()),
   level: z.enum(["OL", "AL", "University", "Professional"]),
   teacherName: z.string().min(2, "Staff name is required"),
   coverImageUrl: z.union([z.string().url(), z.literal("")]).optional(),
@@ -166,8 +168,14 @@ export default function AdminCoursesPage() {
         key: "classDays",
         label: "Class days",
         render: (row: Course) => {
-          const schedule = schedules.get(row.id);
-          if (!schedule || schedule.classDaysPerWeek === 0) {
+          const batchSchedule = schedules.get(row.id);
+          const schedule =
+            batchSchedule && batchSchedule.classDaysPerWeek > 0
+              ? batchSchedule
+              : row.classDays?.length
+                ? { classDaysPerWeek: row.classDays.length, classDays: row.classDays }
+                : null;
+          if (!schedule) {
             return <span className="text-muted-foreground">—</span>;
           }
           return (
@@ -238,6 +246,7 @@ export default function AdminCoursesPage() {
       category: "Engineering",
       description: "",
       durationMonths: 12,
+      classDays: [],
       level: "Professional",
       teacherName: "Vithoosan Sivanathan",
       coverImageUrl: "",
@@ -251,6 +260,7 @@ export default function AdminCoursesPage() {
       category: "Engineering",
       description: "",
       durationMonths: 12,
+      classDays: [],
       level: "Professional",
       teacherName: "Vithoosan Sivanathan",
       coverImageUrl: "",
@@ -265,6 +275,7 @@ export default function AdminCoursesPage() {
       category: course.category ?? "Engineering",
       description: course.description,
       durationMonths: course.durationMonths ?? 12,
+      classDays: course.classDays ?? [],
       level: course.level,
       teacherName: course.teacherName,
       coverImageUrl: course.coverImageUrl ?? "",
@@ -280,6 +291,7 @@ export default function AdminCoursesPage() {
         category: values.category,
         description: values.description,
         durationMonths: values.durationMonths,
+        classDays: values.classDays,
         level: values.level as CourseLevel,
         teacherName: values.teacherName,
         coverImageUrl: values.coverImageUrl ?? "",
@@ -431,6 +443,45 @@ export default function AdminCoursesPage() {
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="classDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class days</FormLabel>
+                    <FormControl>
+                      <div className="flex flex-wrap gap-3">
+                        {CLASS_DAYS.map((day) => {
+                          const checked = field.value.includes(day.id);
+                          return (
+                            <label
+                              key={day.id}
+                              className="flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm"
+                            >
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(next) =>
+                                  field.onChange(
+                                    next
+                                      ? [...field.value, day.id]
+                                      : field.value.filter((d: string) => d !== day.id)
+                                  )
+                                }
+                              />
+                              {day.label}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Shown on the home page as “days/week” with a live next-class countdown. Batch
+                      schedules override these once a batch exists.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="description"

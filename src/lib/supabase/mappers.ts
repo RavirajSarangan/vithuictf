@@ -127,6 +127,7 @@ export function mapStudent(row: StudentRow): Student {
 }
 
 export function mapCourse(row: Database["public"]["Tables"]["courses"]["Row"]): Course {
+  const manualDays = row.class_days ?? [];
   return {
     id: row.id,
     name: row.name,
@@ -141,6 +142,8 @@ export function mapCourse(row: Database["public"]["Tables"]["courses"]["Row"]): 
     coverImageUrl: row.cover_image_url || undefined,
     showOnHome: row.show_on_home ?? true,
     sortOrder: row.sort_order ?? 0,
+    classDaysPerWeek: manualDays.length || undefined,
+    classDays: manualDays.length ? manualDays : undefined,
   };
 }
 

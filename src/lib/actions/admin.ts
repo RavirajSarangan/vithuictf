@@ -373,6 +373,7 @@ export async function addCourse(data: {
   teacherName: string;
   slug?: string;
   coverImageUrl?: string;
+  classDays?: string[];
 }): Promise<ActionResult> {
   try {
     if (!data.durationMonths || data.durationMonths < 1) {
@@ -406,6 +407,7 @@ export async function addCourse(data: {
       cover_image_url: data.coverImageUrl?.trim() ?? "",
       show_on_home: true,
       sort_order: (maxRow?.sort_order ?? 0) + 1,
+      class_days: data.classDays ?? [],
     });
     if (error) return actionFailure(error, "Failed to add course");
     revalidateCoursePaths();
@@ -425,6 +427,7 @@ export async function updateCourse(
     level?: CourseLevel;
     teacherName: string;
     coverImageUrl?: string;
+    classDays?: string[];
   }
 ): Promise<ActionResult> {
   try {
@@ -443,6 +446,7 @@ export async function updateCourse(
         level: data.level ?? "Professional",
         teacher_name: data.teacherName,
         cover_image_url: data.coverImageUrl?.trim() ?? "",
+        ...(data.classDays !== undefined ? { class_days: data.classDays } : {}),
       })
       .eq("id", id);
     if (error) return actionFailure(error, "Failed to update course");
