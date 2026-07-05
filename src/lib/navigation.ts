@@ -12,6 +12,7 @@ export const studentNav: NavItem[] = [
   { href: "/pass-papers", label: "Pass Papers", icon: FolderOpen },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/attendance", label: "Attendance", icon: ClipboardCheck },
+  { href: "/payments", label: "Payments", icon: Wallet },
   { href: "/achievements", label: "Achievements", icon: Medal },
   { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { href: "/profile-card", label: "Profile Card", icon: IdCard },

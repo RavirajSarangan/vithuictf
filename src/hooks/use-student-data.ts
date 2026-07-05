@@ -14,7 +14,9 @@ import {
   mapPlatformSettings,
   mapResource,
   mapResult,
+  mapSessionCharge,
   mapStudent,
+  mapStudentBillingSummary,
   mapTeacher,
 } from "@/lib/supabase/mappers";
 import { markNotificationRead as markReadAction } from "@/lib/actions/admin";
@@ -30,7 +32,9 @@ import type {
   PlatformSettings,
   Resource,
   Result,
+  SessionCharge,
   Student,
+  StudentBillingSummary,
   Teacher,
 } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
@@ -223,6 +227,45 @@ export function useActivities(studentId?: string) {
   );
 
   return { activities: data, isLoading };
+}
+
+
+export function useStudentBilling(studentId?: string) {
+  const summariesFetcher = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("student_billing_summary")
+      .select("*")
+      .eq("student_id", studentId!);
+    return (data ?? []).map(mapStudentBillingSummary);
+  }, [studentId]);
+
+  const chargesFetcher = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("session_charges")
+      .select("*, courses(name), course_batches(name), class_sessions(session_number, scheduled_date)")
+      .eq("student_id", studentId!)
+      .neq("status", "void")
+      .order("billing_month", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(200);
+    return (data ?? []).map(mapSessionCharge);
+  }, [studentId]);
+
+  const { data: summaries, isLoading: summariesLoading } = useCachedList<StudentBillingSummary>(
+    studentId ? `billing-summary:${studentId}` : null,
+    summariesFetcher,
+    Boolean(studentId)
+  );
+
+  const { data: charges, isLoading: chargesLoading } = useCachedList<SessionCharge>(
+    studentId ? `billing-charges:${studentId}` : null,
+    chargesFetcher,
+    Boolean(studentId)
+  );
+
+  return { summaries, charges, isLoading: summariesLoading || chargesLoading };
 }
 
 

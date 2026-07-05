@@ -8,6 +8,7 @@ import {
   allocatePaymentToCharges,
   getPerClassFeeLkr,
 } from "@/lib/billing/session-charges";
+import { runFeeReminders, type FeeReminderStats } from "@/lib/billing/fee-reminders";
 import {
   mapSessionCharge,
   mapStudentBillingSummary,
@@ -336,4 +337,14 @@ export async function getOutstandingSessionFeesTotal(): Promise<number> {
 
   if (error) throw new Error(error.message);
   return (data ?? []).reduce((sum, row) => sum + Number(row.amount_lkr), 0);
+}
+
+export async function sendFeeRemindersNow(): Promise<FeeReminderStats> {
+  await requireAdmin();
+
+  const stats = await runFeeReminders();
+  await logAdminAction("finance.fee_reminders_send", "fee_reminder_log", "batch", {
+    ...stats,
+  });
+  return stats;
 }

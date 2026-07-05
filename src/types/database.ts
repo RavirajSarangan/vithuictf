@@ -1776,6 +1776,33 @@ export type Database = {
         }
         Relationships: []
       }
+      fee_reminder_log: {
+        Row: {
+          id: string
+          student_id: string
+          billing_month: string
+          outstanding_lkr: number
+          channel: string
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          billing_month: string
+          outstanding_lkr: number
+          channel?: string
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          billing_month?: string
+          outstanding_lkr?: number
+          channel?: string
+          sent_at?: string
+        }
+        Relationships: []
+      }
       student_billing_summary: {
         Row: {
           student_id: string

@@ -16,6 +16,7 @@ import {
   Sparkles,
   Trophy,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 
 import { SectionCard } from "@/components/student/dashboard/section-card";
@@ -28,6 +29,7 @@ import {
   useAchievements,
   useActivities,
   useExams,
+  useStudentBilling,
   useStudentData,
   useStudentResults,
 } from "@/hooks/use-student-data";
@@ -360,6 +362,11 @@ export function StudentDashboardView() {
   const { achievements } = useAchievements(studentId);
   const { activities } = useActivities(studentId);
   const { exams } = useExams();
+  const { summaries: billingSummaries } = useStudentBilling(studentId);
+  const outstandingLkr = useMemo(
+    () => billingSummaries.reduce((sum, s) => sum + s.totalOutstandingLkr, 0),
+    [billingSummaries]
+  );
   const { data: batchTodaySessions, loading: batchTodayLoading } = useStudentBatchTodaySessions(
     studentId ?? null,
     courseId
@@ -486,6 +493,34 @@ export function StudentDashboardView() {
           actionHref="/results"
         >
           <ResultsList results={latestResults} />
+        </SectionCard>
+
+        <SectionCard
+          title="Class fees"
+          description="Per-class billing status"
+          icon={Wallet}
+          actionLabel="Payments"
+          actionHref="/payments"
+        >
+          {billingSummaries.length === 0 ? (
+            <EmptyRow message="Charges appear here after your first attended class." />
+          ) : (
+            <div className="flex flex-col items-center gap-2 py-2 text-center">
+              <p
+                className={cn(
+                  "text-2xl font-bold tracking-tight sm:text-3xl",
+                  outstandingLkr > 0 ? "text-amber-700" : "text-emerald-700"
+                )}
+              >
+                Rs. {outstandingLkr.toLocaleString()}
+              </p>
+              <p className="text-xs text-icvf-text-light">
+                {outstandingLkr > 0
+                  ? "Outstanding balance across your courses"
+                  : "All class fees settled — thank you!"}
+              </p>
+            </div>
+          )}
         </SectionCard>
 
         <SectionCard
