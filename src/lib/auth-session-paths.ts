@@ -10,6 +10,7 @@ export const IMMEDIATE_AUTH_PREFIXES = [
   "/attendance",
   "/payments",
   "/assignments",
+  "/quizzes",
   "/achievements",
   "/leaderboard",
   "/profile-card",

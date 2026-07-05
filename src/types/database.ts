@@ -1869,6 +1869,111 @@ export type Database = {
         }
         Relationships: []
       }
+      quizzes: {
+        Row: {
+          id: string
+          course_id: string
+          batch_id: string | null
+          title: string
+          description: string
+          time_limit_minutes: number | null
+          max_attempts: number
+          published: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          batch_id?: string | null
+          title: string
+          description?: string
+          time_limit_minutes?: number | null
+          max_attempts?: number
+          published?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          course_id?: string
+          batch_id?: string | null
+          title?: string
+          description?: string
+          time_limit_minutes?: number | null
+          max_attempts?: number
+          published?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          id: string
+          quiz_id: string
+          position: number
+          prompt: string
+          options: Json
+          correct_index: number
+          points: number
+        }
+        Insert: {
+          id?: string
+          quiz_id: string
+          position?: number
+          prompt: string
+          options: Json
+          correct_index: number
+          points?: number
+        }
+        Update: {
+          id?: string
+          quiz_id?: string
+          position?: number
+          prompt?: string
+          options?: Json
+          correct_index?: number
+          points?: number
+        }
+        Relationships: []
+      }
+      quiz_attempts: {
+        Row: {
+          id: string
+          quiz_id: string
+          student_id: string
+          answers: Json
+          score: number
+          max_score: number
+          started_at: string
+          completed_at: string
+        }
+        Insert: {
+          id?: string
+          quiz_id: string
+          student_id: string
+          answers?: Json
+          score?: number
+          max_score?: number
+          started_at?: string
+          completed_at?: string
+        }
+        Update: {
+          id?: string
+          quiz_id?: string
+          student_id?: string
+          answers?: Json
+          score?: number
+          max_score?: number
+          started_at?: string
+          completed_at?: string
+        }
+        Relationships: []
+      }
       fee_reminder_log: {
         Row: {
           id: string

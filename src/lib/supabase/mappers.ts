@@ -29,6 +29,9 @@ import type {
   PassPaperMedium,
   Payment,
   PlatformSettings,
+  Quiz,
+  QuizAttempt,
+  QuizQuestion,
   Resource,
   Result,
   SessionCharge,
@@ -367,6 +370,64 @@ export function mapAssignmentSubmission(
     feedback: row.feedback,
     gradedAt: row.graded_at,
     submittedAt: row.submitted_at,
+  };
+}
+
+export function mapQuiz(
+  row: Database["public"]["Tables"]["quizzes"]["Row"] & {
+    courses?: { name: string } | null;
+    course_batches?: { name: string } | null;
+  }
+): Quiz {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    batchId: row.batch_id,
+    courseName: row.courses?.name,
+    batchName: row.course_batches?.name,
+    title: row.title,
+    description: row.description,
+    timeLimitMinutes: row.time_limit_minutes,
+    maxAttempts: row.max_attempts,
+    published: row.published,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapQuizQuestion(
+  row: Database["public"]["Tables"]["quiz_questions"]["Row"],
+  { includeAnswer = true }: { includeAnswer?: boolean } = {}
+): QuizQuestion {
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    position: row.position,
+    prompt: row.prompt,
+    options: Array.isArray(row.options) ? (row.options as string[]) : [],
+    ...(includeAnswer ? { correctIndex: row.correct_index } : {}),
+    points: row.points,
+  };
+}
+
+export function mapQuizAttempt(
+  row: Database["public"]["Tables"]["quiz_attempts"]["Row"] & {
+    students?: { display_name: string; student_id: string } | null;
+  }
+): QuizAttempt {
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    studentId: row.student_id,
+    studentName: row.students?.display_name,
+    studentCode: row.students?.student_id,
+    answers:
+      row.answers && typeof row.answers === "object" && !Array.isArray(row.answers)
+        ? (row.answers as Record<string, number>)
+        : {},
+    score: row.score,
+    maxScore: row.max_score,
+    completedAt: row.completed_at,
   };
 }
 

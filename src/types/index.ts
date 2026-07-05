@@ -446,6 +446,51 @@ export interface StudentBillingSummary {
   totalOutstandingLkr: number;
 }
 
+export interface Quiz {
+  id: string;
+  courseId: string;
+  batchId?: string | null;
+  courseName?: string;
+  batchName?: string;
+  title: string;
+  description: string;
+  timeLimitMinutes?: number | null;
+  maxAttempts: number;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Populated per-context. */
+  questionCount?: number;
+  totalPoints?: number;
+  attemptCount?: number;
+  myAttemptCount?: number;
+  myBestScore?: number | null;
+  myBestMaxScore?: number | null;
+}
+
+export interface QuizQuestion {
+  id: string;
+  quizId: string;
+  position: number;
+  prompt: string;
+  options: string[];
+  /** Omitted when served to students. */
+  correctIndex?: number;
+  points: number;
+}
+
+export interface QuizAttempt {
+  id: string;
+  quizId: string;
+  studentId: string;
+  studentName?: string;
+  studentCode?: string;
+  answers: Record<string, number>;
+  score: number;
+  maxScore: number;
+  completedAt: string;
+}
+
 export type SubmissionStatus = "submitted" | "graded" | "returned";
 
 export interface Assignment {

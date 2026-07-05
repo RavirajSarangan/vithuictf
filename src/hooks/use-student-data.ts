@@ -10,6 +10,8 @@ import {
   mapAssignmentSubmission,
   mapCourse,
   mapExam,
+  mapQuiz,
+  mapQuizAttempt,
   mapLeaderboard,
   mapNotification,
   mapParent,
@@ -33,6 +35,7 @@ import type {
   Notification,
   Parent,
   PlatformSettings,
+  Quiz,
   Resource,
   Result,
   SessionCharge,
@@ -277,6 +280,68 @@ export function useStudentAssignments(studentId?: string) {
   }, [studentId, version]);
 
   return { assignments: data, loading: Boolean(studentId) && loading, refresh };
+}
+
+
+export function useStudentQuizzes(studentId?: string) {
+  const [data, setData] = useState<Quiz[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    if (!studentId) return;
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const supabase = createClient();
+      // RLS limits quizzes to published ones in the student's courses/batches.
+      const [{ data: quizRows }, { data: attemptRows }] = await Promise.all([
+        supabase
+          .from("quizzes")
+          .select("*, courses(name), course_batches(name)")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("quiz_attempts")
+          .select("*")
+          .eq("student_id", studentId),
+      ]);
+      if (cancelled) return;
+
+      const attemptsByQuiz = new Map<string, { count: number; best: number; bestMax: number }>();
+      for (const row of attemptRows ?? []) {
+        const attempt = mapQuizAttempt(row);
+        const entry = attemptsByQuiz.get(attempt.quizId) ?? { count: 0, best: -1, bestMax: 0 };
+        entry.count += 1;
+        if (attempt.score > entry.best) {
+          entry.best = attempt.score;
+          entry.bestMax = attempt.maxScore;
+        }
+        attemptsByQuiz.set(attempt.quizId, entry);
+      }
+
+      setData(
+        (quizRows ?? []).map((row) => {
+          const quiz = mapQuiz(row);
+          const attempts = attemptsByQuiz.get(quiz.id);
+          return {
+            ...quiz,
+            myAttemptCount: attempts?.count ?? 0,
+            myBestScore: attempts && attempts.best >= 0 ? attempts.best : null,
+            myBestMaxScore: attempts && attempts.best >= 0 ? attempts.bestMax : null,
+          };
+        })
+      );
+      setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId, version]);
+
+  return { quizzes: data, loading: Boolean(studentId) && loading, refresh };
 }
 
 
