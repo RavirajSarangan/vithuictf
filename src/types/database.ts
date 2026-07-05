@@ -1776,6 +1776,99 @@ export type Database = {
         }
         Relationships: []
       }
+      assignments: {
+        Row: {
+          id: string
+          batch_id: string
+          course_id: string
+          title: string
+          instructions: string
+          attachment_path: string | null
+          attachment_name: string | null
+          due_at: string
+          max_marks: number
+          published: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          batch_id: string
+          course_id: string
+          title: string
+          instructions?: string
+          attachment_path?: string | null
+          attachment_name?: string | null
+          due_at: string
+          max_marks?: number
+          published?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          batch_id?: string
+          course_id?: string
+          title?: string
+          instructions?: string
+          attachment_path?: string | null
+          attachment_name?: string | null
+          due_at?: string
+          max_marks?: number
+          published?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assignment_submissions: {
+        Row: {
+          id: string
+          assignment_id: string
+          student_id: string
+          file_path: string | null
+          file_name: string | null
+          note: string
+          status: Database["public"]["Enums"]["submission_status"]
+          marks: number | null
+          feedback: string | null
+          graded_by: string | null
+          graded_at: string | null
+          submitted_at: string
+        }
+        Insert: {
+          id?: string
+          assignment_id: string
+          student_id: string
+          file_path?: string | null
+          file_name?: string | null
+          note?: string
+          status?: Database["public"]["Enums"]["submission_status"]
+          marks?: number | null
+          feedback?: string | null
+          graded_by?: string | null
+          graded_at?: string | null
+          submitted_at?: string
+        }
+        Update: {
+          id?: string
+          assignment_id?: string
+          student_id?: string
+          file_path?: string | null
+          file_name?: string | null
+          note?: string
+          status?: Database["public"]["Enums"]["submission_status"]
+          marks?: number | null
+          feedback?: string | null
+          graded_by?: string | null
+          graded_at?: string | null
+          submitted_at?: string
+        }
+        Relationships: []
+      }
       fee_reminder_log: {
         Row: {
           id: string
@@ -1949,6 +2042,7 @@ export type Database = {
     Enums: {
       course_level: "OL" | "AL" | "University" | "Professional"
       notification_type: "result" | "announcement" | "achievement" | "class"
+      submission_status: "submitted" | "graded" | "returned"
       whatsapp_message_type:
         | "last_class"
         | "last_class_eve"

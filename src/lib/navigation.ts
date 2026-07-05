@@ -12,6 +12,7 @@ export const studentNav: NavItem[] = [
   { href: "/pass-papers", label: "Pass Papers", icon: FolderOpen },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/attendance", label: "Attendance", icon: ClipboardCheck },
+  { href: "/assignments", label: "Assignments", icon: FileText },
   { href: "/payments", label: "Payments", icon: Wallet },
   { href: "/achievements", label: "Achievements", icon: Medal },
   { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
@@ -46,6 +47,7 @@ export const academicsNav: NavItem[] = [
   { href: "/academics/students", label: "Students", icon: Users },
   { href: "/admin/courses", label: "Courses", icon: Layers },
   { href: "/academics/attendance", label: "Attendance", icon: ClipboardCheck },
+  { href: "/academics/assignments", label: "Assignments", icon: FileText },
   { href: "/academics/reports", label: "Reports", icon: LineChart },
   { href: "/academics/calendar", label: "Calendar", icon: CalendarDays },
 ];
@@ -54,6 +56,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/academics/dashboard", label: "Academics", icon: GraduationCap, group: "Academics" },
   { href: "/academics/attendance", label: "Class attendance", icon: ClipboardCheck, group: "Academics" },
+  { href: "/academics/assignments", label: "Assignments", icon: FileText, group: "Academics" },
   { href: "/academics/calendar", label: "Class calendar", icon: CalendarDays, group: "Academics" },
   { href: "/admin/students", label: "Students", icon: Users, group: "People" },
   { href: "/admin/people", label: "People", icon: GraduationCap, group: "People" },

@@ -9,6 +9,7 @@ export const IMMEDIATE_AUTH_PREFIXES = [
   "/calendar",
   "/attendance",
   "/payments",
+  "/assignments",
   "/achievements",
   "/leaderboard",
   "/profile-card",

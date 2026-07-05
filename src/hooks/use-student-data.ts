@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import {
   mapAchievement,
   mapActivity,
+  mapAssignment,
+  mapAssignmentSubmission,
   mapCourse,
   mapExam,
   mapLeaderboard,
@@ -24,6 +26,7 @@ import { DEFAULT_PLATFORM_SETTINGS } from "@/lib/payment-access";
 import type {
   Achievement,
   ActivityItem,
+  Assignment,
   Course,
   Exam,
   LeaderboardEntry,
@@ -227,6 +230,53 @@ export function useActivities(studentId?: string) {
   );
 
   return { activities: data, isLoading };
+}
+
+
+export function useStudentAssignments(studentId?: string) {
+  const [data, setData] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    if (!studentId) return;
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const supabase = createClient();
+      // RLS limits assignments to published rows in the student's active batches.
+      const [{ data: assignmentRows }, { data: submissionRows }] = await Promise.all([
+        supabase
+          .from("assignments")
+          .select("*, courses(name), course_batches(name)")
+          .order("due_at", { ascending: false }),
+        supabase
+          .from("assignment_submissions")
+          .select("*")
+          .eq("student_id", studentId),
+      ]);
+      if (cancelled) return;
+
+      const submissionByAssignment = new Map(
+        (submissionRows ?? []).map((row) => [row.assignment_id, mapAssignmentSubmission(row)])
+      );
+      setData(
+        (assignmentRows ?? []).map((row) => ({
+          ...mapAssignment(row),
+          mySubmission: submissionByAssignment.get(row.id) ?? null,
+        }))
+      );
+      setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId, version]);
+
+  return { assignments: data, loading: Boolean(studentId) && loading, refresh };
 }
 
 

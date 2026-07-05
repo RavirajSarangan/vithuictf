@@ -1,6 +1,8 @@
 import type {
   Achievement,
   ActivityItem,
+  Assignment,
+  AssignmentSubmission,
   BatchEnrollment,
   BatchWhatsAppLogEntry,
   BlogPostStatus,
@@ -319,6 +321,52 @@ export function mapStudentBillingSummary(row: {
     totalChargedLkr: Number(row.total_charged_lkr),
     totalPaidLkr: Number(row.total_paid_lkr),
     totalOutstandingLkr: Number(row.total_outstanding_lkr),
+  };
+}
+
+export function mapAssignment(
+  row: Database["public"]["Tables"]["assignments"]["Row"] & {
+    courses?: { name: string } | null;
+    course_batches?: { name: string } | null;
+  }
+): Assignment {
+  return {
+    id: row.id,
+    batchId: row.batch_id,
+    courseId: row.course_id,
+    batchName: row.course_batches?.name,
+    courseName: row.courses?.name,
+    title: row.title,
+    instructions: row.instructions,
+    attachmentPath: row.attachment_path,
+    attachmentName: row.attachment_name,
+    dueAt: row.due_at,
+    maxMarks: row.max_marks,
+    published: row.published,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapAssignmentSubmission(
+  row: Database["public"]["Tables"]["assignment_submissions"]["Row"] & {
+    students?: { display_name: string; student_id: string } | null;
+  }
+): AssignmentSubmission {
+  return {
+    id: row.id,
+    assignmentId: row.assignment_id,
+    studentId: row.student_id,
+    studentName: row.students?.display_name,
+    studentCode: row.students?.student_id,
+    filePath: row.file_path,
+    fileName: row.file_name,
+    note: row.note,
+    status: row.status,
+    marks: row.marks,
+    feedback: row.feedback,
+    gradedAt: row.graded_at,
+    submittedAt: row.submitted_at,
   };
 }
 

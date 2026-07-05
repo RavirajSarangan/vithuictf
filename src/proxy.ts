@@ -23,6 +23,7 @@ const studentRoutes: Record<string, UserRole[]> = {
   "/calendar": ["student"],
   "/attendance": ["student"],
   "/payments": ["student"],
+  "/assignments": ["student"],
   "/achievements": ["student"],
   "/leaderboard": ["student"],
   "/profile-card": ["student"],

@@ -446,6 +446,45 @@ export interface StudentBillingSummary {
   totalOutstandingLkr: number;
 }
 
+export type SubmissionStatus = "submitted" | "graded" | "returned";
+
+export interface Assignment {
+  id: string;
+  batchId: string;
+  courseId: string;
+  batchName?: string;
+  courseName?: string;
+  title: string;
+  instructions: string;
+  attachmentPath?: string | null;
+  attachmentName?: string | null;
+  dueAt: string;
+  maxMarks: number;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Populated per-context: staff lists get counts, students get their own submission. */
+  submissionCount?: number;
+  gradedCount?: number;
+  mySubmission?: AssignmentSubmission | null;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName?: string;
+  studentCode?: string;
+  filePath?: string | null;
+  fileName?: string | null;
+  note: string;
+  status: SubmissionStatus;
+  marks?: number | null;
+  feedback?: string | null;
+  gradedAt?: string | null;
+  submittedAt: string;
+}
+
 export interface StudentFinanceRosterRow {
   studentId: string;
   studentName: string;
