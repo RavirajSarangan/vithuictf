@@ -50,6 +50,7 @@ export const academicsNav: NavItem[] = [
   { href: "/academics/attendance", label: "Attendance", icon: ClipboardCheck },
   { href: "/academics/assignments", label: "Assignments", icon: FileText },
   { href: "/academics/quizzes", label: "Quizzes", icon: Brain },
+  { href: "/admin/results", label: "Results", icon: BarChart3 },
   { href: "/academics/reports", label: "Reports", icon: LineChart },
   { href: "/academics/calendar", label: "Calendar", icon: CalendarDays },
 ];
