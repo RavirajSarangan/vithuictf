@@ -13,6 +13,10 @@ interface BlogPostCardProps {
   readMoreLabel?: string;
 }
 
+function MetaDot() {
+  return <span aria-hidden>·</span>;
+}
+
 export function BlogPostCard({ post, featured = false, readMoreLabel = "Read more" }: BlogPostCardProps) {
   const dateLabel = post.publishedAt
     ? format(new Date(post.publishedAt), "MMM d, yyyy")
@@ -20,7 +24,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
 
   if (featured) {
     return (
-      <MarketingPanel featured className="overflow-hidden p-0 md:grid md:grid-cols-2 md:gap-0">
+      <MarketingPanel featured className="group overflow-hidden p-0 md:grid md:grid-cols-2 md:gap-0">
         <Link
           href={`/blog/${post.slug}`}
           className="relative block min-h-56 overflow-hidden bg-white/5 md:min-h-full"
@@ -30,7 +34,7 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
               src={post.coverImageUrl}
               alt={post.title}
               fill
-              className="object-cover transition-transform duration-300 hover:scale-[1.02]"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           ) : (
@@ -42,32 +46,41 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
         <div className="flex flex-col p-6 md:p-8">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-white/60">
             {post.categoryName && (
-              <span className="rounded-full bg-icvf-accent/20 px-2.5 py-0.5 font-semibold text-icvf-accent">
-                {post.categoryName}
-              </span>
+              <>
+                <span className="rounded-full bg-icvf-accent/20 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-icvf-accent">
+                  {post.categoryName}
+                </span>
+                <MetaDot />
+              </>
             )}
-            {dateLabel && <time dateTime={post.publishedAt ?? undefined}>{dateLabel}</time>}
+            {dateLabel && (
+              <>
+                <time dateTime={post.publishedAt ?? undefined}>{dateLabel}</time>
+                <MetaDot />
+              </>
+            )}
             <span className="inline-flex items-center gap-1">
               <Clock className="size-3.5" />
               {post.readingTimeMinutes} min read
             </span>
+            <MetaDot />
             <BlogViewCount postId={post.id} initialCount={post.viewCount} variant="dark" />
           </div>
-          <h2 className="text-2xl font-bold text-white md:text-3xl">
-            <Link href={`/blog/${post.slug}`} className="hover:text-icvf-accent">
+          <h2 className="text-2xl font-bold leading-snug text-white md:text-3xl">
+            <Link href={`/blog/${post.slug}`} className="transition-colors group-hover:text-icvf-accent">
               {post.title}
             </Link>
           </h2>
           {post.excerpt && (
             <p className="mt-3 text-base leading-relaxed text-white/75">{post.excerpt}</p>
           )}
-          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-6">
             <Link
               href={`/blog/${post.slug}`}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-icvf-accent hover:underline"
+              className="group/cta inline-flex items-center gap-1.5 rounded-full bg-icvf-accent px-4 py-2 text-sm font-semibold text-icvf-navy-dark transition-colors hover:bg-icvf-accent-hover"
             >
               {readMoreLabel}
-              <ArrowRight className="size-4" />
+              <ArrowRight className="size-4 transition-transform group-hover/cta:translate-x-1" />
             </Link>
             <BlogPostShare post={post} variant="dark" />
           </div>
@@ -77,14 +90,17 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
   }
 
   return (
-    <MarketingPanel className="flex h-full flex-col overflow-hidden p-0 hover:-translate-y-0.5">
-      <Link href={`/blog/${post.slug}`} className="relative block aspect-[16/10] overflow-hidden bg-icvf-navy/5">
+    <MarketingPanel className="group flex h-full flex-col overflow-hidden p-0 hover:-translate-y-0.5">
+      <Link
+        href={`/blog/${post.slug}`}
+        className="relative block aspect-[16/9] overflow-hidden border-b border-icvf-border/70 bg-icvf-navy/5"
+      >
         {post.coverImageUrl ? (
           <BlogStorageImage
             src={post.coverImageUrl}
             alt={post.title}
             fill
-            className="object-cover transition-transform duration-300 hover:scale-[1.02]"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         ) : (
@@ -95,37 +111,44 @@ export function BlogPostCard({ post, featured = false, readMoreLabel = "Read mor
       </Link>
 
       <div className="flex flex-1 flex-col p-5 md:p-6">
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-icvf-text-light">
+        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-icvf-text-light">
           {post.categoryName && (
-            <span className="rounded-full bg-icvf-accent/15 px-2.5 py-0.5 font-semibold text-icvf-navy">
-              {post.categoryName}
-            </span>
+            <>
+              <span className="rounded-full bg-icvf-accent/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-icvf-navy">
+                {post.categoryName}
+              </span>
+              <MetaDot />
+            </>
           )}
-          {dateLabel && <time dateTime={post.publishedAt ?? undefined}>{dateLabel}</time>}
+          {dateLabel && (
+            <>
+              <time dateTime={post.publishedAt ?? undefined}>{dateLabel}</time>
+              <MetaDot />
+            </>
+          )}
           <span className="inline-flex items-center gap-1">
             <Clock className="size-3.5" />
             {post.readingTimeMinutes} min read
           </span>
+          <MetaDot />
           <BlogViewCount postId={post.id} initialCount={post.viewCount} />
         </div>
 
-        <h2 className="text-lg font-bold text-icvf-navy">
-          <Link href={`/blog/${post.slug}`} className="hover:text-icvf-accent">
-            {post.title}
-          </Link>
+        <h2 className="text-lg font-bold leading-snug text-icvf-navy transition-colors group-hover:text-icvf-accent">
+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
         </h2>
 
         {post.excerpt && (
           <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-icvf-text-light">{post.excerpt}</p>
         )}
 
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-icvf-border/70 pt-4">
           <Link
             href={`/blog/${post.slug}`}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-icvf-accent hover:underline"
+            className="group/cta inline-flex items-center gap-1.5 text-sm font-semibold text-icvf-accent"
           >
             {readMoreLabel}
-            <ArrowRight className="size-4" />
+            <ArrowRight className="size-4 transition-transform group-hover/cta:translate-x-1" />
           </Link>
           <BlogPostShare post={post} />
         </div>

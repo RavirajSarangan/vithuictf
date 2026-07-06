@@ -9,6 +9,7 @@ import {
   getPublishedBlogPosts,
 } from "@/lib/blog/queries";
 import { BlogPostCard } from "@/components/blog/blog-post-card";
+import { CanvasEyebrow } from "@/components/canvas/primitives";
 import {
   MarketingContainer,
   MarketingSection,
@@ -17,6 +18,15 @@ import {
 import { cn } from "@/lib/utils";
 
 export const revalidate = 60;
+
+function categoryChipClass(active: boolean) {
+  return cn(
+    "rounded-full px-4 py-1.5 text-sm font-semibold transition-all",
+    active
+      ? "bg-icvf-navy text-white shadow-sm"
+      : "border border-icvf-border bg-white text-icvf-text-light hover:border-icvf-accent/50 hover:text-icvf-navy"
+  );
+}
 
 interface BlogPageProps {
   searchParams: Promise<{ category?: string; page?: string }>;
@@ -72,27 +82,14 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
       {categories.length > 0 && (
         <MarketingContainer className="mb-8 flex flex-wrap gap-2">
-          <Link
-            href="/blog"
-            className={cn(
-              "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
-              !categorySlug
-                ? "bg-icvf-navy text-white"
-                : "border border-icvf-border bg-white text-icvf-navy hover:border-icvf-accent/40"
-            )}
-          >
+          <Link href="/blog" className={categoryChipClass(!categorySlug)}>
             All
           </Link>
           {categories.map((category) => (
             <Link
               key={category.id}
               href={`/blog?category=${category.slug}`}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
-                categorySlug === category.slug
-                  ? "bg-icvf-navy text-white"
-                  : "border border-icvf-border bg-white text-icvf-navy hover:border-icvf-accent/40"
-              )}
+              className={categoryChipClass(categorySlug === category.slug)}
             >
               {category.name}
             </Link>
@@ -102,8 +99,8 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
       {featured && page === 1 && !categorySlug && (
         <MarketingContainer className="mb-10">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-icvf-accent">
-            Featured
+          <p className="mb-4">
+            <CanvasEyebrow variant="accent">Featured</CanvasEyebrow>
           </p>
           <BlogPostCard post={featured} featured readMoreLabel="Read article" />
         </MarketingContainer>

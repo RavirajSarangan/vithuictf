@@ -879,6 +879,45 @@ async function reconcileStaffProfileRole(userId: string, currentRole: UserRole):
   return "teacher";
 }
 
+/** Fix profiles stuck as student/parent when an active content_managers row already exists. */
+async function reconcileContentManagerProfileRole(
+  userId: string,
+  currentRole: UserRole
+): Promise<UserRole> {
+  if (
+    currentRole === "content_manager" ||
+    currentRole === "teacher" ||
+    currentRole === "admin" ||
+    currentRole === "super_admin" ||
+    !isAdminClientConfigured()
+  ) {
+    return currentRole;
+  }
+
+  const admin = createAdminClient();
+  const { data: managerRecord } = await admin
+    .from("content_managers")
+    .select("active")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!managerRecord || managerRecord.active === false) {
+    return currentRole;
+  }
+
+  const { error } = await admin
+    .from("profiles")
+    .update({ role: "content_manager" })
+    .eq("id", userId);
+  if (error) {
+    console.error("Failed to reconcile content manager profile role:", error.message);
+    return currentRole;
+  }
+
+  await syncProfileRoleToJwt(userId, "content_manager");
+  return "content_manager";
+}
+
 /** Resolve staff login from email when teachers sign in without entering a username. */
 async function resolveTeacherStaffLoginByEmail(
   email: string
@@ -996,6 +1035,10 @@ export async function loginAdminPortal(email: string, password: string): Promise
       await supabase.auth.signOut();
       return loginActionFailure(new Error(LOGIN_ERROR.PAPER_CENTER_ONLY));
     }
+    if (mapped.role === "content_manager") {
+      await supabase.auth.signOut();
+      return loginActionFailure(new Error(LOGIN_ERROR.CONTENT_TEAM_ONLY));
+    }
     if (mapped.role !== "admin" && mapped.role !== "super_admin") {
       await supabase.auth.signOut();
       return loginActionFailure(new Error(LOGIN_ERROR.ADMIN_PORTAL_ONLY));
@@ -1003,6 +1046,83 @@ export async function loginAdminPortal(email: string, password: string): Promise
 
     await syncProfileRoleToJwt(authData.user.id, mapped.role);
     return { ok: true, redirectTo: "/admin/dashboard" };
+  } catch (error) {
+    return loginActionFailure(error);
+  }
+}
+
+/** Client-safe content team login — email + password only, no staff username. */
+export async function loginContentTeamPortal(
+  email: string,
+  password: string
+): Promise<LoginActionResult> {
+  try {
+    const normalizedEmail = normalizeEmail(email);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return loginActionFailure(new Error(LOGIN_ERROR.INVALID_EMAIL));
+    }
+
+    await assertLoginRateLimit(normalizedEmail);
+
+    const supabase = await createClient();
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    if (error) {
+      return loginActionFailure(error);
+    }
+    if (!authData.user) {
+      return { ok: false, error: "Sign in failed" };
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (!profile) {
+      await supabase.auth.signOut();
+      return { ok: false, error: "Profile not found" };
+    }
+
+    const mapped = mapProfile(profile);
+    const effectiveRole = await reconcileContentManagerProfileRole(authData.user.id, mapped.role);
+    if (effectiveRole !== "content_manager") {
+      await supabase.auth.signOut();
+      if (effectiveRole === "teacher") {
+        return loginActionFailure(new Error(LOGIN_ERROR.STAFF_PORTAL_ONLY));
+      }
+      if (effectiveRole === "paper_center_staff") {
+        return loginActionFailure(new Error(LOGIN_ERROR.PAPER_CENTER_ONLY));
+      }
+      if (effectiveRole === "admin" || effectiveRole === "super_admin") {
+        return loginActionFailure(new Error(LOGIN_ERROR.ADMIN_USE_ADMIN_LOGIN));
+      }
+      if (effectiveRole === "student") {
+        return loginActionFailure(new Error(LOGIN_ERROR.STUDENT_ID_ONLY));
+      }
+      return { ok: false, error: "This account cannot use the content team portal." };
+    }
+
+    const { data: manager } = await supabase
+      .from("content_managers")
+      .select("active")
+      .eq("user_id", authData.user.id)
+      .maybeSingle();
+
+    if (!manager?.active) {
+      await supabase.auth.signOut();
+      return {
+        ok: false,
+        error: "Your content team account is deactivated. Contact an administrator.",
+      };
+    }
+
+    await syncProfileRoleToJwt(authData.user.id, "content_manager");
+    return { ok: true, redirectTo: "/staff/tracking" };
   } catch (error) {
     return loginActionFailure(error);
   }
@@ -1023,15 +1143,6 @@ export async function loginStaffPortal(
 
   const trimmedUsername = staffUsername.trim();
 
-  // Teachers can sign in with email + password; username is resolved from their staff record.
-  if (!trimmedUsername) {
-    const teacherMatch = await resolveTeacherStaffLoginByEmail(normalizedEmail);
-    if (teacherMatch) {
-      return loginInstituteStaff(teacherMatch.staffUsername, email, password);
-    }
-    return loginAdminPortal(email, password);
-  }
-
   if (isAdminClientConfigured()) {
     const admin = createAdminClient();
     const { data: profileByEmail } = await admin
@@ -1040,9 +1151,38 @@ export async function loginStaffPortal(
       .eq("email", normalizedEmail)
       .maybeSingle();
 
+    // Content team members have no staff username — sign them in with email + password.
+    if (profileByEmail?.role === "content_manager") {
+      return loginContentTeamPortal(email, password);
+    }
+    if (profileByEmail?.role === "paper_center_staff") {
+      return loginActionFailure(new Error(LOGIN_ERROR.PAPER_CENTER_ONLY));
+    }
     if (profileByEmail?.role === "admin" || profileByEmail?.role === "super_admin") {
       return loginAdminPortal(email, password);
     }
+
+    // Profile role may have drifted — an existing content_managers record still wins.
+    if (profileByEmail?.role !== "teacher") {
+      const { data: managerByEmail } = await admin
+        .from("content_managers")
+        .select("user_id")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+
+      if (managerByEmail?.user_id) {
+        return loginContentTeamPortal(email, password);
+      }
+    }
+  }
+
+  // Teachers can sign in with email + password; username is resolved from their staff record.
+  if (!trimmedUsername) {
+    const teacherMatch = await resolveTeacherStaffLoginByEmail(normalizedEmail);
+    if (teacherMatch) {
+      return loginInstituteStaff(teacherMatch.staffUsername, email, password);
+    }
+    return loginAdminPortal(email, password);
   }
 
   const staffResult = await loginInstituteStaff(staffUsername, email, password);

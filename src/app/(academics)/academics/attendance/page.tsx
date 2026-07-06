@@ -45,6 +45,20 @@ function AttendancePageContent() {
   const batch = activeBatches.find((b) => b.id === courseBatchId);
   const session = sessions.find((s) => s.id === sessionId);
 
+  // Base UI's SelectValue renders the raw value (a UUID) unless the root gets
+  // a value→label map.
+  const batchItems = useMemo(
+    () => Object.fromEntries(activeBatches.map((b) => [b.id, `${b.name} (${b.batchCode})`])),
+    [activeBatches]
+  );
+  const sessionItems = useMemo(
+    () =>
+      Object.fromEntries(
+        sessions.map((s) => [s.id, `Class ${s.sessionNumber} · ${s.scheduledDate}`])
+      ),
+    [sessions]
+  );
+
   return (
     <div className="flex flex-col gap-6 pb-24">
       <PageHeader
@@ -57,6 +71,7 @@ function AttendancePageContent() {
           <label className="text-sm font-medium">Batch</label>
           <Select
             value={courseBatchId}
+            items={batchItems}
             onValueChange={(value) => {
               setCourseBatchId(value ?? "");
               setSessionId("");
@@ -78,6 +93,7 @@ function AttendancePageContent() {
           <label className="text-sm font-medium">Class session</label>
           <Select
             value={sessionId}
+            items={sessionItems}
             onValueChange={(value) => setSessionId(value ?? "")}
             disabled={!courseBatchId}
           >

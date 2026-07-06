@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { markAttendance } from "@/lib/actions/academics";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { AttendanceStatus } from "@/types";
 import type { AttendanceSheetRow } from "@/hooks/use-academics";
 import { exportToCsv } from "@/lib/export/csv";
@@ -42,6 +43,7 @@ export function AttendanceSheet({
 }: AttendanceSheetProps) {
   const [localStatus, setLocalStatus] = useState<Record<string, AttendanceStatus>>({});
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const next: Record<string, AttendanceStatus> = {};
@@ -49,7 +51,53 @@ export function AttendanceSheet({
       if (row.status) next[row.studentId] = row.status;
     }
     setLocalStatus(next);
+    setSelected((prev) => {
+      const ids = new Set(rows.map((row) => row.studentId));
+      return new Set([...prev].filter((id) => ids.has(id)));
+    });
   }, [rows]);
+
+  const toggleSelected = (studentId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelected((prev) =>
+      prev.size === rows.length ? new Set() : new Set(rows.map((row) => row.studentId))
+    );
+  };
+
+  const markSelected = async (status: AttendanceStatus) => {
+    if (selected.size === 0) return;
+    const count = selected.size;
+    const next = { ...localStatus };
+    for (const id of selected) next[id] = status;
+    setLocalStatus(next);
+    setSelected(new Set());
+    if (!autoSave || !sessionId) return;
+
+    setSaving(true);
+    try {
+      await markAttendance(
+        sessionId,
+        rows.map((row) => ({
+          studentId: row.studentId,
+          status: next[row.studentId] ?? "absent",
+        }))
+      );
+      onSaved?.();
+      toast.success(`${count} student${count === 1 ? "" : "s"} marked ${status} and saved`);
+    } catch (e) {
+      toast.error(getActionErrorMessage(e, "Save failed"));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const setStatus = async (studentId: string, status: AttendanceStatus) => {
     const next = { ...localStatus, [studentId]: status };
@@ -197,10 +245,39 @@ export function AttendanceSheet({
         </Button>
       )}
 
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+          <span className="font-medium">{selected.size} selected:</span>
+          {STATUSES.map((status) => (
+            <Button
+              key={status}
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="capitalize"
+              disabled={saving}
+              onClick={() => void markSelected(status)}
+            >
+              Mark {status}
+            </Button>
+          ))}
+          <Button type="button" size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+            Clear
+          </Button>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[520px] text-sm">
           <thead className="bg-muted/50">
             <tr>
+              <th className="w-10 px-4 py-3">
+                <Checkbox
+                  checked={rows.length > 0 && selected.size === rows.length}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all students"
+                />
+              </th>
               <th className="px-4 py-3 text-left font-medium">Student</th>
               {!compact && (
                 <th className="px-4 py-3 text-left font-medium">Enrollment ID</th>
@@ -211,6 +288,13 @@ export function AttendanceSheet({
           <tbody>
             {rows.map((row) => (
               <tr key={row.studentId} className="border-t border-border">
+                <td className="px-4 py-3">
+                  <Checkbox
+                    checked={selected.has(row.studentId)}
+                    onCheckedChange={() => toggleSelected(row.studentId)}
+                    aria-label={`Select ${row.studentName}`}
+                  />
+                </td>
                 <td className="px-4 py-3">{row.studentName}</td>
                 {!compact && (
                   <td className="px-4 py-3 text-muted-foreground">{row.enrollmentCode}</td>
