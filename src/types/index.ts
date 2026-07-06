@@ -293,12 +293,27 @@ export interface Course {
   classDays?: string[];
 }
 
+export type ExamStatus = "scheduled" | "grading" | "published";
+
 export interface Exam {
   id: string;
   title: string;
   courseId: string;
+  batchId?: string | null;
+  courseName?: string;
+  batchName?: string;
   date: string;
+  startTime?: string | null;
   subjects: string[];
+  subject: string;
+  totalMarks: number;
+  term: string;
+  weight: number;
+  status: ExamStatus;
+  publishedAt?: string | null;
+  /** Populated per-context: staff lists get counts. */
+  marksEnteredCount?: number;
+  studentCount?: number;
 }
 
 export interface Result {
@@ -313,6 +328,40 @@ export interface Result {
   rank: number;
   term: string;
   date: string;
+}
+
+export interface ReportCardPublication {
+  id: string;
+  batchId: string;
+  batchName?: string;
+  term: string;
+  publishedAt: string;
+}
+
+export interface PortalAnnouncement {
+  id: string;
+  title: string;
+  body: string;
+  attachmentPath?: string | null;
+  attachmentName?: string | null;
+  pinned: boolean;
+  createdBy?: string | null;
+  authorName?: string;
+  createdAt: string;
+  updatedAt: string;
+  batchIds: string[];
+  batchNames?: string[];
+  replyCount?: number;
+}
+
+export interface AnnouncementReply {
+  id: string;
+  announcementId: string;
+  authorId: string;
+  authorName?: string;
+  authorRole?: UserRole;
+  body: string;
+  createdAt: string;
 }
 
 export interface Resource {

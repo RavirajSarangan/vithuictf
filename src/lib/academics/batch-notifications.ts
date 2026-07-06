@@ -71,11 +71,14 @@ async function loadAllActiveStudents(): Promise<StudentRecipient[]> {
     }));
 }
 
+type PortalNotificationType = "result" | "announcement" | "achievement" | "class";
+
 async function insertPortalNotifications(
   recipients: StudentRecipient[],
   title: string,
   body: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  type: PortalNotificationType = "class"
 ): Promise<number> {
   if (!recipients.length) return 0;
 
@@ -83,7 +86,7 @@ async function insertPortalNotifications(
     user_id: r.userId,
     title,
     body,
-    type: "class" as const,
+    type,
     metadata: metadata ?? null,
   }));
 
@@ -132,10 +135,32 @@ export async function notifyBatchStudentsPortal(
   batchId: string,
   title: string,
   body: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  type: PortalNotificationType = "class"
 ): Promise<number> {
   const recipients = await loadBatchStudents(batchId);
-  return insertPortalNotifications(recipients, title, body, metadata);
+  return insertPortalNotifications(recipients, title, body, metadata, type);
+}
+
+/** Notify students across several batches, deduped so a student enrolled in
+ * more than one targeted batch gets a single notification. */
+export async function notifyBatchesStudentsPortal(
+  batchIds: string[],
+  title: string,
+  body: string,
+  metadata?: Record<string, unknown>,
+  type: PortalNotificationType = "class"
+): Promise<number> {
+  const seen = new Set<string>();
+  const recipients: StudentRecipient[] = [];
+  for (const batchId of batchIds) {
+    for (const recipient of await loadBatchStudents(batchId)) {
+      if (seen.has(recipient.userId)) continue;
+      seen.add(recipient.userId);
+      recipients.push(recipient);
+    }
+  }
+  return insertPortalNotifications(recipients, title, body, metadata, type);
 }
 
 export async function sendBatchManualMessage(

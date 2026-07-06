@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, BarChart3, BookOpen, Trophy, Medal, Brain, Settings, IdCard,
   Users, GraduationCap, FileText, Bell, CreditCard, Award, LineChart, UserCheck, CalendarDays, Tags, Mail, Share2, Clapperboard,
-  FolderOpen, ClipboardCheck, Layers, MapPin, Wallet,
+  FolderOpen, ClipboardCheck, Layers, MapPin, Megaphone, Wallet,
 } from "lucide-react";
 import type { NavItem } from "@/components/layout/portal-shell";
 
@@ -12,6 +12,7 @@ export const studentNav: NavItem[] = [
   { href: "/pass-papers", label: "Pass Papers", icon: FolderOpen },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/attendance", label: "Attendance", icon: ClipboardCheck },
+  { href: "/announcements", label: "Announcements", icon: Megaphone },
   { href: "/assignments", label: "Assignments", icon: FileText },
   { href: "/quizzes", label: "Quizzes", icon: Brain },
   { href: "/payments", label: "Payments", icon: Wallet },
@@ -48,8 +49,11 @@ export const academicsNav: NavItem[] = [
   { href: "/academics/students", label: "Students", icon: Users },
   { href: "/admin/courses", label: "Courses", icon: Layers },
   { href: "/academics/attendance", label: "Attendance", icon: ClipboardCheck },
+  { href: "/academics/announcements", label: "Announcements", icon: Megaphone },
   { href: "/academics/assignments", label: "Assignments", icon: FileText },
   { href: "/academics/quizzes", label: "Quizzes", icon: Brain },
+  { href: "/academics/exams", label: "Exams", icon: FileText },
+  { href: "/academics/report-cards", label: "Report cards", icon: Award },
   { href: "/admin/results", label: "Results", icon: BarChart3 },
   { href: "/academics/reports", label: "Reports", icon: LineChart },
   { href: "/academics/calendar", label: "Calendar", icon: CalendarDays },
@@ -59,8 +63,11 @@ export const adminNav: NavItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/academics/dashboard", label: "Academics", icon: GraduationCap, group: "Academics" },
   { href: "/academics/attendance", label: "Class attendance", icon: ClipboardCheck, group: "Academics" },
+  { href: "/academics/announcements", label: "Announcements", icon: Megaphone, group: "Academics" },
   { href: "/academics/assignments", label: "Assignments", icon: FileText, group: "Academics" },
   { href: "/academics/quizzes", label: "Quizzes", icon: Brain, group: "Academics" },
+  { href: "/academics/exams", label: "Exams", icon: FileText, group: "Academics" },
+  { href: "/academics/report-cards", label: "Report cards", icon: Award, group: "Academics" },
   { href: "/academics/calendar", label: "Class calendar", icon: CalendarDays, group: "Academics" },
   { href: "/admin/students", label: "Students", icon: Users, group: "People" },
   { href: "/admin/people", label: "People", icon: GraduationCap, group: "People" },

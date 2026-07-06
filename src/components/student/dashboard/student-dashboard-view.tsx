@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   ArrowUpRight,
@@ -15,6 +15,7 @@ import {
   IdCard,
   ListChecks,
   Medal,
+  Megaphone,
   Sparkles,
   Trophy,
   TrendingUp,
@@ -42,7 +43,8 @@ import { useStudentBatchTodaySessions } from "@/hooks/use-academics";
 import type { AcademicsCalendarSession } from "@/hooks/use-academics";
 import { cn } from "@/lib/utils";
 import { useActiveCourseId, useActiveCourseName } from "@/contexts/student-course-context";
-import type { ActivityItem, Exam, Result, Student } from "@/types";
+import { getVisibleAnnouncements } from "@/lib/actions/announcements";
+import type { ActivityItem, Exam, PortalAnnouncement, Result, Student } from "@/types";
 
 const QUICK_ACTIONS = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
@@ -386,12 +388,23 @@ export function StudentDashboardView() {
     courseId
   );
 
+  const [announcements, setAnnouncements] = useState<PortalAnnouncement[]>([]);
+  useEffect(() => {
+    if (!studentId) return;
+    getVisibleAnnouncements()
+      .then((rows) => setAnnouncements(rows.slice(0, 3)))
+      .catch(() => setAnnouncements([]));
+  }, [studentId]);
+
   const todayClasses = batchTodaySessions;
 
-  const upcomingExams = useMemo(
-    () => (courseId ? exams.filter((exam) => exam.courseId === courseId).slice(0, 4) : []),
-    [exams, courseId]
-  );
+  const upcomingExams = useMemo(() => {
+    if (!courseId) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    return exams
+      .filter((exam) => exam.courseId === courseId && exam.date >= today)
+      .slice(0, 4);
+  }, [exams, courseId]);
 
   const latestResults = useMemo(
     () => results.slice(-4).reverse(),
@@ -537,6 +550,41 @@ export function StudentDashboardView() {
                   </li>
                 );
               })}
+            </ul>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Announcements"
+          description="Latest updates from your teachers"
+          icon={Megaphone}
+          actionLabel="All announcements"
+          actionHref="/announcements"
+        >
+          {announcements.length === 0 ? (
+            <EmptyRow message="No announcements yet." />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {announcements.map((announcement) => (
+                <li key={announcement.id}>
+                  <Link
+                    href={`/announcements/${announcement.id}`}
+                    className="flex min-h-11 items-center justify-between gap-2 rounded-xl border border-icvf-border bg-icvf-surface/50 px-3 py-2.5 transition-colors hover:border-icvf-navy/20 hover:bg-icvf-navy/5 sm:gap-3 sm:px-4 sm:py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-icvf-navy">
+                        {announcement.title}
+                      </p>
+                      <p className="truncate text-xs text-icvf-text-light">{announcement.body}</p>
+                    </div>
+                    {announcement.pinned ? (
+                      <Badge variant="outline" className="shrink-0">
+                        Pinned
+                      </Badge>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
             </ul>
           )}
         </SectionCard>

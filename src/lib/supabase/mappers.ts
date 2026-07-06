@@ -1,6 +1,7 @@
 import type {
   Achievement,
   ActivityItem,
+  AnnouncementReply,
   Assignment,
   AssignmentSubmission,
   BatchEnrollment,
@@ -29,9 +30,11 @@ import type {
   PassPaperMedium,
   Payment,
   PlatformSettings,
+  PortalAnnouncement,
   Quiz,
   QuizAttempt,
   QuizQuestion,
+  ReportCardPublication,
   Resource,
   Result,
   SessionCharge,
@@ -48,6 +51,7 @@ import type {
   SuccessStory,
   Teacher,
   User,
+  UserRole,
 } from "@/types";
 import type { Database } from "@/types/database";
 import { parseBrandLogoSettings } from "@/lib/brand-logo-settings";
@@ -508,13 +512,83 @@ export function mapLeaderboard(row: Database["public"]["Tables"]["leaderboard"][
   };
 }
 
-export function mapExam(row: Database["public"]["Tables"]["exams"]["Row"]): Exam {
+export function mapExam(
+  row: Database["public"]["Tables"]["exams"]["Row"] & {
+    courses?: { name: string } | null;
+    course_batches?: { name: string } | null;
+  }
+): Exam {
   return {
     id: row.id,
     title: row.title,
     courseId: row.course_id,
+    batchId: row.batch_id,
+    courseName: row.courses?.name,
+    batchName: row.course_batches?.name,
     date: row.exam_date,
+    startTime: row.start_time,
     subjects: row.subjects,
+    subject: row.subject,
+    totalMarks: row.total_marks,
+    term: row.term,
+    weight: Number(row.weight),
+    status: row.status,
+    publishedAt: row.published_at,
+  };
+}
+
+export function mapReportCardPublication(
+  row: Database["public"]["Tables"]["report_card_publications"]["Row"] & {
+    course_batches?: { name: string } | null;
+  }
+): ReportCardPublication {
+  return {
+    id: row.id,
+    batchId: row.batch_id,
+    batchName: row.course_batches?.name,
+    term: row.term,
+    publishedAt: row.published_at,
+  };
+}
+
+export function mapPortalAnnouncement(
+  row: Database["public"]["Tables"]["announcements"]["Row"] & {
+    profiles?: { display_name: string } | null;
+    announcement_batches?: { batch_id: string; course_batches?: { name: string } | null }[] | null;
+  }
+): PortalAnnouncement {
+  const links = row.announcement_batches ?? [];
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    attachmentPath: row.attachment_path,
+    attachmentName: row.attachment_name,
+    pinned: row.pinned,
+    createdBy: row.created_by,
+    authorName: row.profiles?.display_name,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    batchIds: links.map((l) => l.batch_id),
+    batchNames: links
+      .map((l) => l.course_batches?.name)
+      .filter((name): name is string => Boolean(name)),
+  };
+}
+
+export function mapAnnouncementReply(
+  row: Database["public"]["Tables"]["announcement_replies"]["Row"] & {
+    profiles?: { display_name: string; role: UserRole } | null;
+  }
+): AnnouncementReply {
+  return {
+    id: row.id,
+    announcementId: row.announcement_id,
+    authorId: row.author_id,
+    authorName: row.profiles?.display_name,
+    authorRole: row.profiles?.role,
+    body: row.body,
+    createdAt: row.created_at,
   };
 }
 

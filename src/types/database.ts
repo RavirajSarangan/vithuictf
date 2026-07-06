@@ -513,25 +513,55 @@ export type Database = {
       }
       exams: {
         Row: {
+          batch_id: string | null
           course_id: string
+          created_at: string
+          created_by: string | null
           exam_date: string
           id: string
+          published_at: string | null
+          start_time: string | null
+          status: Database["public"]["Enums"]["exam_status"]
+          subject: string
           subjects: string[]
+          term: string
           title: string
+          total_marks: number
+          weight: number
         }
         Insert: {
+          batch_id?: string | null
           course_id: string
+          created_at?: string
+          created_by?: string | null
           exam_date: string
           id?: string
+          published_at?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["exam_status"]
+          subject?: string
           subjects?: string[]
+          term?: string
           title: string
+          total_marks?: number
+          weight?: number
         }
         Update: {
+          batch_id?: string | null
           course_id?: string
+          created_at?: string
+          created_by?: string | null
           exam_date?: string
           id?: string
+          published_at?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["exam_status"]
+          subject?: string
           subjects?: string[]
+          term?: string
           title?: string
+          total_marks?: number
+          weight?: number
         }
         Relationships: [
           {
@@ -1152,6 +1182,7 @@ export type Database = {
       }
       results: {
         Row: {
+          entered_by: string | null
           exam_id: string | null
           exam_title: string
           grade: string
@@ -1163,8 +1194,10 @@ export type Database = {
           student_id: string
           subject: string
           term: string
+          updated_at: string
         }
         Insert: {
+          entered_by?: string | null
           exam_id?: string | null
           exam_title: string
           grade: string
@@ -1176,8 +1209,10 @@ export type Database = {
           student_id: string
           subject: string
           term: string
+          updated_at?: string
         }
         Update: {
+          entered_by?: string | null
           exam_id?: string | null
           exam_title?: string
           grade?: string
@@ -1189,6 +1224,7 @@ export type Database = {
           student_id?: string
           subject?: string
           term?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -2112,6 +2148,105 @@ export type Database = {
         }
         Relationships: []
       }
+      report_card_publications: {
+        Row: {
+          id: string
+          batch_id: string
+          term: string
+          published_at: string
+          published_by: string | null
+        }
+        Insert: {
+          id?: string
+          batch_id: string
+          term: string
+          published_at?: string
+          published_by?: string | null
+        }
+        Update: {
+          id?: string
+          batch_id?: string
+          term?: string
+          published_at?: string
+          published_by?: string | null
+        }
+        Relationships: []
+      }
+      announcements: {
+        Row: {
+          id: string
+          title: string
+          body: string
+          attachment_path: string | null
+          attachment_name: string | null
+          pinned: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          body?: string
+          attachment_path?: string | null
+          attachment_name?: string | null
+          pinned?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          body?: string
+          attachment_path?: string | null
+          attachment_name?: string | null
+          pinned?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      announcement_batches: {
+        Row: {
+          announcement_id: string
+          batch_id: string
+        }
+        Insert: {
+          announcement_id: string
+          batch_id: string
+        }
+        Update: {
+          announcement_id?: string
+          batch_id?: string
+        }
+        Relationships: []
+      }
+      announcement_replies: {
+        Row: {
+          id: string
+          announcement_id: string
+          author_id: string
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          announcement_id: string
+          author_id: string
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          announcement_id?: string
+          author_id?: string
+          body?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       course_schedule_summaries: {
@@ -2146,6 +2281,7 @@ export type Database = {
     }
     Enums: {
       course_level: "OL" | "AL" | "University" | "Professional"
+      exam_status: "scheduled" | "grading" | "published"
       notification_type: "result" | "announcement" | "achievement" | "class"
       submission_status: "submitted" | "graded" | "returned"
       whatsapp_message_type:

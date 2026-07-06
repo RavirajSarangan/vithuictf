@@ -16,6 +16,7 @@ import {
   mapNotification,
   mapParent,
   mapPlatformSettings,
+  mapReportCardPublication,
   mapResource,
   mapResult,
   mapSessionCharge,
@@ -36,6 +37,7 @@ import type {
   Parent,
   PlatformSettings,
   Quiz,
+  ReportCardPublication,
   Resource,
   Result,
   SessionCharge,
@@ -206,13 +208,46 @@ export function useCourseById(courseId?: string) {
 export function useExams() {
   const fetcher = useCallback(async () => {
     const supabase = createClient();
-    const { data: rows } = await supabase.from("exams").select("*");
+    // RLS scopes rows to the student's batches/courses.
+    const { data: rows } = await supabase
+      .from("exams")
+      .select("*, courses(name), course_batches(name)")
+      .order("exam_date", { ascending: true });
     return (rows ?? []).map(mapExam);
   }, []);
 
-  const { data, isLoading } = useCachedList<Exam>("exams:all", fetcher, true);
+  const { data, isLoading } = useCachedList<Exam>("exams:visible", fetcher, true);
 
   return { exams: data, isLoading };
+}
+
+
+export function useStudentReportCards(studentId?: string) {
+  const fetcher = useCallback(async () => {
+    const supabase = createClient();
+    const { data: enrollments } = await supabase
+      .from("batch_enrollments")
+      .select("batch_id")
+      .eq("student_id", studentId!)
+      .eq("active", true);
+    const batchIds = (enrollments ?? []).map((e) => e.batch_id);
+    if (!batchIds.length) return [];
+
+    const { data: rows } = await supabase
+      .from("report_card_publications")
+      .select("*, course_batches(name)")
+      .in("batch_id", batchIds)
+      .order("published_at", { ascending: false });
+    return (rows ?? []).map(mapReportCardPublication);
+  }, [studentId]);
+
+  const { data, isLoading } = useCachedList<ReportCardPublication>(
+    studentId ? `report-cards:${studentId}` : null,
+    fetcher,
+    Boolean(studentId)
+  );
+
+  return { reportCards: data, isLoading };
 }
 
 

@@ -1,0 +1,123 @@
+import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { BatchReportCards, ReportCardStudent } from "@/lib/report-cards/data";
+
+const styles = StyleSheet.create({
+  page: { padding: 40, fontSize: 11, color: "#0F172A" },
+  brand: { fontSize: 10, letterSpacing: 1, color: "#64748B", marginBottom: 4 },
+  title: { fontSize: 20, marginBottom: 2 },
+  subtitle: { fontSize: 11, color: "#64748B", marginBottom: 18 },
+  metaRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 18 },
+  metaBlock: { flexDirection: "column" },
+  metaLabel: { fontSize: 8, color: "#64748B", textTransform: "uppercase", marginBottom: 2 },
+  metaValue: { fontSize: 12 },
+  table: { borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 4 },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#F1F5F9",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  tableRow: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#E2E8F0" },
+  tableRowLast: { flexDirection: "row" },
+  cellSubject: { flex: 3, padding: 6 },
+  cellNarrow: { flex: 1, padding: 6, textAlign: "right" },
+  headerText: { fontSize: 9, color: "#475569" },
+  summaryRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 18 },
+  summaryBox: {
+    flex: 1,
+    marginHorizontal: 4,
+    padding: 10,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 4,
+    alignItems: "center",
+  },
+  summaryLabel: { fontSize: 8, color: "#64748B", textTransform: "uppercase", marginBottom: 3 },
+  summaryValue: { fontSize: 16 },
+  footer: { position: "absolute", bottom: 30, left: 40, right: 40, fontSize: 8, color: "#94A3B8" },
+});
+
+export function ReportCardDocument({
+  brandName,
+  batch,
+  student,
+}: {
+  brandName: string;
+  batch: BatchReportCards;
+  student: ReportCardStudent;
+}) {
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.brand}>{brandName.toUpperCase()}</Text>
+        <Text style={styles.title}>Term Report Card</Text>
+        <Text style={styles.subtitle}>
+          {batch.courseName} · {batch.batchName} · {batch.term}
+        </Text>
+
+        <View style={styles.metaRow}>
+          <View style={styles.metaBlock}>
+            <Text style={styles.metaLabel}>Student</Text>
+            <Text style={styles.metaValue}>{student.studentName}</Text>
+          </View>
+          <View style={styles.metaBlock}>
+            <Text style={styles.metaLabel}>Enrollment</Text>
+            <Text style={styles.metaValue}>{student.enrollmentCode}</Text>
+          </View>
+          <View style={styles.metaBlock}>
+            <Text style={styles.metaLabel}>Issued</Text>
+            <Text style={styles.metaValue}>
+              {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.cellSubject, styles.headerText]}>Exam / Subject</Text>
+            <Text style={[styles.cellNarrow, styles.headerText]}>Marks</Text>
+            <Text style={[styles.cellNarrow, styles.headerText]}>Out of</Text>
+            <Text style={[styles.cellNarrow, styles.headerText]}>Grade</Text>
+          </View>
+          {batch.exams.map((exam, i) => (
+            <View key={exam.id} style={i === batch.exams.length - 1 ? styles.tableRowLast : styles.tableRow}>
+              <View style={styles.cellSubject}>
+                <Text>{exam.title}</Text>
+                <Text style={{ fontSize: 8, color: "#64748B" }}>{exam.subject}</Text>
+              </View>
+              <Text style={styles.cellNarrow}>{student.marks[i] ?? "—"}</Text>
+              <Text style={styles.cellNarrow}>{exam.totalMarks}</Text>
+              <Text style={styles.cellNarrow}>{student.grades[i] ?? "—"}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryLabel}>Weighted average</Text>
+            <Text style={styles.summaryValue}>{student.averagePercent}%</Text>
+          </View>
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryLabel}>Overall grade</Text>
+            <Text style={styles.summaryValue}>{student.overallGrade}</Text>
+          </View>
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryLabel}>Rank in batch</Text>
+            <Text style={styles.summaryValue}>
+              {student.rank} / {batch.students.length}
+            </Text>
+          </View>
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryLabel}>Attendance</Text>
+            <Text style={styles.summaryValue}>{student.attendancePercent}%</Text>
+          </View>
+        </View>
+
+        <Text style={styles.footer}>
+          Generated by {brandName}. Grading: A ≥ 75%, B 65–74%, C 55–64%, S 35–54%, F below 35%.
+        </Text>
+      </Page>
+    </Document>
+  );
+}
