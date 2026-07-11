@@ -374,6 +374,7 @@ export async function addCourse(data: {
   slug?: string;
   coverImageUrl?: string;
   classDays?: string[];
+  isPublic?: boolean;
 }): Promise<ActionResult> {
   try {
     if (!data.durationMonths || data.durationMonths < 1) {
@@ -406,6 +407,7 @@ export async function addCourse(data: {
       slug,
       cover_image_url: data.coverImageUrl?.trim() ?? "",
       show_on_home: true,
+      is_public: data.isPublic ?? true,
       sort_order: (maxRow?.sort_order ?? 0) + 1,
       class_days: data.classDays ?? [],
     });
@@ -428,6 +430,8 @@ export async function updateCourse(
     teacherName: string;
     coverImageUrl?: string;
     classDays?: string[];
+    slug?: string;
+    isPublic?: boolean;
   }
 ): Promise<ActionResult> {
   try {
@@ -447,6 +451,8 @@ export async function updateCourse(
         teacher_name: data.teacherName,
         cover_image_url: data.coverImageUrl?.trim() ?? "",
         ...(data.classDays !== undefined ? { class_days: data.classDays } : {}),
+        ...(data.slug?.trim() ? { slug: data.slug.trim() } : {}),
+        ...(data.isPublic !== undefined ? { is_public: data.isPublic } : {}),
       })
       .eq("id", id);
     if (error) return actionFailure(error, "Failed to update course");

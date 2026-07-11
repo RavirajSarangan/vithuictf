@@ -24,6 +24,8 @@ export type DriveSyncOptions = {
   publish?: boolean;
   includeFiles?: boolean;
   examTypes?: PassPaperExamType[];
+  /** Sync the ICTF Term Papers root folder (mirrored subtree). Defaults to true. */
+  syncIctf?: boolean;
 };
 
 export function isGoogleDriveConfigured(): boolean {

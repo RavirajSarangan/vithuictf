@@ -31,6 +31,7 @@ interface DashboardChartsRowProps {
   enrollmentData: { name: string; students: number }[];
   paymentStatus: { name: string; value: number }[];
   loading?: boolean;
+  showPaymentStatus?: boolean;
 }
 
 export function DashboardChartsRow({
@@ -38,6 +39,7 @@ export function DashboardChartsRow({
   enrollmentData,
   paymentStatus,
   loading,
+  showPaymentStatus = true,
 }: DashboardChartsRowProps) {
   if (loading) {
     return (
@@ -54,7 +56,11 @@ export function DashboardChartsRow({
       <div className="lg:col-span-2">
         <AdminDashboardRevenueChart data={revenueTrend} />
       </div>
-      <DashboardMiniAnalytics enrollmentData={enrollmentData} paymentStatus={paymentStatus} />
+      <DashboardMiniAnalytics
+        enrollmentData={enrollmentData}
+        paymentStatus={paymentStatus}
+        showPaymentStatus={showPaymentStatus}
+      />
     </div>
   );
 }

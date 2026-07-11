@@ -151,6 +151,64 @@ export function getProgramBySlug(slug: string): SeoKeywordPage | undefined {
   return PROGRAM_PAGES.find((p) => p.slug === slug);
 }
 
+/** Templated district Q&As for /locations pages — visible content + FAQPage schema. */
+export function getLocationFaq(
+  slug: LocationSlug,
+  locale: MarketingLocale
+): { question: string; answer: string }[] {
+  const name = formatDistrictName(slug);
+  if (locale === "ta") {
+    return [
+      {
+        question: `${name} இல் ICT வகுப்புகள் உள்ளதா?`,
+        answer: `ஆம். ICTF ${name} மாவட்ட மாணவர்களுக்கு O/L மற்றும் A/L ICT வகுப்புகளை நேரடி Zoom வழியாக வழங்குகிறது. ictf.lk/register இல் பதிவு செய்யலாம்.`,
+      },
+      {
+        question: `${name} இலிருந்து ஆன்லைனில் சேரலாமா?`,
+        answer: `ஆம். வகுப்புகள் Zoom வழியாக நடைபெறுவதால் ${name} உட்பட இலங்கையின் எந்த இடத்திலிருந்தும் சேரலாம். பதிவுகளும் மாணவர் தளமும் கிடைக்கும்.`,
+      },
+      {
+        question: `${name} இல் ICTF பேப்பர் மையம் உள்ளதா?`,
+        answer: `ICTF பேப்பர் மைய வலையமைப்பு தீவு முழுவதும் விரிவடைகிறது. அருகிலுள்ள மையங்களை ictf.lk/network/paper-centers இல் பார்க்கலாம்.`,
+      },
+    ];
+  }
+  if (locale === "si") {
+    return [
+      {
+        question: `${name} හි ICT පන්ති තිබේද?`,
+        answer: `ඔව්. ICTF ${name} දිස්ත්‍රික්කයේ ශිෂ්‍යයින්ට O/L සහ A/L ICT පන්ති සජීවී Zoom හරහා ලබා දෙයි. ictf.lk/register හරහා ලියාපදිංචි විය හැක.`,
+      },
+      {
+        question: `${name} සිට අන්තර්ජාලයෙන් එක්විය හැකිද?`,
+        answer: `ඔව්. පන්ති Zoom හරහා පැවැත්වෙන නිසා ${name} ඇතුළු ශ්‍රී ලංකාවේ ඕනෑම ස්ථානයකින් එක්විය හැක. පටිගත කිරීම් සහ ශිෂ්‍ය ද්වාරයද ලැබේ.`,
+      },
+      {
+        question: `${name} හි ICTF ප්‍රශ්න පත්‍ර මධ්‍යස්ථානයක් තිබේද?`,
+        answer: `ICTF ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන ජාලය දිවයින පුරා ව්‍යාප්ත වේ. ළඟම මධ්‍යස්ථාන ictf.lk/network/paper-centers හි බලන්න.`,
+      },
+    ];
+  }
+  return [
+    {
+      question: `Are there ICT classes in ${name}?`,
+      answer: `Yes. ICTF offers O/L and A/L ICT classes for students in ${name} district through live Zoom sessions. Register at ictf.lk/register or WhatsApp +94 77 459 1161.`,
+    },
+    {
+      question: `Can I join ICTF online from ${name}?`,
+      answer: `Yes. Classes run live on Zoom, so students join from anywhere in ${name} district. Recordings, notes, and the ICTF Student Portal are included.`,
+    },
+    {
+      question: `Does ICTF have a paper center in ${name}?`,
+      answer: `The ICTF paper center network keeps growing islandwide. Check the current list of centers near ${name} at ictf.lk/network/paper-centers.`,
+    },
+    {
+      question: `Which ICT programs can ${name} students enroll in?`,
+      answer: `Students in ${name} can enroll in O/L ICT, A/L ICT, and online Zoom programs, with past-paper practice and exam-technique support.`,
+    },
+  ];
+}
+
 export const FOUNDER_SEO = {
   path: "/about/founder",
   h1: {

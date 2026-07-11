@@ -50,17 +50,17 @@ export function DashboardSuperAdminPanel({ stats, loading }: DashboardSuperAdmin
       icon: Upload,
     },
     {
-      title: "Pass Paper Folders",
+      title: "Past Paper Folders",
       value: stats.passPaperFolderCount,
-      hint: "Pass papers library folders",
-      href: "/admin/pass-papers",
+      hint: "Past papers library folders",
+      href: "/admin/past-papers",
       icon: FolderOpen,
     },
     {
-      title: "Pass Paper Items",
+      title: "Past Paper Items",
       value: stats.passPaperItemCount,
       hint: "Published drive links",
-      href: "/admin/pass-papers",
+      href: "/admin/past-papers",
       icon: FileText,
     },
   ] as const;

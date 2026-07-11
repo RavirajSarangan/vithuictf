@@ -1,7 +1,7 @@
 import { BRAND } from "@/lib/constants";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import { localizedPath } from "@/lib/seo/metadata";
-import { FOUNDER, ORG_GEO, SITE_URL, absoluteUrl, socialSameAs } from "@/lib/seo/site";
+import { DEFAULT_OG_IMAGE, FOUNDER, ORG_GEO, SITE_URL, absoluteUrl, socialSameAs } from "@/lib/seo/site";
 
 type JsonLd = Record<string, unknown>;
 
@@ -144,12 +144,20 @@ export function CourseJsonLd({
   description,
   path,
   educationalLevel,
+  image,
+  instructorName,
+  durationMonths,
+  courseMode = "blended",
   locale = "en",
 }: {
   name: string;
   description: string;
   path: string;
   educationalLevel: string;
+  image?: string;
+  instructorName?: string;
+  durationMonths?: number;
+  courseMode?: "blended" | "online" | "onsite";
   locale?: MarketingLocale;
 }) {
   const localizedCoursePath = localizedPath(path, locale);
@@ -161,6 +169,17 @@ export function CourseJsonLd({
     name,
     description,
     url: absoluteUrl(localizedCoursePath),
+    ...(image ? { image: image.startsWith("http") ? image : absoluteUrl(image) } : {}),
+    ...(durationMonths ? { timeRequired: `P${durationMonths}M` } : {}),
+    ...(instructorName
+      ? {
+          hasCourseInstance: {
+            "@type": "CourseInstance",
+            courseMode,
+            instructor: { "@type": "Person", name: instructorName },
+          },
+        }
+      : {}),
     provider: {
       "@type": "Organization",
       name: BRAND.fullName,
@@ -173,7 +192,7 @@ export function CourseJsonLd({
     },
     educationalLevel,
     inLanguage: localeToHreflang(locale),
-    courseMode: "blended",
+    courseMode,
     offers: {
       "@type": "Offer",
       priceCurrency: "LKR",
@@ -238,9 +257,11 @@ export function BlogIndexJsonLd({
 export function ItemListJsonLd({
   name,
   items,
+  itemType = "LocalBusiness",
 }: {
   name: string;
   items: { name: string; url: string; description?: string }[];
+  itemType?: "LocalBusiness" | "Course";
 }) {
   if (items.length === 0) return null;
   const data: JsonLd = {
@@ -252,11 +273,15 @@ export function ItemListJsonLd({
       "@type": "ListItem",
       position: index + 1,
       item: {
-        "@type": "LocalBusiness",
+        "@type": itemType,
         name: item.name,
         url: item.url.startsWith("http") ? item.url : absoluteUrl(item.url),
         description: item.description,
-        address: { "@type": "PostalAddress", addressCountry: "LK" },
+        ...(itemType === "LocalBusiness"
+          ? { address: { "@type": "PostalAddress", addressCountry: "LK" } }
+          : {
+              provider: { "@id": `${SITE_URL}/#organization` },
+            }),
       },
     })),
   };
@@ -267,11 +292,16 @@ export function WebPageJsonLd({
   title,
   description,
   path,
+  datePublished,
+  dateModified,
   locale = "en",
 }: {
   title: string;
   description: string;
   path: string;
+  /** ISO dates from real source columns only — never fabricated. */
+  datePublished?: string;
+  dateModified?: string;
   locale?: MarketingLocale;
 }) {
   const pagePath = localizedPath(path, locale);
@@ -285,6 +315,8 @@ export function WebPageJsonLd({
     isPartOf: { "@id": `${SITE_URL}/#website` },
     about: { "@id": `${SITE_URL}/#organization` },
     inLanguage: localeToHreflang(locale),
+    ...(datePublished ? { datePublished } : {}),
+    ...(dateModified ? { dateModified } : {}),
   };
   return <JsonLdScript data={data} />;
 }
@@ -295,11 +327,56 @@ function localeToHreflang(locale: MarketingLocale): string {
   return "en-LK";
 }
 
+/**
+ * Testimonials as Review + AggregateRating attached to the home LocalBusiness node.
+ * Google ignores self-serving review stars; this targets AI answer engines.
+ */
+export function ReviewsJsonLd({
+  reviews,
+}: {
+  reviews: { name: string; review: string; rating?: number; achievement?: string }[];
+}) {
+  const usable = reviews.filter((r) => r.review?.trim()).slice(0, 10);
+  if (usable.length === 0) return null;
+  const businessId = `${SITE_URL}/#localbusiness`;
+  const ratings = usable.map((r) => Math.min(5, Math.max(1, r.rating ?? 5)));
+  const average = ratings.reduce((sum, value) => sum + value, 0) / ratings.length;
+  const data: JsonLd[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "AggregateRating",
+      itemReviewed: { "@id": businessId },
+      ratingValue: Number(average.toFixed(2)),
+      bestRating: 5,
+      worstRating: 1,
+      ratingCount: usable.length,
+    },
+    ...usable.map((review, index) => ({
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "@id": `${businessId}-review-${index + 1}`,
+      itemReviewed: { "@id": businessId },
+      author: { "@type": "Person", name: review.name },
+      reviewBody: review.review,
+      ...(review.achievement ? { name: review.achievement } : {}),
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: ratings[index],
+        bestRating: 5,
+        worstRating: 1,
+      },
+    })),
+  ];
+  return <JsonLdScript data={data} />;
+}
+
 export function HomePageJsonLd({
   faqs,
+  reviews = [],
   locale = "en",
 }: {
   faqs: { question: string; answer: string }[];
+  reviews?: { name: string; review: string; rating?: number; achievement?: string }[];
   locale?: MarketingLocale;
 }) {
   return (
@@ -309,6 +386,7 @@ export function HomePageJsonLd({
       <WebSiteJsonLd locale={locale} />
       <PersonJsonLd locale={locale} />
       <FaqPageJsonLd faqs={faqs} />
+      <ReviewsJsonLd reviews={reviews} />
     </>
   );
 }
@@ -336,7 +414,7 @@ export function ArticleJsonLd({
     headline: title,
     description: description ?? title,
     url,
-    image: image ? (image.startsWith("http") ? image : absoluteUrl(image)) : absoluteUrl("/og-image.png"),
+    image: image ? (image.startsWith("http") ? image : absoluteUrl(image)) : absoluteUrl(DEFAULT_OG_IMAGE),
     datePublished,
     dateModified: dateModified ?? datePublished,
     author: {

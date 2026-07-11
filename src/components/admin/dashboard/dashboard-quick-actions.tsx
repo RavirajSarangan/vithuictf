@@ -81,8 +81,8 @@ const ACTIONS: QuickAction[] = [
     roles: ["teacher"],
   },
   {
-    label: "Pass Papers",
-    href: "/admin/pass-papers",
+    label: "Past Papers",
+    href: "/admin/past-papers",
     icon: FolderOpen,
     roles: ["super_admin"],
   },

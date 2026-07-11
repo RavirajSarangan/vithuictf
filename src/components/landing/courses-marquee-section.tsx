@@ -41,7 +41,7 @@ export function CoursesMarqueeSection() {
           {track.map((course, index) => (
             <Link
               key={`${course.id}-${index}`}
-              href="/register"
+              href={course.slug ? `/courses/${course.slug}` : "/register"}
               className="block w-64 shrink-0 sm:w-72"
               aria-hidden={index >= courses.length}
               tabIndex={index >= courses.length ? -1 : undefined}
@@ -56,6 +56,10 @@ export function CoursesMarqueeSection() {
                 durationMonths={course.durationMonths}
                 classDaysPerWeek={course.classDaysPerWeek}
                 classDays={course.classDays}
+                startTime={course.startTime}
+                endTime={course.endTime}
+                totalSessions={course.totalSessions}
+                completedSessions={course.completedSessions}
                 teacherName={course.teacherName}
                 studentCount={course.studentCount}
               />

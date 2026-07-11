@@ -380,7 +380,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   "nav.faq": { en: "FAQ", ta: "கேள்விகள்" },
   "nav.contact": { en: "Contact", ta: "தொடர்பு" },
   "nav.blog": { en: "Blog", ta: "வலைப்பதிவு", si: "Blog" },
-  "nav.passPapers": { en: "Pass Papers", ta: "கடந்த வினாத்தாள்கள்", si: "Pass Papers" },
+  "nav.passPapers": { en: "Past Papers", ta: "கடந்த வினாத்தாள்கள்", si: "Past Papers" },
   "nav.passPapersFreeDownload": {
     en: "Free Download",
     ta: "இலவச பதிவிறக்கம்",

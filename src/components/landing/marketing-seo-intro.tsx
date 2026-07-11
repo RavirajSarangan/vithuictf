@@ -19,7 +19,7 @@ const COPY: Record<
     links: [
       { href: "/programs/ol-ict", label: "O/L ICT classes" },
       { href: "/programs/al-ict", label: "A/L ICT institute" },
-      { href: "/pass-papers", label: "Free pass papers" },
+      { href: "/past-papers", label: "Free past papers" },
       { href: "/network/paper-centers", label: "Paper centers" },
       { href: "/register", label: "Student registration" },
     ],
@@ -33,7 +33,7 @@ const COPY: Record<
     links: [
       { href: "/ta/programs/ol-ict", label: "O/L ICT வகுப்புகள்" },
       { href: "/ta/programs/al-ict", label: "A/L ICT நிறுவனம்" },
-      { href: "/pass-papers", label: "இலவச கடந்த வினாத்தாள்கள்" },
+      { href: "/past-papers", label: "இலவச கடந்த வினாத்தாள்கள்" },
       { href: "/ta/network/paper-centers", label: "பேப்பர் மையங்கள்" },
       { href: "/register", label: "மாணவர் பதிவு" },
     ],
@@ -47,7 +47,7 @@ const COPY: Record<
     links: [
       { href: "/si/programs/ol-ict", label: "O/L ICT පන්ති" },
       { href: "/si/programs/al-ict", label: "A/L ICT ආයතනය" },
-      { href: "/pass-papers", label: "නොමිලේ පසුගිය ප්‍රශ්න පත්‍ර" },
+      { href: "/past-papers", label: "නොමිලේ පසුගිය ප්‍රශ්න පත්‍ර" },
       { href: "/si/network/paper-centers", label: "ප්‍රශ්න පත්‍ර මධ්‍යස්ථාන" },
       { href: "/register", label: "ශිෂ්‍ය ලියාපදිංචිය" },
     ],

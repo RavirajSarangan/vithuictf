@@ -150,6 +150,8 @@ export function mapCourse(row: Database["public"]["Tables"]["courses"]["Row"]): 
     slug: row.slug ?? undefined,
     coverImageUrl: row.cover_image_url || undefined,
     showOnHome: row.show_on_home ?? true,
+    isPublic: row.is_public ?? true,
+    createdAt: row.created_at,
     sortOrder: row.sort_order ?? 0,
     classDaysPerWeek: manualDays.length || undefined,
     classDays: manualDays.length ? manualDays : undefined,
@@ -173,6 +175,10 @@ export function mergeCourseSchedules(
       ...course,
       classDaysPerWeek: summary.class_days_per_week,
       classDays: summary.class_days,
+      startTime: summary.start_time ?? undefined,
+      endTime: summary.end_time ?? undefined,
+      totalSessions: summary.total_sessions > 0 ? summary.total_sessions : undefined,
+      completedSessions: summary.total_sessions > 0 ? summary.completed_sessions : undefined,
     };
   });
 }
@@ -611,6 +617,7 @@ export function mapSuccessStory(row: Database["public"]["Tables"]["success_stori
     achievement: row.achievement,
     review: row.review,
     photo: row.photo,
+    rating: row.rating ?? 5,
   };
 }
 

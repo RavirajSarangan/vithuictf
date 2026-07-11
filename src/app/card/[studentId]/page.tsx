@@ -13,12 +13,16 @@ export async function generateMetadata({ params }: PublicCardPageProps): Promise
   const card = await getPublicStudentCard(studentId);
 
   if (!card) {
-    return { title: `Card Not Available | ${BRAND.name}` };
+    return {
+      title: `Card Not Available | ${BRAND.name}`,
+      robots: { index: false, follow: false },
+    };
   }
 
   return {
     title: `${card.name} | ${BRAND.name} Student Card`,
     description: card.bio || `Student profile card for ${card.name}`,
+    robots: { index: false, follow: false },
     openGraph: {
       title: `${card.name} | ${BRAND.name} Student Card`,
       description: card.bio || `Student at ${BRAND.name} — ${card.courseName ?? ""}`,

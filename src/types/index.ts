@@ -287,10 +287,19 @@ export interface Course {
   slug?: string;
   coverImageUrl?: string;
   showOnHome: boolean;
+  /** Whether the course appears in the public /courses catalog. */
+  isPublic?: boolean;
+  createdAt?: string;
   sortOrder: number;
   /** Admin-set days on the course, overridden by active-batch schedules when present. */
   classDaysPerWeek?: number;
   classDays?: string[];
+  /** From the most recently started active batch ("HH:MM:SS"). */
+  startTime?: string;
+  endTime?: string;
+  /** Session progress summed across active batches. */
+  totalSessions?: number;
+  completedSessions?: number;
 }
 
 export type ExamStatus = "scheduled" | "grading" | "published";
@@ -659,6 +668,8 @@ export interface SuccessStory {
   achievement: string;
   review: string;
   photo: string;
+  /** 1–5 star rating used for Review structured data. */
+  rating?: number;
 }
 
 export interface FAQ {

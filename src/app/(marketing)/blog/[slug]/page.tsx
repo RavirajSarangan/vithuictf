@@ -16,7 +16,7 @@ import { BlogPostShare } from "@/components/blog/blog-post-share";
 import { BlogPostViewTracker } from "@/components/blog/blog-post-view-tracker";
 import { BlogViewCount } from "@/components/blog/blog-view-count";
 import { BlogStorageImage } from "@/components/blog/blog-storage-image";
-import { ArticleJsonLd } from "@/components/seo/json-ld";
+import { ArticleJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { MarketingContainer, MarketingSection } from "@/components/landing/marketing-layout";
 
 export const revalidate = 60;
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     title: post.seoTitle || post.title,
     description: post.seoDescription || post.excerpt || post.title,
     path: `/blog/${post.slug}`,
-    ogImage: post.coverImageUrl || undefined,
+    ogImage: post.coverImageUrl || null,
     ogType: "article",
     alternateLocales: ["en"],
   });
@@ -72,6 +72,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         datePublished={post.publishedAt ?? post.createdAt}
         dateModified={post.updatedAt}
         authorName={post.authorName || "ICTF"}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Blog", path: "/blog" },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ]}
       />
 
       <MarketingSection tone="light">

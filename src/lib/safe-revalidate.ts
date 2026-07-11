@@ -1,9 +1,13 @@
 import { revalidatePath } from "next/cache";
 
 /** Revalidate without failing the mutation that triggered it. */
-export function safeRevalidatePath(path: string): void {
+export function safeRevalidatePath(path: string, type?: "page" | "layout"): void {
   try {
-    revalidatePath(path);
+    if (type) {
+      revalidatePath(path, type);
+    } else {
+      revalidatePath(path);
+    }
   } catch (error) {
     console.warn(`[revalidate] Skipped ${path}:`, error);
   }

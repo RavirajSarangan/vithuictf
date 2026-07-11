@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BreadcrumbJsonLd, CourseJsonLd } from "@/components/seo/json-ld";
+import { BreadcrumbJsonLd, CourseJsonLd, FaqPageJsonLd } from "@/components/seo/json-ld";
 import { SeoContentPage } from "@/components/seo/seo-content-page";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getProgramBySlug } from "@/lib/seo/keywords";
-import { PROGRAM_CONTENT } from "@/lib/seo/program-content";
+import { PROGRAM_CONTENT, PROGRAM_FAQS } from "@/lib/seo/program-content";
 
 export function createProgramMetadata(slug: string, locale: MarketingLocale): Metadata {
   const program = getProgramBySlug(slug);
@@ -16,6 +16,8 @@ export function createProgramMetadata(slug: string, locale: MarketingLocale): Me
     path: program.path,
     locale,
     keywords: program.keywords[locale],
+    // English-only per-route opengraph-image.tsx; ta/si mirrors keep the global OG image.
+    ogImage: locale === "en" ? null : undefined,
   });
 }
 
@@ -25,6 +27,8 @@ export function ProgramPageView({ slug, locale }: { slug: string; locale: Market
 
   const content = PROGRAM_CONTENT[slug]?.[locale];
   if (!content) notFound();
+
+  const faqs = PROGRAM_FAQS[slug]?.[locale] ?? [];
 
   const educationalLevel =
     slug === "ol-ict" ? "Ordinary Level (O/L)" : slug === "al-ict" ? "Advanced Level (A/L)" : "Secondary Education";
@@ -71,12 +75,14 @@ export function ProgramPageView({ slug, locale }: { slug: string; locale: Market
         educationalLevel={educationalLevel}
         locale={locale}
       />
+      <FaqPageJsonLd faqs={faqs} />
       <SeoContentPage
         locale={locale}
         h1={program.h1[locale]}
         intro={content.intro}
         content={content}
         relatedLinks={relatedLinks}
+        faqs={faqs}
         breadcrumbs={[
           { name: "Home", path: "/" },
           { name: "Programs", path: "/#programs" },

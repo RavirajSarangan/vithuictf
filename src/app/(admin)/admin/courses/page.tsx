@@ -58,6 +58,11 @@ const courseSchema = z.object({
   level: z.enum(["OL", "AL", "University", "Professional"]),
   teacherName: z.string().min(2, "Staff name is required"),
   coverImageUrl: z.union([z.string().url(), z.literal("")]).optional(),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-]*$/, "Lowercase letters, numbers and hyphens only")
+    .optional(),
+  isPublic: z.boolean(),
 });
 
 type CourseFormValues = z.infer<typeof courseSchema>;
@@ -250,6 +255,8 @@ export default function AdminCoursesPage() {
       level: "Professional",
       teacherName: "Vithoosan Sivanathan",
       coverImageUrl: "",
+      slug: "",
+      isPublic: true,
     },
   });
 
@@ -264,6 +271,8 @@ export default function AdminCoursesPage() {
       level: "Professional",
       teacherName: "Vithoosan Sivanathan",
       coverImageUrl: "",
+      slug: "",
+      isPublic: true,
     });
     setOpen(true);
   };
@@ -279,6 +288,8 @@ export default function AdminCoursesPage() {
       level: course.level,
       teacherName: course.teacherName,
       coverImageUrl: course.coverImageUrl ?? "",
+      slug: course.slug ?? "",
+      isPublic: course.isPublic ?? true,
     });
     setOpen(true);
   };
@@ -295,6 +306,8 @@ export default function AdminCoursesPage() {
         level: values.level as CourseLevel,
         teacherName: values.teacherName,
         coverImageUrl: values.coverImageUrl ?? "",
+        slug: values.slug?.trim() || undefined,
+        isPublic: values.isPublic,
       };
 
       if (editing) {
@@ -525,6 +538,39 @@ export default function AdminCoursesPage() {
                       <Input {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Public URL slug</FormLabel>
+                    <FormControl>
+                      <Input placeholder="auto-generated from name" {...field} />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Public page: ictf.lk/courses/&lt;slug&gt;. Changing it breaks the old link.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isPublic"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-md border px-3 py-2.5">
+                    <div>
+                      <FormLabel>Show in public course catalog</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Lists the course on ictf.lk/courses (independent of the home-page toggle).
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
                   </FormItem>
                 )}
               />

@@ -24,6 +24,8 @@ export function revalidateStudentPortalPaths() {
 export function revalidateCoursePaths() {
   safeRevalidatePath("/admin/courses");
   safeRevalidatePath("/");
+  safeRevalidatePath("/courses");
+  safeRevalidatePath("/courses", "layout");
   revalidateStudentPortalPaths();
 }
 

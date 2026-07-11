@@ -71,7 +71,8 @@ export function CourseBatchDetail({
     useBatchStudents(id);
   const { data: sessions, loading: sessionsLoading, refresh: refreshSessions } =
     useBatchSessions(id);
-  const { data: attendanceSummary } = useBatchAttendanceSummary(id);
+  const { data: attendanceSummary, refresh: refreshAttendanceSummary } =
+    useBatchAttendanceSummary(id);
   const { data: whatsappLog, loading: whatsappLogLoading } = useBatchWhatsAppLog(isAdmin ? id : null);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [setAsCurrentOnEnroll, setSetAsCurrentOnEnroll] = useState(false);
@@ -104,6 +105,11 @@ export function CourseBatchDetail({
 
   const attendanceByStudent = useMemo(
     () => new Map(attendanceSummary.map((r) => [r.studentId, r])),
+    [attendanceSummary]
+  );
+
+  const attendancePercentByStudent = useMemo(
+    () => new Map(attendanceSummary.map((r) => [r.studentId, r.attendancePercent])),
     [attendanceSummary]
   );
 
@@ -504,7 +510,11 @@ export function CourseBatchDetail({
                   sessionDate={sessions.find((s) => s.id === attendanceSessionId)?.scheduledDate}
                   stickySave={false}
                   autoSave
-                  onSaved={refreshAttendance}
+                  attendancePercentByStudent={attendancePercentByStudent}
+                  onSaved={() => {
+                    refreshAttendance();
+                    refreshAttendanceSummary();
+                  }}
                 />
               )}
             </div>

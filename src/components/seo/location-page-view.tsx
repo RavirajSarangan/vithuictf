@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BreadcrumbJsonLd, LocalBusinessJsonLd } from "@/components/seo/json-ld";
+import { BreadcrumbJsonLd, FaqPageJsonLd, LocalBusinessJsonLd } from "@/components/seo/json-ld";
 import { SeoContentPage } from "@/components/seo/seo-content-page";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -8,6 +8,7 @@ import {
   LOCATION_SLUGS,
   type LocationSlug,
   formatDistrictName,
+  getLocationFaq,
   getLocationSeo,
 } from "@/lib/seo/keywords";
 import { SRI_LANKA_DISTRICT_COORDS } from "@/lib/data/sri-lanka-map-projection";
@@ -91,6 +92,7 @@ export async function LocationPageView({
   const slug = district as LocationSlug;
   const seo = getLocationSeo(slug);
   const content = buildLocationContent(slug, locale);
+  const faqs = getLocationFaq(slug, locale);
   const coords = SRI_LANKA_DISTRICT_COORDS[slug];
   const marketing = await getPaperCentersOnly();
   const districtCenters = marketing.filter(
@@ -138,12 +140,14 @@ export async function LocationPageView({
         longitude={coords?.lon}
         locale={locale}
       />
+      <FaqPageJsonLd faqs={faqs} />
       <SeoContentPage
         locale={locale}
         h1={seo.h1[locale]}
         intro={content.intro}
         content={content}
         relatedLinks={relatedLinks}
+        faqs={faqs}
         breadcrumbs={[
           { name: "Home", path: "/" },
           { name: "Network", path: "/network/paper-centers" },

@@ -217,7 +217,7 @@ export default function AdminPassPapersPage() {
   };
 
   const handleCopyPublicUrl = async (folder: PassPaperFolder) => {
-    const path = buildPassPaperUrl("/pass-papers", folder.id, folders);
+    const path = buildPassPaperUrl("/past-papers", folder.id, folders);
     const url = `${window.location.origin}${path}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -267,7 +267,7 @@ export default function AdminPassPapersPage() {
     }
     refreshItems();
     setLinkFormKey((k) => k + 1);
-    toast.success("Pass paper link added");
+    toast.success("Past paper link added");
     setLinkSubmitting(false);
   };
 
@@ -328,7 +328,7 @@ export default function AdminPassPapersPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Pass Papers Network"
+        title="Past Papers Network"
         description="Manage folder structure, design, Google Drive links, and direct file uploads to Drive"
       />
 
@@ -533,7 +533,7 @@ export default function AdminPassPapersPage() {
                   <Link2 className="size-4 shrink-0 text-muted-foreground" />
                   <span className="text-muted-foreground">Public path:</span>
                   <code className="break-all text-xs">
-                    {buildPassPaperUrl("/pass-papers", selected.id, folders)}
+                    {buildPassPaperUrl("/past-papers", selected.id, folders)}
                   </code>
                   <Button
                     type="button"
@@ -708,7 +708,7 @@ export default function AdminPassPapersPage() {
               </section>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">Create or select a folder to manage pass papers.</p>
+            <p className="text-sm text-muted-foreground">Create or select a folder to manage past papers.</p>
           )}
         </div>
       </div>
@@ -732,7 +732,7 @@ export default function AdminPassPapersPage() {
       <DeleteConfirmDialog
         open={!!deleteTargetId}
         onOpenChange={(open) => !open && setDeleteTargetId(null)}
-        entityLabel="pass paper link"
+        entityLabel="past paper link"
         deleting={deleting}
         onConfirm={handleConfirmDeleteItem}
       />

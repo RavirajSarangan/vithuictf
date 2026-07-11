@@ -110,7 +110,7 @@ export function PassPaperBrowser({
   };
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">Loading pass papers…</p>;
+    return <p className="text-sm text-muted-foreground">Loading past papers…</p>;
   }
 
   const unpublishedCurrent =
@@ -121,11 +121,11 @@ export function PassPaperBrowser({
       <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
         {useUrlPaths && basePath ? (
           <Link href={basePath} className="hover:text-foreground">
-            Pass Papers
+            Past Papers
           </Link>
         ) : (
           <button type="button" className="hover:text-foreground" onClick={() => navigateToPathIndex(-1)}>
-            Pass Papers
+            Past Papers
           </button>
         )}
         {path.map((folderId, index) => {
@@ -154,7 +154,7 @@ export function PassPaperBrowser({
       </nav>
 
       {pathMismatch ? (
-        <p className="text-sm text-muted-foreground">Folder not found. Showing pass papers home.</p>
+        <p className="text-sm text-muted-foreground">Folder not found. Showing past papers home.</p>
       ) : null}
 
       {currentFolder?.description ? (
@@ -318,8 +318,8 @@ export function PassPaperBrowser({
       {!unpublishedCurrent && !pathMismatch && childFolders.length === 0 && folderItems.length === 0 && (
         <p className="text-sm text-muted-foreground">
           {currentFolder
-            ? "No pass papers in this folder yet."
-            : "No published pass paper folders yet."}
+            ? "No past papers in this folder yet."
+            : "No published past paper folders yet."}
         </p>
       )}
 

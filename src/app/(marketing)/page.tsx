@@ -13,7 +13,7 @@ export default async function HomePage({ locale = "en" }: { locale?: MarketingLo
 
   return (
     <MarketingDataProvider data={data}>
-      <HomePageJsonLd faqs={faqsForSchema} locale={locale} />
+      <HomePageJsonLd faqs={faqsForSchema} reviews={data.successStories} locale={locale} />
       <HeroSection />
       <CoursesMarqueeSection />
       <MarketingHomeSections />

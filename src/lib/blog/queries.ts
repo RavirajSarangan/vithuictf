@@ -156,3 +156,29 @@ export async function getPublishedBlogSlugs(): Promise<string[]> {
   }
   return (data ?? []).map((row) => row.slug);
 }
+
+export interface BlogSlugEntry {
+  slug: string;
+  updatedAt: string | null;
+  publishedAt: string | null;
+}
+
+/** Slugs with freshness dates, for sitemap lastModified. */
+export async function getPublishedBlogSlugEntries(): Promise<BlogSlugEntry[]> {
+  const supabase = blogClient();
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("slug, updated_at, published_at")
+    .eq("status", "published")
+    .lte("published_at", new Date().toISOString());
+
+  if (error) {
+    if (isMissingBlogSchemaError(error)) return [];
+    throw new Error(error.message);
+  }
+  return (data ?? []).map((row) => ({
+    slug: row.slug,
+    updatedAt: row.updated_at,
+    publishedAt: row.published_at,
+  }));
+}

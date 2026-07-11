@@ -21,7 +21,7 @@ export function MarketingPassPapersView({
         <MarketingSectionIntro
           as="h1"
           badge="Free Download"
-          title="Pass Papers Network"
+          title="Past Papers Network"
           subtitle="Browse official and supplementary past papers. Preview and download PDFs on this site, or open them on Google Drive."
           light={false}
           badgeVariant="accent"
@@ -30,7 +30,7 @@ export function MarketingPassPapersView({
           folders={folders}
           items={items}
           loading={false}
-          basePath="/pass-papers"
+          basePath="/past-papers"
           pathSlugs={pathSlugs}
         />
       </MarketingContainer>

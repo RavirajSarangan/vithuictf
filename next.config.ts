@@ -86,6 +86,22 @@ const nextConfig: NextConfig = {
         destination: "https://www.ictf.lk/:path*",
         permanent: true,
       },
+      // "Pass Papers" was renamed to "Past Papers" (the correct exam-papers term).
+      {
+        source: "/pass-papers/:path*",
+        destination: "/past-papers/:path*",
+        permanent: true,
+      },
+      {
+        source: "/admin/pass-papers/:path*",
+        destination: "/admin/past-papers/:path*",
+        permanent: true,
+      },
+      {
+        source: "/parent/pass-papers/:path*",
+        destination: "/parent/past-papers/:path*",
+        permanent: true,
+      },
     ];
   },
   async headers() {
@@ -184,6 +200,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/llms.txt",
+              headers: [
+                { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+              ],
+            },
+      {
+        source: "/llms-full.txt",
               headers: [
                 { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
               ],

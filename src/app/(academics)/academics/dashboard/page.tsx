@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { PageHeader } from "@/components/shared/page-header";
+import { AcademicsDashboardHero } from "@/components/academics/academics-dashboard-hero";
 import { useBatches, useAcademicsOverviewStats } from "@/hooks/use-academics";
 import { useCurrentTeacher } from "@/hooks/use-student-data";
 import { CourseThumbnail } from "@/components/courses/course-card";
@@ -93,14 +93,7 @@ export default function AcademicsDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title={teacher ? "My classes" : "Academics Dashboard"}
-        description={
-          teacher
-            ? `Welcome, ${teacher.displayName} — your batches, sessions, and attendance at a glance`
-            : "Batches, enrollments, and class attendance at a glance"
-        }
-      />
+      <AcademicsDashboardHero teacherName={teacher?.displayName} />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">

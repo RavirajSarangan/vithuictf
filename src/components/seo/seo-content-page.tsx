@@ -11,6 +11,7 @@ interface SeoContentPageProps {
   content: ProgramContent;
   breadcrumbs: { name: string; path: string }[];
   relatedLinks?: { label: string; path: string }[];
+  faqs?: { question: string; answer: string }[];
   children?: React.ReactNode;
 }
 
@@ -21,6 +22,7 @@ export function SeoContentPage({
   content,
   breadcrumbs,
   relatedLinks,
+  faqs,
   children,
 }: SeoContentPageProps) {
   const homePrefix = locale === "en" ? "" : `/${locale}`;
@@ -65,6 +67,31 @@ export function SeoContentPage({
         </div>
 
         {children}
+
+        {faqs && faqs.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="text-xl font-semibold text-icvf-navy sm:text-2xl">
+              {locale === "ta"
+                ? "அடிக்கடி கேட்கப்படும் கேள்விகள்"
+                : locale === "si"
+                  ? "නිතර අසන ප්‍රශ්න"
+                  : "Frequently asked questions"}
+            </h2>
+            <div className="mt-4 space-y-3">
+              {faqs.map((faq) => (
+                <details
+                  key={faq.question}
+                  className="rounded-lg border border-icvf-border bg-white px-4 py-3"
+                >
+                  <summary className="cursor-pointer font-medium text-icvf-navy">
+                    {faq.question}
+                  </summary>
+                  <p className="mt-2 leading-relaxed text-icvf-text-light">{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {relatedLinks && relatedLinks.length > 0 ? (
           <section className="mt-10">

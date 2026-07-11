@@ -31,6 +31,7 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
   const [includeFiles, setIncludeFiles] = useState(true);
   const [syncAl, setSyncAl] = useState(true);
   const [syncOl, setSyncOl] = useState(true);
+  const [syncIctf, setSyncIctf] = useState(true);
   const [running, setRunning] = useState(false);
   const [fullSyncing, setFullSyncing] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -55,7 +56,7 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
   const olRoot = folders.find((f) => f.slug === "o-l-past-papers" && !f.parentId);
 
   const handleImport = async () => {
-    if (examTypes.length === 0) {
+    if (examTypes.length === 0 && !syncIctf) {
       toast.error("Select at least one exam type to sync.");
       return;
     }
@@ -67,6 +68,7 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
         publish,
         includeFiles,
         examTypes,
+        syncIctf,
       });
       if (!result.ok) {
         toast.error(result.error);
@@ -114,8 +116,9 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
       setReport(result.report);
       const alItems = result.published.al?.itemsUpdated ?? 0;
       const olItems = result.published.ol?.itemsUpdated ?? 0;
+      const ictfItems = result.published.ictf?.itemsUpdated ?? 0;
       toast.success(
-        `Full sync complete: ${result.report.created} links created, ${result.report.updated} updated. Published ${alItems + olItems} paper link(s).`
+        `Full sync complete: ${result.report.created} links created, ${result.report.updated} updated. Published ${alItems + olItems + ictfItems} paper link(s).`
       );
       onComplete();
     } catch (error) {
@@ -198,6 +201,10 @@ export function PassPaperDriveImportPanel({ folders, onComplete }: PassPaperDriv
         <div className="flex items-center gap-2">
           <Switch checked={syncOl} onCheckedChange={setSyncOl} />
           <Label>Sync O/L</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch checked={syncIctf} onCheckedChange={setSyncIctf} />
+          <Label>Sync ICTF term papers</Label>
         </div>
       </div>
 

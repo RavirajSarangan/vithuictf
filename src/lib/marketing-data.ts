@@ -193,6 +193,89 @@ async function getHomeAboutOnlyUncached(): Promise<HomeAbout | null> {
 /** Single-row fetch for founder/about SEO pages. */
 export const getHomeAboutOnly = cache(getHomeAboutOnlyUncached);
 
+async function getPublicCoursesUncached(): Promise<Course[]> {
+  try {
+    const result = await Promise.race([
+      (async () => {
+        const supabase = createPublicClient();
+        const [{ data: courseRows, error }, { data: scheduleRows }] = await Promise.all([
+          supabase
+            .from("courses")
+            .select("*")
+            .eq("is_public", true)
+            .not("slug", "is", null)
+            .order("sort_order")
+            .order("name"),
+          supabase.from("course_schedule_summaries").select("*"),
+        ]);
+        if (error) throw error;
+        return mergeCourseSchedules(
+          (courseRows ?? []).map(mapCourse).filter((course) => course.slug),
+          scheduleRows
+        );
+      })(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("public courses timeout")), FETCH_TIMEOUT_MS);
+      }),
+    ]);
+    return result;
+  } catch (error) {
+    console.error("getPublicCourses failed:", error);
+    return [];
+  }
+}
+
+/** Courses shown in the public /courses catalog (SEO pages, sitemap, llms.txt). */
+export const getPublicCourses = cache(getPublicCoursesUncached);
+
+async function getPublicCourseBySlugUncached(slug: string): Promise<Course | null> {
+  try {
+    const result = await Promise.race([
+      (async () => {
+        const supabase = createPublicClient();
+        const [{ data: courseRow, error }, { data: scheduleRows }] = await Promise.all([
+          supabase
+            .from("courses")
+            .select("*")
+            .eq("is_public", true)
+            .eq("slug", slug)
+            .maybeSingle(),
+          supabase.from("course_schedule_summaries").select("*"),
+        ]);
+        if (error) throw error;
+        if (!courseRow) return null;
+        const [course] = mergeCourseSchedules([mapCourse(courseRow)], scheduleRows);
+        return course ?? null;
+      })(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("public course timeout")), FETCH_TIMEOUT_MS);
+      }),
+    ]);
+    return result;
+  } catch (error) {
+    console.error("getPublicCourseBySlug failed:", error);
+    return null;
+  }
+}
+
+/** Single public course for the /courses/[slug] detail page. */
+export const getPublicCourseBySlug = cache(getPublicCourseBySlugUncached);
+
+async function getFaqsOnlyUncached(): Promise<FAQ[]> {
+  try {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase.from("faqs").select("*").order("sort_order");
+    if (error) throw error;
+    return (data ?? []).map(mapFaq);
+  } catch (error) {
+    console.error("getFaqsOnly failed:", error);
+    return [];
+  }
+}
+
+/** Lightweight FAQ fetch for llms.txt / AEO surfaces. */
+export const getFaqsOnly = cache(getFaqsOnlyUncached);
+
 export type MarketingPassPapersData = {
   folders: PassPaperFolder[];
   items: PassPaperItem[];

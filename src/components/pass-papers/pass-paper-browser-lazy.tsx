@@ -7,7 +7,7 @@ const PassPaperBrowser = dynamic(
   () => import("./pass-paper-browser").then((mod) => mod.PassPaperBrowser),
   {
     loading: () => (
-      <p className="text-sm text-muted-foreground">Loading pass papers…</p>
+      <p className="text-sm text-muted-foreground">Loading past papers…</p>
     ),
   }
 );

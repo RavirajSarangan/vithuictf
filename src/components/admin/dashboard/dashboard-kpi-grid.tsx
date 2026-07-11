@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,6 +17,8 @@ import {
   Award,
   BookOpen,
   CreditCard,
+  Eye,
+  EyeOff,
   FileText,
   FolderOpen,
   GraduationCapIcon,
@@ -30,9 +33,12 @@ const cardGridClassName =
 interface DashboardKpiGridProps {
   stats: AdminDashboardStats | null;
   loading?: boolean;
+  isSuperAdmin?: boolean;
 }
 
-export function DashboardKpiGrid({ stats, loading }: DashboardKpiGridProps) {
+export function DashboardKpiGrid({ stats, loading, isSuperAdmin }: DashboardKpiGridProps) {
+  const [revenueVisible, setRevenueVisible] = useState(false);
+
   if (loading || !stats) {
     return (
       <div className={cardGridClassName}>
@@ -57,13 +63,15 @@ export function DashboardKpiGrid({ stats, loading }: DashboardKpiGridProps) {
       href: "/admin/people",
       hint: "Staff roster and portal access",
       icon: GraduationCapIcon,
+      hideForSuperAdmin: true,
     },
     {
       title: "Total Revenue",
-      value: `Rs. ${stats.totalRevenue.toLocaleString()}`,
+      value: revenueVisible ? `Rs. ${stats.totalRevenue.toLocaleString()}` : "Rs. ••••••",
       href: "/admin/payments",
       hint: "Fee collections and payment records",
       icon: CreditCard,
+      sensitive: true,
     },
     {
       title: "Session fees due",
@@ -72,6 +80,7 @@ export function DashboardKpiGrid({ stats, loading }: DashboardKpiGridProps) {
       hint: "Outstanding per-class session charges",
       icon: CreditCard,
       alert: stats.outstandingSessionFeesLkr > 0,
+      hideForSuperAdmin: true,
     },
     {
       title: "Total Courses",
@@ -101,6 +110,7 @@ export function DashboardKpiGrid({ stats, loading }: DashboardKpiGridProps) {
       hint: "Awaiting payment confirmation",
       icon: CreditCard,
       alert: stats.pendingPayments > 0,
+      hideForSuperAdmin: true,
     },
     {
       title: "Pending Registrations",
@@ -120,14 +130,28 @@ export function DashboardKpiGrid({ stats, loading }: DashboardKpiGridProps) {
     },
   ] as const;
 
+  const visibleCards = cards.filter(
+    (card) => !(isSuperAdmin && "hideForSuperAdmin" in card && card.hideForSuperAdmin)
+  );
+
   return (
     <div className={cardGridClassName}>
-      {cards.map((card) => (
+      {visibleCards.map((card) => (
         <Card key={card.title} className="@container/card">
           <CardHeader>
             <CardDescription>{card.title}</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {card.value}
+            <CardTitle className="flex items-center gap-2 text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              <span>{card.value}</span>
+              {"sensitive" in card && card.sensitive ? (
+                <button
+                  type="button"
+                  onClick={() => setRevenueVisible((visible) => !visible)}
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label={revenueVisible ? "Hide revenue" : "Show revenue"}
+                >
+                  {revenueVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                </button>
+              ) : null}
             </CardTitle>
             <CardAction>
               <Badge variant={"alert" in card && card.alert ? "destructive" : "outline"}>

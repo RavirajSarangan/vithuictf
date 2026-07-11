@@ -109,10 +109,10 @@ interface PortalShellProps {
 function getMobileNavItems(variant: "student" | "parent" | "admin", navItems: NavItem[]) {
   const preferred =
     variant === "student"
-      ? ["/dashboard", "/calendar", "/pass-papers", "/attendance", "/resources"]
+      ? ["/dashboard", "/calendar", "/past-papers", "/attendance", "/resources"]
       : variant === "parent"
-        ? ["/parent/dashboard", "/parent/calendar", "/parent/pass-papers", "/parent/attendance"]
-        : ["/admin/dashboard", "/academics/dashboard", "/admin/students", "/admin/pass-papers"];
+        ? ["/parent/dashboard", "/parent/calendar", "/parent/past-papers", "/parent/attendance"]
+        : ["/admin/dashboard", "/academics/dashboard", "/admin/students", "/admin/past-papers"];
 
   return preferred
     .map((href) => navItems.find((item) => item.href === href))

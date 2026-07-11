@@ -466,6 +466,7 @@ export type Database = {
           description: string
           duration_months: number | null
           id: string
+          is_public: boolean
           level: Database["public"]["Enums"]["course_level"]
           name: string
           show_on_home: boolean
@@ -483,6 +484,7 @@ export type Database = {
           description?: string
           duration_months?: number | null
           id?: string
+          is_public?: boolean
           level: Database["public"]["Enums"]["course_level"]
           name: string
           show_on_home?: boolean
@@ -500,6 +502,7 @@ export type Database = {
           description?: string
           duration_months?: number | null
           id?: string
+          is_public?: boolean
           level?: Database["public"]["Enums"]["course_level"]
           name?: string
           show_on_home?: boolean
@@ -1436,6 +1439,7 @@ export type Database = {
           id: string
           name: string
           photo: string
+          rating: number
           review: string
         }
         Insert: {
@@ -1444,6 +1448,7 @@ export type Database = {
           id?: string
           name: string
           photo?: string
+          rating?: number
           review: string
         }
         Update: {
@@ -1452,6 +1457,7 @@ export type Database = {
           id?: string
           name?: string
           photo?: string
+          rating?: number
           review?: string
         }
         Relationships: []
@@ -2254,6 +2260,10 @@ export type Database = {
           course_id: string
           class_days_per_week: number
           class_days: string[]
+          start_time: string | null
+          end_time: string | null
+          total_sessions: number
+          completed_sessions: number
         }
         Relationships: []
       }

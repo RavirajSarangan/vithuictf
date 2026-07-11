@@ -14,6 +14,12 @@ import { toast } from "sonner";
 import { getActionErrorMessage } from "@/lib/action-error";
 const STATUSES: AttendanceStatus[] = ["present", "absent", "late"];
 
+function attendanceBadgeVariant(percent: number): "default" | "outline" | "destructive" {
+  if (percent < 75) return "destructive";
+  if (percent < 85) return "outline";
+  return "default";
+}
+
 export type AttendanceSheetProps = {
   sessionId: string;
   rows: AttendanceSheetRow[];
@@ -25,6 +31,7 @@ export type AttendanceSheetProps = {
   showExport?: boolean;
   stickySave?: boolean;
   autoSave?: boolean;
+  attendancePercentByStudent?: Map<string, number>;
   onSaved?: () => void;
 };
 
@@ -39,6 +46,7 @@ export function AttendanceSheet({
   showExport = true,
   stickySave = true,
   autoSave = false,
+  attendancePercentByStudent,
   onSaved,
 }: AttendanceSheetProps) {
   const [localStatus, setLocalStatus] = useState<Record<string, AttendanceStatus>>({});
@@ -191,6 +199,9 @@ export function AttendanceSheet({
         studentName: row.studentName,
         enrollmentCode: row.enrollmentCode,
         status: localStatus[row.studentId] ?? row.status ?? "unmarked",
+        ...(attendancePercentByStudent
+          ? { attendancePercent: attendancePercentByStudent.get(row.studentId) ?? "" }
+          : {}),
       }))
     );
   };
@@ -282,6 +293,9 @@ export function AttendanceSheet({
               {!compact && (
                 <th className="px-4 py-3 text-left font-medium">Enrollment ID</th>
               )}
+              {attendancePercentByStudent && (
+                <th className="px-4 py-3 text-left font-medium">Attendance %</th>
+              )}
               <th className="px-4 py-3 text-left font-medium">Status</th>
             </tr>
           </thead>
@@ -298,6 +312,17 @@ export function AttendanceSheet({
                 <td className="px-4 py-3">{row.studentName}</td>
                 {!compact && (
                   <td className="px-4 py-3 text-muted-foreground">{row.enrollmentCode}</td>
+                )}
+                {attendancePercentByStudent && (
+                  <td className="px-4 py-3">
+                    {attendancePercentByStudent.has(row.studentId) ? (
+                      <Badge variant={attendanceBadgeVariant(attendancePercentByStudent.get(row.studentId)!)}>
+                        {attendancePercentByStudent.get(row.studentId)}%
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                 )}
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">

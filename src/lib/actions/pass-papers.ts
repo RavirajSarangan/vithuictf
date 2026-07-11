@@ -11,9 +11,9 @@ import { mapPassPaperFolder } from "@/lib/supabase/mappers";
 import type { PassPaperFolder } from "@/types";
 
 function revalidatePassPaperPaths() {
-  revalidatePath("/pass-papers");
-  revalidatePath("/parent/pass-papers");
-  revalidatePath("/admin/pass-papers");
+  revalidatePath("/past-papers");
+  revalidatePath("/parent/past-papers");
+  revalidatePath("/admin/past-papers");
 }
 
 function validateDriveUrl(url: string): string {
@@ -458,6 +458,7 @@ export async function syncPassPapersFromDrive(options: {
   publish?: boolean;
   includeFiles?: boolean;
   examTypes?: PassPaperExamType[];
+  syncIctf?: boolean;
 }): Promise<ActionResult<{ report: DriveSyncReport }>> {
   try {
     await requireSuperAdmin();
@@ -489,7 +490,7 @@ export async function fullSyncPassPapersFromDrive(options?: {
 }): Promise<
   ActionResult<{
     report: DriveSyncReport;
-    published: { al: { foldersUpdated: number; itemsUpdated: number } | null; ol: { foldersUpdated: number; itemsUpdated: number } | null };
+    published: { al: { foldersUpdated: number; itemsUpdated: number } | null; ol: { foldersUpdated: number; itemsUpdated: number } | null; ictf: { foldersUpdated: number; itemsUpdated: number } | null };
   }>
 > {
   try {
@@ -527,14 +528,15 @@ export async function fullSyncPassPapersFromDrive(options?: {
       .from("pass_paper_folders")
       .select("id, slug")
       .is("parent_id", null)
-      .in("slug", ["a-l-past-papers", "o-l-past-papers"]);
+      .in("slug", ["a-l-past-papers", "o-l-past-papers", "ictf-a-l-term-papers"]);
 
     if (error) throw new Error(error.message);
 
     const published: {
       al: { foldersUpdated: number; itemsUpdated: number } | null;
       ol: { foldersUpdated: number; itemsUpdated: number } | null;
-    } = { al: null, ol: null };
+      ictf: { foldersUpdated: number; itemsUpdated: number } | null;
+    } = { al: null, ol: null, ictf: null };
 
     for (const root of roots ?? []) {
       const result = await publishPassPaperSubtreeCompleteImpl(root.id, true);
@@ -542,6 +544,8 @@ export async function fullSyncPassPapersFromDrive(options?: {
         published.al = result;
       } else if (root.slug === "o-l-past-papers") {
         published.ol = result;
+      } else if (root.slug === "ictf-a-l-term-papers") {
+        published.ictf = result;
       }
     }
 

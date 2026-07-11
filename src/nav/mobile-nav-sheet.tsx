@@ -114,15 +114,15 @@ export function MobileNavSheet({
               ICTF Team
             </Link>
             <Link
-              href="/pass-papers"
+              href="/past-papers"
               onClick={close}
               className={cn(
                 mobileNavLinkClass,
                 "flex w-full items-center gap-2",
-                (pathname === "/pass-papers" || pathname.startsWith("/pass-papers/")) &&
+                (pathname === "/past-papers" || pathname.startsWith("/past-papers/")) &&
                   "font-semibold text-icvf-navy-dark"
               )}
-              aria-current={pathname.startsWith("/pass-papers") ? "page" : undefined}
+              aria-current={pathname.startsWith("/past-papers") ? "page" : undefined}
               aria-label={`${t("nav.passPapers")} — ${t("nav.passPapersFreeDownload")}`}
             >
               <span aria-hidden="true">{t("nav.passPapers")}</span>

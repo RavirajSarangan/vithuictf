@@ -12,7 +12,7 @@ export default function ParentPassPapersPage({ pathSlugs = [] }: { pathSlugs?: s
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Pass Papers</h1>
+        <h1 className="text-2xl font-bold text-white">Past Papers</h1>
         <p className="text-sm text-white/70">
           Browse G.C.E. O/L, A/L, and scholarship past papers.
         </p>
@@ -21,7 +21,7 @@ export default function ParentPassPapersPage({ pathSlugs = [] }: { pathSlugs?: s
         folders={folders}
         items={items}
         loading={loading}
-        basePath="/parent/pass-papers"
+        basePath="/parent/past-papers"
         pathSlugs={pathSlugs}
       />
     </div>

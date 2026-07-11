@@ -4,7 +4,8 @@ import { SITE_URL } from "@/lib/seo/site";
 const PUBLIC_ALLOW = [
   "/",
   "/blog/",
-  "/pass-papers/",
+  "/courses/",
+  "/past-papers/",
   "/programs/",
   "/locations/",
   "/network/",
@@ -14,6 +15,7 @@ const PUBLIC_ALLOW = [
   "/ta/",
   "/si/",
   "/llms.txt",
+  "/llms-full.txt",
 ] as const;
 
 const PRIVATE_DISALLOW = [

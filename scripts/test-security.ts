@@ -43,10 +43,10 @@ function assert(name: string, condition: boolean, detail?: string) {
 
 assert("teacher blocked from /admin/finance", isAdminOnlyRoute("/admin/finance"));
 assert("teacher allowed on /admin/dashboard", !isAdminOnlyRoute("/admin/dashboard"));
-assert("admin blocked from /admin/pass-papers", isSuperAdminOnlyRoute("/admin/pass-papers"));
+assert("admin blocked from /admin/past-papers", isSuperAdminOnlyRoute("/admin/past-papers"));
 assert(
-  "pass-papers subroutes restricted",
-  isSuperAdminOnlyRoute("/admin/pass-papers/import")
+  "past-papers subroutes restricted",
+  isSuperAdminOnlyRoute("/admin/past-papers/import")
 );
 
 assert(

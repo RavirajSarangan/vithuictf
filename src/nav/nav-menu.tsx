@@ -43,7 +43,7 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
   const { t } = useMarketingText();
   const pathname = usePathname();
   const blogActive = pathname === "/blog" || pathname.startsWith("/blog/");
-  const passPapersActive = pathname === "/pass-papers" || pathname.startsWith("/pass-papers/");
+  const passPapersActive = pathname === "/past-papers" || pathname.startsWith("/past-papers/");
   const ictfTeamActive = pathname === "/ictf-team" || pathname.startsWith("/ictf-team/");
 
   const programLinks = useMemo<NavItemType[]>(
@@ -117,7 +117,7 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
             <Link
-              href="/pass-papers"
+              href="/past-papers"
               className={cn(
                 navLinkClass,
                 "inline-flex items-center gap-1.5",

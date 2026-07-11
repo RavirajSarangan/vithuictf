@@ -49,13 +49,18 @@ export default function AdminDashboard() {
     <div className="admin-dashboard @container/main flex flex-col gap-4 md:gap-6">
       <DashboardHero role={role} displayName={user?.displayName} />
       <DashboardQuickActions role={role} />
-      <DashboardKpiGrid stats={overview.stats} loading={overview.loading} />
+      <DashboardKpiGrid
+        stats={overview.stats}
+        loading={overview.loading}
+        isSuperAdmin={isSuperAdmin}
+      />
       <DashboardActiveBatches />
       <DashboardChartsRow
         revenueTrend={revenueTrend}
         enrollmentData={overview.enrollmentData}
         paymentStatus={overview.paymentStatus}
         loading={overview.loading}
+        showPaymentStatus={!isSuperAdmin}
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <DashboardActivityFeed items={overview.activity} loading={overview.loading} />

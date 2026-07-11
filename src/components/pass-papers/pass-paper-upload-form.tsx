@@ -84,7 +84,7 @@ export function PassPaperUploadForm({ folderId, publishOnAdd = false, onUploaded
         return;
       }
 
-      toast.success("Pass paper uploaded to Drive");
+      toast.success("Past paper uploaded to Drive");
       reset();
       onUploaded?.();
     } catch {

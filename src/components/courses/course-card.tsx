@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, CalendarDays, Clock, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, ListChecks, Users } from "lucide-react";
 import { MarketingPanel } from "@/components/landing/marketing-layout";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,24 @@ const WEEKDAY_LABELS: Record<string, string> = {
   fri: "Friday",
   sat: "Saturday",
 };
+
+/** "16:00:00" → "4:00 PM". Returns null for unparseable input. */
+function formatTime(time: string): string | null {
+  const match = /^(\d{1,2}):(\d{2})/.exec(time);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  if (hours > 23) return null;
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const hour12 = hours % 12 === 0 ? 12 : hours % 12;
+  return `${hour12}:${match[2]} ${suffix}`;
+}
+
+function timeRangeLabel(startTime?: string, endTime?: string): string | null {
+  const start = startTime ? formatTime(startTime) : null;
+  const end = endTime ? formatTime(endTime) : null;
+  if (start && end) return `${start} – ${end}`;
+  return start ?? end;
+}
 
 function nextClassInfo(classDays: string[], now: Date): { label: string; daysAway: number } | null {
   const targets = new Set(
@@ -35,7 +53,15 @@ function nextClassInfo(classDays: string[], now: Date): { label: string; daysAwa
 }
 
 /** Renders only on the client so the countdown uses the visitor's local date. */
-function NextClassCountdown({ classDays }: { classDays: string[] }) {
+function NextClassCountdown({
+  classDays,
+  startTime,
+  endTime,
+}: {
+  classDays: string[];
+  startTime?: string;
+  endTime?: string;
+}) {
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -48,12 +74,18 @@ function NextClassCountdown({ classDays }: { classDays: string[] }) {
   const next = nextClassInfo(classDays, now);
   if (!next) return null;
 
+  const classDate = new Date(now);
+  classDate.setDate(classDate.getDate() + next.daysAway);
+  const dateLabel = classDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+  const timeLabel = timeRangeLabel(startTime, endTime);
+  const timeSuffix = timeLabel ? ` · ${timeLabel}` : "";
   const text =
     next.daysAway === 0
-      ? "Class today"
+      ? `Class today · ${next.label}, ${dateLabel}${timeSuffix}`
       : next.daysAway === 1
-        ? "Class tomorrow"
-        : `Next class ${next.label} · in ${next.daysAway} days`;
+        ? `Class tomorrow · ${next.label}, ${dateLabel}${timeSuffix}`
+        : `Next class ${next.label}, ${dateLabel}${timeSuffix} · in ${next.daysAway} days`;
 
   return (
     <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-icvf-accent">
@@ -81,6 +113,10 @@ export interface CourseCardProps {
   durationMonths?: number;
   classDaysPerWeek?: number;
   classDays?: string[];
+  startTime?: string;
+  endTime?: string;
+  totalSessions?: number;
+  completedSessions?: number;
   teacherName?: string;
   studentCount?: number;
   href?: string;
@@ -126,6 +162,10 @@ export function CourseCard({
   durationMonths,
   classDaysPerWeek,
   classDays,
+  startTime,
+  endTime,
+  totalSessions,
+  completedSessions,
   teacherName,
   studentCount,
   href,
@@ -179,9 +219,17 @@ export function CourseCard({
                 <Users className="size-3.5" />
                 {studentCount ?? 0} students
               </span>
+              {totalSessions ? (
+                <span className="flex items-center gap-1.5">
+                  <ListChecks className="size-3.5" />
+                  {completedSessions ?? 0}/{totalSessions} sessions
+                </span>
+              ) : null}
             </div>
           ) : null}
-          {classDays?.length ? <NextClassCountdown classDays={classDays} /> : null}
+          {classDays?.length ? (
+            <NextClassCountdown classDays={classDays} startTime={startTime} endTime={endTime} />
+          ) : null}
         </div>
       </MarketingPanel>
     );

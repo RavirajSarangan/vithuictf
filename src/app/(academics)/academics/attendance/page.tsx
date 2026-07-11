@@ -4,7 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { AttendanceSheet } from "@/components/academics/attendance-sheet";
-import { useBatches, useBatchSessions, useAttendanceSheet } from "@/hooks/use-academics";
+import {
+  useBatches,
+  useBatchSessions,
+  useAttendanceSheet,
+  useBatchAttendanceSummary,
+} from "@/hooks/use-academics";
 import { pickDefaultAttendanceSession } from "@/lib/academics/attendance-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -16,8 +21,15 @@ function AttendancePageContent() {
   const [sessionId, setSessionId] = useState(initialSession ?? "");
   const { data: sessions, loading: sessionsLoading } = useBatchSessions(courseBatchId || null);
   const { rows, loading: sheetLoading, refresh } = useAttendanceSheet(sessionId || null);
+  const { data: attendanceSummary, refresh: refreshSummary } =
+    useBatchAttendanceSummary(courseBatchId || null);
 
   const activeBatches = useMemo(() => batches.filter((b) => b.active), [batches]);
+
+  const attendancePercentByStudent = useMemo(
+    () => new Map(attendanceSummary.map((r) => [r.studentId, r.attendancePercent])),
+    [attendanceSummary]
+  );
 
   useEffect(() => {
     if (initialSession) setSessionId(initialSession);
@@ -122,7 +134,11 @@ function AttendancePageContent() {
           sessionNumber={session?.sessionNumber}
           sessionDate={session?.scheduledDate}
           autoSave
-          onSaved={refresh}
+          attendancePercentByStudent={attendancePercentByStudent}
+          onSaved={() => {
+            refresh();
+            refreshSummary();
+          }}
         />
       )}
     </div>

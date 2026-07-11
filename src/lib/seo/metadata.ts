@@ -62,7 +62,8 @@ export interface BuildPageMetadataInput {
   path: string;
   locale?: PageLocale;
   keywords?: string[];
-  ogImage?: string;
+  /** Pass null to omit OG/Twitter images so a co-located opengraph-image.tsx file wins. */
+  ogImage?: string | null;
   ogType?: "website" | "article" | "profile";
   noIndex?: boolean;
   /** Limit hreflang alternates (e.g. English-only blog). Defaults to en, ta, si. */
@@ -82,7 +83,7 @@ export function buildPageMetadata({
 }: BuildPageMetadataInput): Metadata {
   const canonicalPath = localizedPath(path, locale);
   const url = absoluteUrl(canonicalPath);
-  const imageUrl = ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage);
+  const imageUrl = ogImage ? (ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage)) : null;
 
   return {
     title,
@@ -112,13 +113,15 @@ export function buildPageMetadata({
       siteName: BRAND.fullName,
       title,
       description,
-      images: [{ url: imageUrl, width: 1200, height: 630, alt: `${BRAND.name} — ${BRAND.tagline}` }],
+      ...(imageUrl
+        ? { images: [{ url: imageUrl, width: 1200, height: 630, alt: `${BRAND.name} — ${BRAND.tagline}` }] }
+        : {}),
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [imageUrl],
+      ...(imageUrl ? { images: [imageUrl] } : {}),
     },
   };
 }

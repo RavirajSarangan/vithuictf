@@ -15,7 +15,7 @@ export const ADMIN_ONLY_ROUTES = [
 
 /** Routes restricted to super_admin only. */
 export const SUPER_ADMIN_ONLY_ROUTES = [
-  "/admin/pass-papers",
+  "/admin/past-papers",
   "/admin/exam-papers",
   "/admin/paper-centers",
   "/admin/ictf-team",

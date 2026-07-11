@@ -33,6 +33,22 @@ const MEDIUM_SLUGS: Record<PassPaperMedium, string> = {
   tamil: "tamil-medium",
 };
 
+export const ICTF_ROOT_SLUG = "ictf-a-l-term-papers";
+
+function isIctfRootName(name: string): boolean {
+  return /\bictf\b/i.test(name);
+}
+
+function slugify(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 64) || "folder"
+  );
+}
+
 function parseExamType(name: string): PassPaperExamType | null {
   const normalized = name.toLowerCase();
   if (/\ba[\s/-]?l\b/.test(normalized) && !/\bo[\s/-]?l\b/.test(normalized)) return "al";
@@ -101,15 +117,16 @@ async function loadAllItemsByDriveUrl(
   return map;
 }
 
-async function ensureYearFolder(
+async function ensureChildFolder(
   supabase: DbClient,
   folders: PassPaperFolder[],
-  mediumFolderId: string,
-  year: number,
+  parentId: string,
+  title: string,
+  slug: string,
+  sortOrder: number,
   dryRun: boolean
 ): Promise<{ folder: PassPaperFolder | null; created: boolean }> {
-  const slug = String(year);
-  const existing = folders.find((f) => f.parentId === mediumFolderId && f.slug === slug) ?? null;
+  const existing = folders.find((f) => f.parentId === parentId && f.slug === slug) ?? null;
   if (existing) return { folder: existing, created: false };
 
   if (dryRun) {
@@ -119,14 +136,14 @@ async function ensureYearFolder(
   const { data, error } = await supabase
     .from("pass_paper_folders")
     .insert({
-      parent_id: mediumFolderId,
-      title: slug,
+      parent_id: parentId,
+      title,
       slug,
       description: "",
       icon_key: "folder",
       accent_color: "#1e3a5f",
       layout: "folder",
-      sort_order: year,
+      sort_order: sortOrder,
       published: false,
     })
     .select("*")
@@ -136,6 +153,16 @@ async function ensureYearFolder(
   const folder = mapPassPaperFolder(data);
   folders.push(folder);
   return { folder, created: true };
+}
+
+async function ensureYearFolder(
+  supabase: DbClient,
+  folders: PassPaperFolder[],
+  mediumFolderId: string,
+  year: number,
+  dryRun: boolean
+): Promise<{ folder: PassPaperFolder | null; created: boolean }> {
+  return ensureChildFolder(supabase, folders, mediumFolderId, String(year), String(year), year, dryRun);
 }
 
 type UpsertItemInput = {
@@ -435,6 +462,112 @@ async function syncExamBranch(
   }
 }
 
+const MAX_MIRROR_DEPTH = 6;
+
+async function syncMirroredSubtree(
+  supabase: DbClient,
+  drive: DriveClient,
+  folders: PassPaperFolder[],
+  siteFolderId: string | null,
+  driveFolderId: string,
+  context: { medium?: PassPaperMedium; year?: number },
+  options: DriveSyncOptions,
+  existingByUrl: Map<string, { id: string; title: string; folder_id: string; published: boolean }>,
+  report: DriveSyncReport,
+  depth = 0
+): Promise<void> {
+  if (depth > MAX_MIRROR_DEPTH) return;
+
+  const children = await listDriveChildren(drive, driveFolderId);
+  for (const child of children) {
+    if (isDriveFolder(child.mimeType)) {
+      const childContext = {
+        medium: parseMedium(child.name) ?? context.medium,
+        year: parseYearFromName(child.name) ?? context.year,
+      };
+      let childSiteFolderId: string | null = null;
+      if (siteFolderId) {
+        const ensured = await ensureChildFolder(
+          supabase,
+          folders,
+          siteFolderId,
+          child.name.trim(),
+          slugify(child.name),
+          0,
+          options.dryRun ?? false
+        );
+        if (ensured.created) report.foldersEnsured += 1;
+        childSiteFolderId = ensured.folder?.id ?? null;
+      } else if (options.dryRun) {
+        report.foldersEnsured += 1;
+      }
+      await syncMirroredSubtree(
+        supabase,
+        drive,
+        folders,
+        childSiteFolderId,
+        child.id,
+        childContext,
+        options,
+        existingByUrl,
+        report,
+        depth + 1
+      );
+      continue;
+    }
+
+    if (isPdfFile(child)) {
+      await upsertDriveItem(
+        supabase,
+        {
+          folderId: siteFolderId ?? "dry-run",
+          title: child.name.replace(/\.pdf$/i, ""),
+          driveUrl: driveUrlForNode(child),
+          year: context.year,
+          medium: context.medium,
+          examType: "al",
+          published: options.publish ?? false,
+        },
+        existingByUrl,
+        options.dryRun ?? false,
+        report
+      );
+    }
+  }
+}
+
+async function syncIctfBranch(
+  supabase: DbClient,
+  drive: DriveClient,
+  folders: PassPaperFolder[],
+  ictfNode: DriveFileNode,
+  options: DriveSyncOptions,
+  existingByUrl: Map<string, { id: string; title: string; folder_id: string; published: boolean }>,
+  report: DriveSyncReport
+): Promise<void> {
+  const siteRoot = findChildFolder(folders, null, ICTF_ROOT_SLUG);
+  if (!siteRoot) {
+    report.unmatched.push({
+      driveName: ictfNode.name,
+      driveUrl: driveUrlForNode(ictfNode),
+      reason: `Site ICTF root missing: ${ICTF_ROOT_SLUG}`,
+    });
+    return;
+  }
+
+  await syncMirroredSubtree(
+    supabase,
+    drive,
+    folders,
+    siteRoot.id,
+    ictfNode.id,
+    {},
+    options,
+    existingByUrl,
+    report
+  );
+}
+
 export async function syncPassPapersFromDriveInternal(
   supabase: DbClient,
   options: DriveSyncOptions
@@ -461,6 +594,12 @@ export async function syncPassPapersFromDriveInternal(
 
   for (const child of rootChildren) {
     if (!isDriveFolder(child.mimeType)) continue;
+    if (isIctfRootName(child.name)) {
+      if (options.syncIctf !== false) {
+        await syncIctfBranch(supabase, drive, folders, child, options, existingByUrl, report);
+      }
+      continue;
+    }
     const examType = parseExamType(child.name);
     if (!examType || (examType !== "al" && examType !== "ol")) {
       report.unmatched.push({

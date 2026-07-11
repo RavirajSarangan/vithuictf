@@ -300,6 +300,8 @@ export function useBatchAttendanceSummary(
 ) {
   const [data, setData] = useState<BatchAttendanceSummaryRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     if (!batchId) {
@@ -376,9 +378,9 @@ export function useBatchAttendanceSummary(
     return () => {
       cancelled = true;
     };
-  }, [batchId, options?.fromDate, options?.toDate]);
+  }, [batchId, options?.fromDate, options?.toDate, version]);
 
-  return { data, loading };
+  return { data, loading, refresh };
 }
 
 export type StudentAttendanceHistoryRow = {
