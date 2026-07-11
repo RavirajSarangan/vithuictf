@@ -64,7 +64,7 @@ export const BRAND = {
       youtube: "https://www.youtube.com/@ictfinstitute",
       linkedin: "https://www.linkedin.com/company/ictfofficial",
       telegram: "https://t.me/ictf_institute",
-      whatsappChannel: "https://wa.me/94774591161",
+      whatsappChannel: "https://whatsapp.com/channel/0029Va6NAaj3QxS5UNXs0C1Z",
     },
   },
   footerLinks: {

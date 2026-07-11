@@ -1,6 +1,7 @@
 import { CoursesMarqueeSection } from "@/components/landing/courses-marquee-section";
 import { HeroSection } from "@/components/landing/hero-section";
 import { MarketingHomeSections } from "@/components/landing/marketing-home-sections";
+import { WhatsAppFloatButton } from "@/components/landing/whatsapp-float-button";
 import { HomePageJsonLd } from "@/components/seo/json-ld";
 import { MarketingDataProvider } from "@/contexts/marketing-data-context";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
@@ -17,6 +18,7 @@ export default async function HomePage({ locale = "en" }: { locale?: MarketingLo
       <HeroSection />
       <CoursesMarqueeSection />
       <MarketingHomeSections />
+      <WhatsAppFloatButton />
     </MarketingDataProvider>
   );
 }
