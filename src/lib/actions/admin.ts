@@ -103,6 +103,7 @@ export async function addStudent(data: {
   batchIds?: Record<string, string>;
   whatsapp: string;
   schoolName: string;
+  district?: string;
   nicNumber?: string;
   password?: string;
   examYear?: string;
@@ -200,6 +201,7 @@ export async function addStudent(data: {
         course_name: primaryCourseName,
         phone: normalizedWhatsApp,
         school_name: schoolName,
+        district: data.district?.trim() ?? "",
         nic_number: nicNumber,
         exam_year: data.examYear ?? null,
         ict_grade: data.ictGrade ?? null,

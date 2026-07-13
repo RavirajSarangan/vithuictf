@@ -1147,6 +1147,7 @@ export async function updateStudent(
     courseName?: string;
     whatsapp?: string;
     schoolName?: string;
+    district?: string;
     nicNumber?: string;
     examYear?: string;
     ictGrade?: string;
@@ -1201,6 +1202,7 @@ export async function updateStudent(
     updates.phone = normalizeSriLankaWhatsApp(data.whatsapp);
   }
   if (data.schoolName !== undefined) updates.school_name = data.schoolName.trim();
+  if (data.district !== undefined) updates.district = data.district.trim();
   if (normalizedNic !== undefined) updates.nic_number = normalizedNic;
   if (data.examYear !== undefined) updates.exam_year = data.examYear;
   if (data.ictGrade !== undefined) updates.ict_grade = data.ictGrade;

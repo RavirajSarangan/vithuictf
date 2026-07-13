@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +51,7 @@ import {
 } from "@/lib/validation/register-student";
 import { normalizeSriLankaWhatsApp } from "@/lib/validation/sri-lanka-phone";
 import { useBatches } from "@/hooks/use-academics";
+import { SRI_LANKA_DISTRICTS } from "@/lib/data/sri-lanka-districts";
 import type { Student } from "@/types";
 
 const studentSchema = z.object({
@@ -62,6 +64,7 @@ const studentSchema = z.object({
       message: "Enter a valid Sri Lankan mobile number (e.g. 07X XXX XXXX)",
     }),
   schoolName: z.string().min(2, "School name is required"),
+  district: z.string().min(1, "District is required"),
   nicNumber: z
     .string()
     .optional()
@@ -158,6 +161,7 @@ export default function AdminStudentsPage() {
       email: "",
       whatsapp: "",
       schoolName: "",
+      district: "",
       nicNumber: "",
       courseIds: [],
     },
@@ -195,6 +199,7 @@ export default function AdminStudentsPage() {
         batchIds: batchByCourse,
         whatsapp: values.whatsapp,
         schoolName: values.schoolName,
+        district: values.district,
         nicNumber: values.nicNumber?.trim() || undefined,
       });
 
@@ -422,6 +427,30 @@ export default function AdminStudentsPage() {
                     <FormControl>
                       <Input placeholder="e.g. Jaffna Hindu College" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="district"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>District</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a district" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SRI_LANKA_DISTRICTS.map((district) => (
+                          <SelectItem key={district} value={district}>
+                            {district}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

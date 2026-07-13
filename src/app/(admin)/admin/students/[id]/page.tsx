@@ -226,6 +226,12 @@ export default function AdminStudentDetailPage() {
                 <span>{student.schoolName}</span>
               </div>
             ) : null}
+            {student.district ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">District</span>
+                <span>{student.district}</span>
+              </div>
+            ) : null}
             {student.nicNumber ? (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">NIC</span>

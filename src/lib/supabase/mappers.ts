@@ -99,6 +99,7 @@ export function mapStudent(row: StudentRow): Student {
     nicNumber: row.nic_number ?? undefined,
     phone: row.phone ?? undefined,
     schoolName: row.school_name ?? undefined,
+    district: row.district || undefined,
     notifyEmail: row.notify_email,
     examYear: row.exam_year ?? undefined,
     ictGrade: row.ict_grade ?? undefined,

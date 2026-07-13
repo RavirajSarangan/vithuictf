@@ -1286,6 +1286,7 @@ export type Database = {
           course_id: string | null
           course_name: string
           display_name: string
+          district: string
           email: string
           grade: string
           id: string
@@ -1321,6 +1322,7 @@ export type Database = {
           course_id?: string | null
           course_name?: string
           display_name: string
+          district?: string
           email: string
           grade?: string
           id?: string
@@ -1356,6 +1358,7 @@ export type Database = {
           course_id?: string | null
           course_name?: string
           display_name?: string
+          district?: string
           email?: string
           grade?: string
           id?: string

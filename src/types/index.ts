@@ -43,6 +43,7 @@ export interface Student {
   nicNumber?: string;
   phone?: string;
   schoolName?: string;
+  district?: string;
   notifyEmail?: boolean;
   examYear?: string;
   ictGrade?: string;

@@ -25,7 +25,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { SRI_LANKA_DISTRICTS } from "@/lib/data/sri-lanka-districts";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/providers/auth-provider";
 import type { Student } from "@/types";
@@ -36,6 +38,7 @@ const profileSchema = z.object({
   displayName: z.string().min(2),
   email: z.string().email(),
   phone: z.string().optional(),
+  district: z.string().optional(),
   examYear: z.string().optional(),
   ictGrade: z.string().optional(),
 });
@@ -59,6 +62,7 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
       displayName: "",
       email: "",
       phone: "",
+      district: "",
       examYear: "",
       ictGrade: "",
     },
@@ -70,6 +74,7 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
         displayName: student.displayName,
         email: student.email,
         phone: student.phone ?? "",
+        district: student.district ?? "",
         examYear: student.examYear ?? "",
         ictGrade: student.ictGrade ?? "",
       });
@@ -84,6 +89,7 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
         displayName: values.displayName,
         email: values.email,
         whatsapp: values.phone,
+        district: values.district,
         examYear: values.examYear,
         ictGrade: values.ictGrade,
       });
@@ -191,6 +197,30 @@ export function StudentUpdateDrawer({ student, open, onOpenChange, onUpdated }: 
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="district"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>District</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a district" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {SRI_LANKA_DISTRICTS.map((district) => (
+                                <SelectItem key={district} value={district}>
+                                  {district}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
