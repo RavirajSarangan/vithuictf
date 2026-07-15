@@ -81,7 +81,7 @@ export function BulkIssueWizard({ onComplete }: BulkIssueWizardProps) {
         studentName: sample.studentName,
         courseName: sample.courseName,
         issueDate,
-        certificateNumber: "foc-cert-2026-PREVIEW",
+        certificateNumber: "FOC-CERT-2026-PREVIEW",
       });
       if (!result.ok) throw new Error(result.error);
       setPreviewUrl(result.dataUrl);

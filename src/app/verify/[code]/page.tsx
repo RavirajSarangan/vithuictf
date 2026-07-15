@@ -41,7 +41,7 @@ export default async function VerifyCertificatePage({
     const { data: byNumber } = await admin
       .from("certificates")
       .select("student_name, course_name, issued_at, certificate_number, verify_code, image_path")
-      .eq("certificate_number", code)
+      .ilike("certificate_number", code)
       .maybeSingle();
 
     if (byNumber) {
@@ -50,7 +50,7 @@ export default async function VerifyCertificatePage({
       const { data: byVerify } = await admin
         .from("certificates")
         .select("student_name, course_name, issued_at, certificate_number, verify_code, image_path")
-        .eq("verify_code", code)
+        .ilike("verify_code", code)
         .maybeSingle();
       cert = byVerify;
     }

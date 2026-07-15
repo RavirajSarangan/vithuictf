@@ -42,6 +42,8 @@ export function isSiteGatePublicExemptPath(pathname: string, mode: SitePublicMod
   if (pathname.startsWith("/admin")) return true;
   if (pathname.startsWith("/staff")) return true;
   if (pathname.startsWith("/paper-center")) return true;
+  if (pathname.startsWith("/verify")) return true;
+  if (pathname.startsWith("/certificate/claim")) return true;
   if (mode === "coming_soon" && (pathname === "/coming-soon" || pathname.startsWith("/coming-soon/"))) {
     return true;
   }

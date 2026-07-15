@@ -4,7 +4,6 @@ import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { requireStaff, getSessionProfile } from "@/lib/actions/auth";
 import { actionFailure, getActionFailureMessage } from "@/lib/actions/action-result";
 import { logAdminAction } from "@/lib/audit";
-import { allocateCertificateNumber } from "@/lib/certificates/numbering";
 import {
   DEFAULT_CERTIFICATE_FIELD_CONFIG,
   DEFAULT_CERTIFICATE_ID_PADDING,
@@ -15,14 +14,16 @@ import {
   type CertificateTemplateFieldConfig,
 } from "@/lib/certificates/field-config";
 import { parseCertificateIssueDate } from "@/lib/certificates/parse-date";
-import { normalizeName } from "@/lib/certificates/parse-csv";
-import { getResendConfig } from "@/lib/email/resend";
-import { sendEmail } from "@/lib/email/send";
 import {
-  buildCertificateDeliveryEmailHtml,
-  buildCertificateDeliveryEmailSubject,
-  buildCertificateDeliveryEmailText,
-} from "@/lib/email/templates/certificate-delivery";
+  generateAndPersistCertificate,
+  getActiveTemplateRecordForClient,
+  matchStudentAndCourse,
+  normalizeTemplateImageUrl,
+  renderCertificateImage,
+  sendCertificateEmailCore,
+  type CertificateTemplateRow as TemplateRow,
+} from "@/lib/certificates/issue-certificate";
+import { getResendConfig } from "@/lib/email/resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Certificate, CertificateBatch, CertificateTemplate } from "@/types";
@@ -44,25 +45,6 @@ export type BulkIssueResultItem = {
   certificateNumber?: string;
   error?: string;
 };
-
-type TemplateRow = {
-  id: string;
-  name: string;
-  image_url: string;
-  field_config: unknown;
-  is_active: boolean;
-  id_prefix: string;
-  id_padding: number;
-  created_at: string;
-  updated_at: string;
-};
-
-function normalizeTemplateImageUrl(imageUrl: string): string {
-  if (imageUrl.includes("ICTF - Certificate")) {
-    return DEFAULT_CERTIFICATE_TEMPLATE_PATH;
-  }
-  return imageUrl;
-}
 
 function mapTemplateRow(row: TemplateRow): CertificateTemplate {
   return {
@@ -104,34 +86,12 @@ function mapBatchRow(row: {
   };
 }
 
-function getAppUrl(): string {
+export async function getAppUrl(): Promise<string> {
   return getResendConfig()?.appUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://ictf.lk";
 }
 
-async function renderCertificateImage(
-  templateImageUrl: string,
-  fieldConfig: CertificateTemplateFieldConfig,
-  data: {
-    certificateNumber: string;
-    studentName: string;
-    courseName: string;
-    issueDate: Date;
-  }
-) {
-  const { generateCertificateImage } = await import("@/lib/certificates/generate-image");
-  return generateCertificateImage(normalizeTemplateImageUrl(templateImageUrl), fieldConfig, data);
-}
-
 async function getActiveTemplateRecord(): Promise<TemplateRow | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("certificate_templates")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data as TemplateRow | null;
+  return getActiveTemplateRecordForClient(await createClient());
 }
 
 export async function ensureDefaultCertificateTemplate(): Promise<CertificateTemplate | null> {
@@ -249,35 +209,6 @@ export async function updateCertificateTemplateConfig(fieldConfig: CertificateTe
   return { ok: true as const };
 }
 
-async function matchStudentAndCourse(
-  admin: ReturnType<typeof createAdminClient>,
-  studentName: string,
-  courseName: string,
-  email?: string
-) {
-  const [{ data: students }, { data: courses }] = await Promise.all([
-    admin.from("students").select("id, display_name, email"),
-    admin.from("courses").select("id, name"),
-  ]);
-
-  let studentId: string | null = null;
-  if (email) {
-    const byEmail = students?.find((s) => s.email.toLowerCase() === email.toLowerCase());
-    if (byEmail) studentId = byEmail.id;
-  }
-  if (!studentId) {
-    const normalized = normalizeName(studentName);
-    const byName = students?.find((s) => normalizeName(s.display_name) === normalized);
-    if (byName) studentId = byName.id;
-  }
-
-  const courseMatch = courses?.find((c) => normalizeName(c.name) === normalizeName(courseName));
-  return {
-    studentId,
-    courseId: courseMatch?.id ?? null,
-  };
-}
-
 async function issueOneCertificate(params: {
   template: TemplateRow;
   batchId: string;
@@ -286,71 +217,31 @@ async function issueOneCertificate(params: {
   autoSendEmail?: boolean;
 }): Promise<BulkIssueResultItem> {
   const admin = createAdminClient();
-  const supabase = await createClient();
 
   try {
-    const certificateNumber = await allocateCertificateNumber(
-      supabase,
-      params.template.id_prefix,
-      params.template.id_padding
-    );
-
-    const fieldConfig = getRenderFieldConfig(params.template.field_config);
-    const pngBuffer = await renderCertificateImage(params.template.image_url, fieldConfig, {
-      certificateNumber,
+    const { id, certificateNumber } = await generateAndPersistCertificate({
+      admin,
+      template: params.template,
       studentName: params.row.studentName,
       courseName: params.row.courseName,
       issueDate: params.issueDate,
+      email: params.row.email,
+      phone: params.row.phone,
+      storageFolder: `issued/${params.batchId}`,
+      batchId: params.batchId,
+      autoSendEmail: params.autoSendEmail,
+      appUrl: await getAppUrl(),
     });
 
-    const storagePath = `issued/${params.batchId}/${certificateNumber}.png`;
-    const { error: uploadError } = await admin.storage.from("certificates").upload(storagePath, pngBuffer, {
-      contentType: "image/png",
-      upsert: true,
-    });
-    if (uploadError) throw new Error(uploadError.message);
-
-    const { studentId, courseId } = await matchStudentAndCourse(
-      admin,
-      params.row.studentName,
-      params.row.courseName,
-      params.row.email
-    );
-
-    const { data: inserted, error: insertError } = await supabase
-      .from("certificates")
-      .insert({
-        student_id: studentId,
-        student_name: params.row.studentName,
-        course_id: courseId,
-        course_name: params.row.courseName,
-        certificate_number: certificateNumber,
-        verify_code: certificateNumber,
-        batch_id: params.batchId,
-        image_path: storagePath,
-        recipient_email: params.row.email ?? null,
-        recipient_phone: params.row.phone ?? null,
-        delivery_status: "pending",
-        issued_at: params.issueDate.toISOString(),
-      })
-      .select("id")
-      .single();
-
-    if (insertError || !inserted) throw new Error(insertError?.message ?? "Failed to save certificate");
-
-    await logAdminAction("certificate.bulk_issue", "certificate", inserted.id, {
+    await logAdminAction("certificate.bulk_issue", "certificate", id, {
       certificateNumber,
       batchId: params.batchId,
     });
 
-    if (params.autoSendEmail && params.row.email) {
-      await sendCertificateEmail(inserted.id);
-    }
-
     return {
       rowIndex: params.row.rowIndex,
       success: true,
-      certificateId: inserted.id,
+      certificateId: id,
       certificateNumber,
     };
   } catch (error) {
@@ -534,7 +425,7 @@ export async function updateCertificate(
 
     const issueDate = parseCertificateIssueDate(data.issueDate);
     const fieldConfig = getRenderFieldConfig(template.field_config);
-    const pngBuffer = await renderCertificateImage(normalizeTemplateImageUrl(template.image_url), fieldConfig, {
+    const pngBuffer = await renderCertificateImage(template.image_url, fieldConfig, {
       certificateNumber,
       studentName,
       courseName,
@@ -607,70 +498,9 @@ export async function getCertificateSignedUrl(certificateId: string) {
 
 export async function sendCertificateEmail(certificateId: string) {
   await requireStaff();
-  const supabase = await createClient();
-  const { data: cert } = await supabase
-    .from("certificates")
-    .select("*")
-    .eq("id", certificateId)
-    .maybeSingle();
-
-  if (!cert) return actionFailure(new Error("Not found"), "Certificate not found");
-  if (!cert.recipient_email) return actionFailure(new Error("No email"), "No recipient email on this certificate");
-
-  const appUrl = getAppUrl();
-  const verifyCode = cert.certificate_number ?? cert.verify_code;
-  const verifyUrl = `${appUrl}/verify/${verifyCode}`;
-
-  let attachment: Buffer | undefined;
-  if (cert.image_path) {
-    const admin = createAdminClient();
-    const { data: fileData, error: downloadError } = await admin.storage
-      .from("certificates")
-      .download(cert.image_path);
-    if (!downloadError && fileData) {
-      attachment = Buffer.from(await fileData.arrayBuffer());
-    }
-  }
-
-  const emailData = {
-    studentName: cert.student_name,
-    courseName: cert.course_name,
-    certificateNumber: verifyCode ?? certificateId,
-    verifyUrl,
-  };
-
-  const result = await sendEmail({
-    to: cert.recipient_email,
-    subject: buildCertificateDeliveryEmailSubject(emailData.certificateNumber),
-    html: buildCertificateDeliveryEmailHtml(emailData),
-    text: buildCertificateDeliveryEmailText(emailData),
-    attachments: attachment
-      ? [
-          {
-            filename: `${emailData.certificateNumber}.png`,
-            content: attachment,
-            contentType: "image/png",
-          },
-        ]
-      : undefined,
-  });
-
-  if (!result.emailSent) {
-    await supabase
-      .from("certificates")
-      .update({ delivery_status: "failed" })
-      .eq("id", certificateId);
-    return actionFailure(new Error(result.error ?? "Send failed"), result.error ?? "Failed to send email");
-  }
-
-  await supabase
-    .from("certificates")
-    .update({
-      delivery_status: "email_sent",
-      email_sent_at: new Date().toISOString(),
-      delivered_at: new Date().toISOString(),
-    })
-    .eq("id", certificateId);
+  const admin = createAdminClient();
+  const result = await sendCertificateEmailCore(admin, certificateId, await getAppUrl());
+  if (!result.ok) return actionFailure(new Error(result.error), result.error);
 
   revalidatePath(CERTIFICATES_PATH);
   return { ok: true as const };
@@ -752,40 +582,45 @@ export type CertificateListItem = Certificate & {
   batchId?: string;
 };
 
+export function mapCertificateRow(row: {
+  id: string;
+  student_name: string;
+  course_name: string;
+  issued_at: string;
+  verify_code?: string;
+  certificate_number?: string;
+  recipient_email?: string;
+  recipient_phone?: string;
+  delivery_status?: string;
+  image_path?: string;
+  batch_id?: string;
+  student_id?: string | null;
+  course_id?: string | null;
+}): CertificateListItem {
+  return {
+    id: row.id,
+    studentId: row.student_id ?? "",
+    studentName: row.student_name,
+    courseId: row.course_id ?? "",
+    courseName: row.course_name,
+    issuedAt: row.issued_at,
+    verifyCode: row.verify_code,
+    certificateNumber: row.certificate_number,
+    recipientEmail: row.recipient_email,
+    recipientPhone: row.recipient_phone,
+    deliveryStatus: (row.delivery_status ?? "pending") as Certificate["deliveryStatus"],
+    imagePath: row.image_path,
+    batchId: row.batch_id ?? undefined,
+  };
+}
+
 export async function listCertificatesForAdmin(): Promise<CertificateListItem[]> {
   try {
     await requireStaff();
     const supabase = await createClient();
     const { data, error } = await supabase.from("certificates").select("*").order("issued_at", { ascending: false });
     if (error) return [];
-    return (data ?? []).map((row) => {
-      const extended = row as typeof row & {
-        verify_code?: string;
-        certificate_number?: string;
-        recipient_email?: string;
-        recipient_phone?: string;
-        delivery_status?: string;
-        image_path?: string;
-        batch_id?: string;
-        student_id?: string | null;
-        course_id?: string | null;
-      };
-      return {
-        id: extended.id,
-        studentId: extended.student_id ?? "",
-        studentName: extended.student_name,
-        courseId: extended.course_id ?? "",
-        courseName: extended.course_name,
-        issuedAt: extended.issued_at,
-        verifyCode: extended.verify_code,
-        certificateNumber: extended.certificate_number,
-        recipientEmail: extended.recipient_email,
-        recipientPhone: extended.recipient_phone,
-        deliveryStatus: (extended.delivery_status ?? "pending") as Certificate["deliveryStatus"],
-        imagePath: extended.image_path,
-        batchId: extended.batch_id ?? undefined,
-      };
-    });
+    return (data ?? []).map((row) => mapCertificateRow(row as Parameters<typeof mapCertificateRow>[0]));
   } catch {
     return [];
   }

@@ -256,6 +256,56 @@ export type Database = {
         }
         Relationships: []
       }
+      certificate_claim_links: {
+        Row: {
+          claim_count: number
+          course_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          issue_date: string
+          max_claims: number | null
+          slug: string
+          status: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          claim_count?: number
+          course_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issue_date?: string
+          max_claims?: number | null
+          slug: string
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          claim_count?: number
+          course_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issue_date?: string
+          max_claims?: number | null
+          slug?: string
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_claim_links_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certificate_sequences: {
         Row: {
           last_number: number
@@ -311,6 +361,7 @@ export type Database = {
         Row: {
           batch_id: string | null
           certificate_number: string | null
+          claim_link_id: string | null
           course_id: string | null
           course_name: string
           delivered_at: string | null
@@ -328,6 +379,7 @@ export type Database = {
         Insert: {
           batch_id?: string | null
           certificate_number?: string | null
+          claim_link_id?: string | null
           course_id?: string | null
           course_name: string
           delivered_at?: string | null
@@ -345,6 +397,7 @@ export type Database = {
         Update: {
           batch_id?: string | null
           certificate_number?: string | null
+          claim_link_id?: string | null
           course_id?: string | null
           course_name?: string
           delivered_at?: string | null
@@ -360,6 +413,13 @@ export type Database = {
           verify_code?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "certificates_claim_link_id_fkey"
+            columns: ["claim_link_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_claim_links"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "certificates_course_id_fkey"
             columns: ["course_id"]

@@ -86,7 +86,7 @@ export const DEFAULT_CERTIFICATE_FIELD_CONFIG: CertificateTemplateFieldConfig = 
 };
 
 export const DEFAULT_CERTIFICATE_TEMPLATE_PATH = "/landing/ictf-certificate.webp";
-export const DEFAULT_CERTIFICATE_ID_PREFIX = "foc-cert-2026";
+export const DEFAULT_CERTIFICATE_ID_PREFIX = "FOC-CERT-2026";
 export const DEFAULT_CERTIFICATE_ID_PADDING = 3;
 
 function mergeField(

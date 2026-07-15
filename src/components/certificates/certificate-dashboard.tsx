@@ -27,7 +27,12 @@ const CertificateTemplatePanel = dynamic(
   { loading: () => <p className="text-sm text-muted-foreground">Loading template…</p> }
 );
 
-type CertificateTab = "certificates" | "manual" | "bulk" | "template";
+const ClaimLinksPanel = dynamic(
+  () => import("@/components/certificates/claim-links-panel").then((m) => m.ClaimLinksPanel),
+  { loading: () => <p className="text-sm text-muted-foreground">Loading claim links…</p> }
+);
+
+type CertificateTab = "certificates" | "manual" | "bulk" | "template" | "claims";
 
 export function CertificateDashboard() {
   const [activeTab, setActiveTab] = useState<CertificateTab>("certificates");
@@ -52,6 +57,7 @@ export function CertificateDashboard() {
           <TabsTrigger value="manual">Manual issue</TabsTrigger>
           <TabsTrigger value="bulk">Bulk issue</TabsTrigger>
           <TabsTrigger value="template">Template</TabsTrigger>
+          <TabsTrigger value="claims">Claim links</TabsTrigger>
         </TabsList>
 
         {activeTab === "certificates" ? (
@@ -76,6 +82,12 @@ export function CertificateDashboard() {
         {activeTab === "template" ? (
           <TabsContent value="template">
             <CertificateTemplatePanel template={template} onUpdated={refresh} />
+          </TabsContent>
+        ) : null}
+
+        {activeTab === "claims" ? (
+          <TabsContent value="claims">
+            <ClaimLinksPanel />
           </TabsContent>
         ) : null}
       </Tabs>

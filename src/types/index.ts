@@ -651,6 +651,22 @@ export interface CertificateBatch {
   createdAt: string;
 }
 
+export type CertificateClaimLinkStatus = "active" | "paused" | "closed";
+
+export interface CertificateClaimLink {
+  id: string;
+  slug: string;
+  courseName: string;
+  issueDate: string;
+  templateId: string | null;
+  status: CertificateClaimLinkStatus;
+  maxClaims: number | null;
+  claimCount: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ContactInquiry {
   id: string;
   name: string;

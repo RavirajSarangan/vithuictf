@@ -65,7 +65,7 @@ export function CertificateTemplatePanel({ template, onUpdated }: CertificateTem
           <CardTitle>Active template</CardTitle>
           <CardDescription>
             This image is used for every generated certificate. ID prefix:{" "}
-            <span className="font-mono">{template?.idPrefix ?? "foc-cert-2026"}</span>
+            <span className="font-mono">{template?.idPrefix ?? "FOC-CERT-2026"}</span>
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -112,7 +112,7 @@ export function CertificateTemplatePanel({ template, onUpdated }: CertificateTem
         <CardContent className="space-y-3 text-sm">
           <div className="rounded-lg border p-3">
             <p className="font-medium">Certificate ID</p>
-            <p className="text-muted-foreground">Top right — e.g. foc-cert-2026-001</p>
+            <p className="text-muted-foreground">Top right — e.g. FOC-CERT-2026-001</p>
           </div>
           <div className="rounded-lg border p-3">
             <p className="font-medium">Student name</p>
