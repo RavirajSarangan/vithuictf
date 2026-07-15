@@ -576,8 +576,6 @@ export async function listCertificateBatches(): Promise<CertificateBatch[]> {
   }
 }
 
-export type { CertificateListItem };
-
 export async function listCertificatesForAdmin(): Promise<CertificateListItem[]> {
   try {
     await requireStaff();

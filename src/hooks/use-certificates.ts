@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/client";
 import { mapCertificate } from "@/lib/supabase/mappers";
-import type { Certificate, CertificateBatch, CertificateTemplate } from "@/types";
+import type { CertificateBatch, CertificateTemplate } from "@/types";
 import { useCallback, useEffect, useState } from "react";
 import {
   ensureDefaultCertificateTemplate,
   getCertificateStats,
   listCertificateBatches,
   listCertificatesForAdmin,
-  type CertificateListItem,
 } from "@/lib/actions/certificates";
+import type { CertificateListItem } from "@/lib/certificates/issue-certificate";
 
 export function useCertificates() {
   const [certificates, setCertificates] = useState<CertificateListItem[]>([]);
