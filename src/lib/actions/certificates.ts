@@ -17,16 +17,18 @@ import { parseCertificateIssueDate } from "@/lib/certificates/parse-date";
 import {
   generateAndPersistCertificate,
   getActiveTemplateRecordForClient,
+  mapCertificateRow,
   matchStudentAndCourse,
   normalizeTemplateImageUrl,
   renderCertificateImage,
   sendCertificateEmailCore,
+  type CertificateListItem,
   type CertificateTemplateRow as TemplateRow,
 } from "@/lib/certificates/issue-certificate";
 import { getResendConfig } from "@/lib/email/resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import type { Certificate, CertificateBatch, CertificateTemplate } from "@/types";
+import type { CertificateBatch, CertificateTemplate } from "@/types";
 
 const CERTIFICATES_PATH = "/admin/certificates";
 
@@ -574,45 +576,7 @@ export async function listCertificateBatches(): Promise<CertificateBatch[]> {
   }
 }
 
-export type CertificateListItem = Certificate & {
-  recipientEmail?: string;
-  recipientPhone?: string;
-  deliveryStatus: Certificate["deliveryStatus"];
-  imagePath?: string;
-  batchId?: string;
-};
-
-export function mapCertificateRow(row: {
-  id: string;
-  student_name: string;
-  course_name: string;
-  issued_at: string;
-  verify_code?: string;
-  certificate_number?: string;
-  recipient_email?: string;
-  recipient_phone?: string;
-  delivery_status?: string;
-  image_path?: string;
-  batch_id?: string;
-  student_id?: string | null;
-  course_id?: string | null;
-}): CertificateListItem {
-  return {
-    id: row.id,
-    studentId: row.student_id ?? "",
-    studentName: row.student_name,
-    courseId: row.course_id ?? "",
-    courseName: row.course_name,
-    issuedAt: row.issued_at,
-    verifyCode: row.verify_code,
-    certificateNumber: row.certificate_number,
-    recipientEmail: row.recipient_email,
-    recipientPhone: row.recipient_phone,
-    deliveryStatus: (row.delivery_status ?? "pending") as Certificate["deliveryStatus"],
-    imagePath: row.image_path,
-    batchId: row.batch_id ?? undefined,
-  };
-}
+export type { CertificateListItem };
 
 export async function listCertificatesForAdmin(): Promise<CertificateListItem[]> {
   try {

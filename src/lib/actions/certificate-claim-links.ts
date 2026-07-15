@@ -3,9 +3,13 @@
 import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { requireStaff, getSessionProfile } from "@/lib/actions/auth";
 import { actionFailure } from "@/lib/actions/action-result";
-import { getAppUrl, mapCertificateRow, type CertificateListItem } from "@/lib/actions/certificates";
+import { getAppUrl } from "@/lib/actions/certificates";
 import { logAdminAction } from "@/lib/audit";
-import { getActiveTemplateRecordForClient } from "@/lib/certificates/issue-certificate";
+import {
+  getActiveTemplateRecordForClient,
+  mapCertificateRow,
+  type CertificateListItem,
+} from "@/lib/certificates/issue-certificate";
 import { createClient } from "@/lib/supabase/server";
 import type { CertificateClaimLink, CertificateClaimLinkStatus } from "@/types";
 

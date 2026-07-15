@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import type { Certificate } from "@/types";
 import { allocateCertificateNumber } from "@/lib/certificates/numbering";
 import {
   DEFAULT_CERTIFICATE_TEMPLATE_PATH,
@@ -180,6 +181,47 @@ export async function generateAndPersistCertificate(
   }
 
   return { id: certificateId, certificateNumber };
+}
+
+export type CertificateListItem = Certificate & {
+  recipientEmail?: string;
+  recipientPhone?: string;
+  deliveryStatus: Certificate["deliveryStatus"];
+  imagePath?: string;
+  batchId?: string;
+};
+
+/** Maps a raw `certificates` table row to the shape used by admin list views. */
+export function mapCertificateRow(row: {
+  id: string;
+  student_name: string;
+  course_name: string;
+  issued_at: string;
+  verify_code?: string;
+  certificate_number?: string;
+  recipient_email?: string;
+  recipient_phone?: string;
+  delivery_status?: string;
+  image_path?: string;
+  batch_id?: string;
+  student_id?: string | null;
+  course_id?: string | null;
+}): CertificateListItem {
+  return {
+    id: row.id,
+    studentId: row.student_id ?? "",
+    studentName: row.student_name,
+    courseId: row.course_id ?? "",
+    courseName: row.course_name,
+    issuedAt: row.issued_at,
+    verifyCode: row.verify_code,
+    certificateNumber: row.certificate_number,
+    recipientEmail: row.recipient_email,
+    recipientPhone: row.recipient_phone,
+    deliveryStatus: (row.delivery_status ?? "pending") as Certificate["deliveryStatus"],
+    imagePath: row.image_path,
+    batchId: row.batch_id ?? undefined,
+  };
 }
 
 /** Session-agnostic certificate email sender — always uses the passed-in client. */
