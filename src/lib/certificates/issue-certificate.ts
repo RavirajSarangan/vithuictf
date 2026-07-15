@@ -128,9 +128,12 @@ export async function generateAndPersistCertificate(
   });
 
   const storagePath = `${input.storageFolder}/${certificateNumber}.png`;
+  // Uint8Array.from(...) avoids UTF-8 corruption of the binary body in the Supabase client
+  // (same fix as src/lib/storage/upload-admin-object.ts — passing a raw Buffer directly
+  // gets mangled in production).
   const { error: uploadError } = await input.admin.storage
     .from("certificates")
-    .upload(storagePath, pngBuffer, { contentType: "image/png", upsert: true });
+    .upload(storagePath, Uint8Array.from(pngBuffer), { contentType: "image/png", upsert: true });
   if (uploadError) throw new Error(uploadError.message);
 
   const { studentId, courseId } = await matchStudentAndCourse(

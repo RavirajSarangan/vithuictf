@@ -436,10 +436,14 @@ export async function updateCertificate(
 
     const storagePath =
       cert.image_path ?? `issued/${cert.batch_id ?? "manual"}/${certificateNumber}.png`;
-    const { error: uploadError } = await admin.storage.from("certificates").upload(storagePath, pngBuffer, {
-      contentType: "image/png",
-      upsert: true,
-    });
+    // Uint8Array.from(...) avoids UTF-8 corruption of the binary body in the Supabase client
+    // (same fix as src/lib/storage/upload-admin-object.ts).
+    const { error: uploadError } = await admin.storage
+      .from("certificates")
+      .upload(storagePath, Uint8Array.from(pngBuffer), {
+        contentType: "image/png",
+        upsert: true,
+      });
     if (uploadError) return actionFailure(uploadError, "Failed to regenerate certificate image");
 
     const { studentId, courseId } = await matchStudentAndCourse(
