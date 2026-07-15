@@ -124,9 +124,9 @@ export function parseFieldConfig(raw: unknown): CertificateTemplateFieldConfig {
   };
 }
 
-/** Always render with the latest calibrated defaults (ignores stale DB positions). */
-export function getRenderFieldConfig(_raw?: unknown): CertificateTemplateFieldConfig {
-  return DEFAULT_CERTIFICATE_FIELD_CONFIG;
+/** Renders using each template's own stored field positions, falling back to the defaults for any missing field. */
+export function getRenderFieldConfig(raw?: unknown): CertificateTemplateFieldConfig {
+  return parseFieldConfig(raw);
 }
 
 export function buildCourseDescriptionText(courseName: string): string {

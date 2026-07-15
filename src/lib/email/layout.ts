@@ -36,13 +36,30 @@ export function buildIctfEmailLayout({
     : "";
 
   const ctaHtml = cta
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:30px 0 8px;">
         <tr>
-          <td style="border-radius:999px;background:${ACCENT};">
-            <a href="${escapeHtml(cta.href)}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:${NAVY_DARK};text-decoration:none;border-radius:999px;">${escapeHtml(cta.label)}</a>
+          <td style="border-radius:999px;background:${ACCENT};box-shadow:0 10px 24px -10px rgba(245,166,35,0.55);">
+            <a href="${escapeHtml(cta.href)}" style="display:inline-block;padding:15px 30px;font-size:15px;font-weight:700;color:${NAVY_DARK};text-decoration:none;border-radius:999px;">${escapeHtml(cta.label)}</a>
           </td>
         </tr>
       </table>`
+    : "";
+
+  const social = BRAND.contact.social;
+  const socialLinks: Array<{ label: string; href: string }> = [
+    { label: "Facebook", href: social.facebook },
+    { label: "Instagram", href: social.instagram },
+    { label: "YouTube", href: social.youtube },
+    { label: "LinkedIn", href: social.linkedin },
+  ].filter((link) => Boolean(link.href));
+
+  const socialLinksHtml = socialLinks.length
+    ? `<p style="margin:12px 0 0;font-size:12px;">${socialLinks
+        .map(
+          (link) =>
+            `<a href="${escapeHtml(link.href)}" style="color:${MUTED};text-decoration:none;">${escapeHtml(link.label)}</a>`
+        )
+        .join('<span style="color:#cbd5e1;padding:0 6px;">&middot;</span>')}</p>`
     : "";
 
   return `<!DOCTYPE html>
@@ -54,42 +71,48 @@ export function buildIctfEmailLayout({
   <meta name="supported-color-schemes" content="light" />
   <title>${escapeHtml(title)}</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f6fb;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:${TEXT};">
+<body style="margin:0;padding:0;background:#eef1f8;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:${TEXT};">
   ${preheaderHtml}
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:24px 12px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f8;padding:32px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border:1px solid #e8edf5;border-radius:18px;overflow:hidden;box-shadow:0 18px 50px -28px rgba(39,52,97,0.35);">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(28,37,71,0.30);">
           <tr>
-            <td style="background:linear-gradient(135deg,${NAVY} 0%,${NAVY_DARK} 100%);padding:28px 28px 24px;">
-              <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:${ACCENT};">${escapeHtml(BRAND.name)} · ${escapeHtml(BRAND.fullName)}</p>
-              <h1 style="margin:0;font-size:24px;line-height:1.25;font-weight:800;color:#ffffff;">${escapeHtml(title)}</h1>
+            <td style="padding:22px 28px;text-align:center;border-bottom:1px solid #f1f4fa;">
+              <img src="https://ictf.lk${BRAND.logo}" alt="${escapeHtml(BRAND.name)}" width="136" style="display:inline-block;width:136px;max-width:136px;height:auto;border:0;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="background:linear-gradient(135deg,${NAVY} 0%,${NAVY_DARK} 100%);padding:32px 28px 28px;">
+              <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:${ACCENT};">${escapeHtml(BRAND.name)} · ${escapeHtml(BRAND.fullName)}</p>
+              <h1 style="margin:0;font-size:23px;line-height:1.3;font-weight:800;color:#ffffff;letter-spacing:-0.01em;">${escapeHtml(title)}</h1>
               ${subtitleHtml}
             </td>
           </tr>
           <tr>
-            <td style="padding:28px;font-size:15px;line-height:1.7;color:${TEXT};">
+            <td style="padding:30px 28px;font-size:15px;line-height:1.7;color:${TEXT};">
               ${bodyHtml}
               ${ctaHtml}
             </td>
           </tr>
           <tr>
             <td style="padding:0 28px 28px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e8edf5;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eef2f7;">
                 <tr>
-                  <td style="padding-top:18px;font-size:12px;line-height:1.6;color:${MUTED};">
+                  <td style="padding-top:20px;font-size:12px;line-height:1.7;color:${MUTED};">
                     <strong style="color:${NAVY};">${escapeHtml(BRAND.legalName)}</strong><br />
                     ${escapeHtml(BRAND.contact.address)}<br />
                     <a href="mailto:${escapeHtml(BRAND.contact.email)}" style="color:${NAVY};text-decoration:none;">${escapeHtml(BRAND.contact.email)}</a>
                     · ${escapeHtml(BRAND.contact.phone)}<br />
                     <a href="https://ictf.lk" style="color:${NAVY};text-decoration:none;">ictf.lk</a>
+                    ${socialLinksHtml}
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
         </table>
-        <p style="margin:16px 0 0;font-size:11px;line-height:1.5;color:#94a3b8;max-width:600px;">
+        <p style="margin:18px 0 0;font-size:11px;line-height:1.5;color:#94a3b8;max-width:600px;">
           You received this email from ${escapeHtml(BRAND.platformName)}. Please do not reply to automated messages unless a reply address is provided.
         </p>
       </td>
