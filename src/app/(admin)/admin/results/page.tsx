@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import dynamic from "next/dynamic";
 import { addResult, deleteResult } from "@/lib/actions/admin";
 import { bulkDeleteResults } from "@/lib/actions/bulk-delete";
 import { useAdminResults, useAdminStudents } from "@/hooks/use-data";
@@ -17,11 +18,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/shared/empty-state";
 
 import { getActionErrorMessage } from "@/lib/action-error";
+
+const ResultCheckLinksPanel = dynamic(
+  () => import("@/components/results/result-check-links-panel").then((m) => m.ResultCheckLinksPanel),
+  { loading: () => <p className="text-sm text-muted-foreground">Loading check links…</p> }
+);
+
+type ResultsTab = "results" | "links";
 const resultSchema = z.object({
   studentId: z.string().min(1, "Select a student"),
   examTitle: z.string().min(2, "Exam title is required"),

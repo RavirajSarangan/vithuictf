@@ -62,4 +62,5 @@ export function revalidateSitePublicPaths() {
   safeRevalidatePath("/admin/home");
   safeRevalidatePath("/parent");
   safeRevalidatePath("/verify");
+  safeRevalidatePath("/results/check");
 }
