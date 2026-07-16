@@ -19,8 +19,40 @@ export function CoursesMarqueeSection() {
 
   if (courses.length === 0) return null;
 
-  // Duplicate the list so the -50% keyframe loops seamlessly.
-  const track = [...courses, ...courses];
+  // Looping the marquee only reads as "infinite" once there are enough real
+  // cards that the seam isn't obvious — with only a couple of courses, the
+  // cloned copy just looks like the same course appearing twice in a row.
+  const MIN_COURSES_TO_LOOP = 5;
+  const shouldLoop = courses.length >= MIN_COURSES_TO_LOOP;
+  const track = shouldLoop ? [...courses, ...courses] : courses;
+
+  const cards = track.map((course, index) => (
+    <Link
+      key={`${course.id}-${index}`}
+      href={course.slug ? `/courses/${course.slug}` : "/register"}
+      className="group block w-64 shrink-0 sm:w-72"
+      aria-hidden={shouldLoop && index >= courses.length}
+      tabIndex={shouldLoop && index >= courses.length ? -1 : undefined}
+    >
+      <CourseCard
+        compact
+        showStats
+        title={course.name}
+        description={course.description}
+        coverImageUrl={course.coverImageUrl}
+        category={course.category}
+        durationMonths={course.durationMonths}
+        classDaysPerWeek={course.classDaysPerWeek}
+        classDays={course.classDays}
+        startTime={course.startTime}
+        endTime={course.endTime}
+        totalSessions={course.totalSessions}
+        completedSessions={course.completedSessions}
+        teacherName={course.teacherName}
+        studentCount={course.studentCount}
+      />
+    </Link>
+  ));
 
   return (
     <MarketingSection id="courses" tone="surface">
@@ -32,41 +64,17 @@ export function CoursesMarqueeSection() {
         light={false}
       />
 
-      <div
-        ref={ref}
-        data-marquee-in-view={inView ? "true" : "false"}
-        className="marketing-marquee-track"
-      >
-        <div className="courses-marquee flex w-max gap-5 py-2 motion-reduce:animate-none">
-          {track.map((course, index) => (
-            <Link
-              key={`${course.id}-${index}`}
-              href={course.slug ? `/courses/${course.slug}` : "/register"}
-              className="block w-64 shrink-0 sm:w-72"
-              aria-hidden={index >= courses.length}
-              tabIndex={index >= courses.length ? -1 : undefined}
-            >
-              <CourseCard
-                compact
-                showStats
-                title={course.name}
-                description={course.description}
-                coverImageUrl={course.coverImageUrl}
-                category={course.category}
-                durationMonths={course.durationMonths}
-                classDaysPerWeek={course.classDaysPerWeek}
-                classDays={course.classDays}
-                startTime={course.startTime}
-                endTime={course.endTime}
-                totalSessions={course.totalSessions}
-                completedSessions={course.completedSessions}
-                teacherName={course.teacherName}
-                studentCount={course.studentCount}
-              />
-            </Link>
-          ))}
+      {shouldLoop ? (
+        <div
+          ref={ref}
+          data-marquee-in-view={inView ? "true" : "false"}
+          className="marketing-marquee-track"
+        >
+          <div className="courses-marquee flex w-max gap-5 py-2 motion-reduce:animate-none">{cards}</div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-wrap justify-center gap-5 py-2">{cards}</div>
+      )}
 
       <div className="mt-10 flex justify-center">
         <ButtonLink href="/register" variant="icvf" className="gap-2" size="lg">

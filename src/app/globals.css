@@ -471,7 +471,8 @@
   will-change: transform;
 }
 
-.courses-marquee:hover {
+.courses-marquee:hover,
+.courses-marquee:focus-within {
   animation-play-state: paused;
 }
 
