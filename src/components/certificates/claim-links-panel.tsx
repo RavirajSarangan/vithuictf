@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp, Copy, Link as LinkIcon, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Link as LinkIcon, Loader2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { getActionErrorMessage } from "@/lib/action-error";
 import {
   createCertificateClaimLink,
+  deleteCertificateClaimLink,
   listCertificateClaimLinks,
   listCertificatesForClaimLink,
   updateCertificateClaimLinkStatus,
@@ -42,6 +43,7 @@ export function ClaimLinksPanel() {
   const [claims, setClaims] = useState<CertificateListItem[]>([]);
   const [claimsLoading, setClaimsLoading] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const refreshLinks = () => {
     setLoading(true);
@@ -103,6 +105,25 @@ export function ClaimLinksPanel() {
       toast.error(getActionErrorMessage(e, "Failed to update link"));
     } finally {
       setStatusUpdating(null);
+    }
+  };
+
+  const handleDelete = async (link: CertificateClaimLink) => {
+    const confirmed = window.confirm(
+      `Delete the claim link for "${link.courseName}"? Certificates already claimed through it are kept, but the link itself will stop working.`
+    );
+    if (!confirmed) return;
+    setDeletingId(link.id);
+    try {
+      const result = await deleteCertificateClaimLink(link.id);
+      if (!result.ok) throw new Error(result.error);
+      toast.success("Claim link deleted");
+      if (expandedId === link.id) setExpandedId(null);
+      refreshLinks();
+    } catch (e) {
+      toast.error(getActionErrorMessage(e, "Failed to delete claim link"));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -229,6 +250,19 @@ export function ClaimLinksPanel() {
                             Close
                           </Button>
                         ) : null}
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Delete link"
+                          disabled={deletingId === link.id}
+                          onClick={() => void handleDelete(link)}
+                        >
+                          {deletingId === link.id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-4 text-destructive" />
+                          )}
+                        </Button>
                         <Button variant="ghost" size="icon-sm" onClick={() => toggleExpand(link)}>
                           {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                         </Button>

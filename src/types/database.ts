@@ -802,6 +802,12 @@ export type Database = {
           credentials: string
           cta_label: string
           cta_url: string
+          hero_accent: string
+          hero_accent_ta: string
+          hero_badge: string
+          hero_badge_ta: string
+          hero_title: string
+          hero_title_ta: string
           highlight_experience_years: number
           highlight_students: number
           id: number
@@ -816,6 +822,12 @@ export type Database = {
           credentials?: string
           cta_label?: string
           cta_url?: string
+          hero_accent?: string
+          hero_accent_ta?: string
+          hero_badge?: string
+          hero_badge_ta?: string
+          hero_title?: string
+          hero_title_ta?: string
           highlight_experience_years?: number
           highlight_students?: number
           id?: number
@@ -830,6 +842,12 @@ export type Database = {
           credentials?: string
           cta_label?: string
           cta_url?: string
+          hero_accent?: string
+          hero_accent_ta?: string
+          hero_badge?: string
+          hero_badge_ta?: string
+          hero_title?: string
+          hero_title_ta?: string
           highlight_experience_years?: number
           highlight_students?: number
           id?: number

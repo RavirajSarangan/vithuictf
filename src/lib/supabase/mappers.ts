@@ -732,6 +732,12 @@ export function mapHomeAbout(row: Database["public"]["Tables"]["home_about"]["Ro
     highlightExperienceYears: row.highlight_experience_years,
     ctaLabel: row.cta_label,
     ctaUrl: row.cta_url,
+    heroBadge: row.hero_badge || undefined,
+    heroBadgeTa: row.hero_badge_ta || undefined,
+    heroTitle: row.hero_title || undefined,
+    heroTitleTa: row.hero_title_ta || undefined,
+    heroAccent: row.hero_accent || undefined,
+    heroAccentTa: row.hero_accent_ta || undefined,
   };
 }
 

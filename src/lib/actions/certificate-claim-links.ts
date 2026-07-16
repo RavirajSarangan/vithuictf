@@ -142,6 +142,22 @@ export async function updateCertificateClaimLinkStatus(id: string, status: Certi
   }
 }
 
+export async function deleteCertificateClaimLink(id: string) {
+  try {
+    await requireStaff();
+    const supabase = await createClient();
+    const { error } = await supabase.from("certificate_claim_links").delete().eq("id", id);
+
+    if (error) return actionFailure(error, "Failed to delete claim link");
+
+    await logAdminAction("certificate.claim_link.delete", "certificate_claim_link", id);
+    revalidatePath(CERTIFICATES_PATH);
+    return { ok: true as const };
+  } catch (error) {
+    return actionFailure(error, "Failed to delete claim link");
+  }
+}
+
 export async function listCertificatesForClaimLink(claimLinkId: string): Promise<CertificateListItem[]> {
   try {
     await requireStaff();

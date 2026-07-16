@@ -203,6 +203,29 @@ export default function AdminHomePage() {
                 />
               </div>
             ))}
+            <div className="mt-2 border-t pt-4">
+              <p className="mb-3 text-sm font-semibold text-muted-foreground">Homepage hero text</p>
+              <div className="grid gap-4">
+                {(
+                  [
+                    "heroBadge",
+                    "heroBadgeTa",
+                    "heroTitle",
+                    "heroTitleTa",
+                    "heroAccent",
+                    "heroAccentTa",
+                  ] as const
+                ).map((key) => (
+                  <div key={key}>
+                    <label className="text-sm font-medium">{key}</label>
+                    <Input
+                      defaultValue={String(about[key] ?? "")}
+                      onChange={(e) => setAboutForm((f) => ({ ...f, [key]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
             <AdminImageUpload
               label="photoUrl"
               value={String(aboutForm.photoUrl ?? about.photoUrl ?? "")}

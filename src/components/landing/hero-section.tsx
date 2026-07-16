@@ -144,11 +144,14 @@ function HeroFounderPhoto({ className, src }: { className?: string; src: string 
 }
 
 export function HeroSection() {
-  const { t, locale } = useMarketingText();
+  const { t, locale, field } = useMarketingText();
   const pathname = usePathname();
   const about = useHomeAbout();
   const topHighlight = resultsHighlights[0];
   const founderImage = about?.photoUrl || HERO_FOUNDER_IMAGE;
+  const heroBadge = (about && field(about, "heroBadge")) || t("hero.badge");
+  const heroTitle = (about && field(about, "heroTitle")) || t("hero.title");
+  const heroAccent = (about && field(about, "heroAccent")) || t("hero.accent");
 
   return (
     <section
@@ -165,15 +168,15 @@ export function HeroSection() {
                 className="size-1.5 shrink-0 rounded-full bg-icvf-accent motion-reduce:animate-none"
                 aria-hidden
               />
-              {t("hero.badge")}
+              {heroBadge}
             </p>
 
             <h1 className="hero-enter hero-enter-2 max-w-4xl font-bold">
               <span className="hero-sub-line">
-                {t("hero.title")}
+                {heroTitle}
                 <span className="sr-only"> </span>
               </span>
-              <span className="hero-accent-line">{t("hero.accent")}</span>
+              <span className="hero-accent-line">{heroAccent}</span>
             </h1>
 
             <p className="hero-enter hero-enter-3 mt-3 max-w-full text-sm leading-relaxed break-words text-icvf-text-light sm:mt-4 sm:max-w-2xl sm:text-base md:text-lg lg:max-w-2xl">

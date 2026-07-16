@@ -796,6 +796,13 @@ export interface HomeAbout {
   highlightExperienceYears: number;
   ctaLabel: string;
   ctaUrl: string;
+  /** Hero section badge/title/accent text — falls back to the static i18n copy when empty. */
+  heroBadge?: string;
+  heroBadgeTa?: string;
+  heroTitle?: string;
+  heroTitleTa?: string;
+  heroAccent?: string;
+  heroAccentTa?: string;
 }
 
 export type MarketingAnnouncementContentType =

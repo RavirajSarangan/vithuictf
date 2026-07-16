@@ -1277,6 +1277,8 @@ export async function updateNetworkStats(data: {
 export async function updateHomeAbout(data: {
   name: string; title: string; titleTa?: string; bio: string; bioTa?: string; photoUrl: string; credentials: string;
   highlightStudents: number; highlightExperienceYears: number; ctaLabel: string; ctaUrl: string;
+  heroBadge?: string; heroBadgeTa?: string; heroTitle?: string; heroTitleTa?: string;
+  heroAccent?: string; heroAccentTa?: string;
 }) {
   await requireAdmin();
   const supabase = await createClient();
@@ -1292,6 +1294,12 @@ export async function updateHomeAbout(data: {
     highlight_experience_years: data.highlightExperienceYears,
     cta_label: data.ctaLabel,
     cta_url: data.ctaUrl,
+    hero_badge: data.heroBadge ?? "",
+    hero_badge_ta: data.heroBadgeTa ?? "",
+    hero_title: data.heroTitle ?? "",
+    hero_title_ta: data.heroTitleTa ?? "",
+    hero_accent: data.heroAccent ?? "",
+    hero_accent_ta: data.heroAccentTa ?? "",
   }).eq("id", 1);
   if (error) throw new Error(error.message);
   revalidateMarketingPaths();
