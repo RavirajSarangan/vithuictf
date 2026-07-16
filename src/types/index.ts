@@ -667,6 +667,22 @@ export interface CertificateClaimLink {
   updatedAt: string;
 }
 
+export type ResultCheckLinkStatus = "active" | "paused" | "closed";
+
+export interface ResultCheckLink {
+  id: string;
+  slug: string;
+  courseId: string | null;
+  courseName: string;
+  batchId: string | null;
+  status: ResultCheckLinkStatus;
+  maxLookups: number | null;
+  lookupCount: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ContactInquiry {
   id: string;
   name: string;
@@ -871,6 +887,7 @@ export interface PlatformSettings {
   marketingComingSoonEnabled: boolean;
   sitePublicMode: SitePublicMode;
   brandLogo: BrandLogoSettings;
+  resultsCheckEnabled: boolean;
   updatedAt: string;
 }
 

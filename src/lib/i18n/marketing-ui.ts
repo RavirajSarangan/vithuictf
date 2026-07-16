@@ -70,6 +70,20 @@ export type MarketingUiKey =
   | "results.fullHistorySubtitle"
   | "results.backToHome"
   | "results.noRankings"
+  | "results.checkCta"
+  | "results.checkModalTitle"
+  | "results.checkModalDescription"
+  | "results.checkUsernameLabel"
+  | "results.checkStudentIdLabel"
+  | "results.checkSubmit"
+  | "results.checkAnother"
+  | "results.checkOpenFull"
+  | "results.checkFeatureUnavailable"
+  | "results.checkLinkInactive"
+  | "results.checkCourseLabel"
+  | "results.checkDistrictLabel"
+  | "results.checkResultsTitle"
+  | "results.checkNoResults"
   | "companies.badge"
   | "companies.title"
   | "companies.subtitle"
@@ -461,6 +475,48 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   },
   "results.backToHome": { en: "Back to homepage", ta: "முகப்புக்குத் திரும்பு" },
   "results.noRankings": { en: "Rankings will be published soon.", ta: "தரவரிசைகள் விரைவில் வெளியிடப்படும்." },
+  "results.checkCta": {
+    en: "Check Your Result",
+    ta: "உங்கள் முடிவைச் சரிபார்க்கவும்",
+    si: "ඔබේ ප්‍රතිඵලය පරීක්ෂා කරන්න",
+  },
+  "results.checkModalTitle": {
+    en: "Check Your Result",
+    ta: "உங்கள் முடிவைச் சரிபார்க்கவும்",
+    si: "ඔබේ ප්‍රතිඵලය පරීක්ෂා කරන්න",
+  },
+  "results.checkModalDescription": {
+    en: "Enter your username and student ID to view your exam results.",
+    ta: "உங்கள் தேர்வு முடிவுகளைக் காண உங்கள் பயனர்பெயர் மற்றும் மாணவர் அடையாள எண்ணை உள்ளிடவும்.",
+    si: "ඔබේ විභාග ප්‍රතිඵල බැලීමට ඔබේ පරිශීලක නාමය සහ ශිෂ්‍ය හැඳුනුම්පත් අංකය ඇතුළත් කරන්න.",
+  },
+  "results.checkUsernameLabel": { en: "Username", ta: "பயனர்பெயர்", si: "පරිශීලක නාමය" },
+  "results.checkStudentIdLabel": { en: "Student ID", ta: "மாணவர் ஐடி", si: "ශිෂ්‍ය හැඳුනුම්පත් අංකය" },
+  "results.checkSubmit": { en: "Check my result", ta: "எனது முடிவைச் சரிபார்க்க", si: "මගේ ප්‍රතිඵලය පරීක්ෂා කරන්න" },
+  "results.checkAnother": {
+    en: "Check another result",
+    ta: "மற்றொரு முடிவைச் சரிபார்க்க",
+    si: "වෙනත් ප්‍රතිඵලයක් පරීක්ෂා කරන්න",
+  },
+  "results.checkOpenFull": { en: "Open full page", ta: "முழுப் பக்கத்தைத் திற", si: "සම්පූර්ණ පිටුව විවෘත කරන්න" },
+  "results.checkFeatureUnavailable": {
+    en: "Result checking isn't available right now. Please check back later.",
+    ta: "முடிவு சரிபார்ப்பு தற்போது கிடைக்கவில்லை. பின்னர் மீண்டும் பார்க்கவும்.",
+    si: "ප්‍රතිඵල පරීක්ෂාව දැනට ලබා ගත නොහැක. පසුව නැවත පරීක්ෂා කරන්න.",
+  },
+  "results.checkLinkInactive": {
+    en: "This result-check link is no longer active.",
+    ta: "இந்த முடிவு சரிபார்ப்பு இணைப்பு இனி செயலில் இல்லை.",
+    si: "මෙම ප්‍රතිඵල පරීක්ෂණ සබැඳිය තවදුරටත් ක්‍රියාත්මක නොවේ.",
+  },
+  "results.checkCourseLabel": { en: "Course", ta: "படிப்பு", si: "පාඨමාලාව" },
+  "results.checkDistrictLabel": { en: "District", ta: "மாவட்டம்", si: "දිස්ත්‍රික්කය" },
+  "results.checkResultsTitle": { en: "Your Results", ta: "உங்கள் முடிவுகள்", si: "ඔබේ ප්‍රතිඵල" },
+  "results.checkNoResults": {
+    en: "No results have been recorded yet.",
+    ta: "இதுவரை முடிவுகள் பதிவு செய்யப்படவில்லை.",
+    si: "තවම ප්‍රතිඵල වාර්තා වී නොමැත.",
+  },
   "companies.badge": { en: "Islandwide Presence", ta: "தீவு முழுவதும்" },
   "companies.title": {
     en: "Reaching students across Sri Lanka's key education cities",

@@ -1809,6 +1809,7 @@ export type Database = {
           marketing_coming_soon_enabled: boolean | null
           site_public_mode: string | null
           brand_logo_settings: unknown
+          results_check_enabled: boolean
           updated_at: string
         }
         Insert: {
@@ -1819,6 +1820,7 @@ export type Database = {
           marketing_coming_soon_enabled?: boolean | null
           site_public_mode?: string | null
           brand_logo_settings?: unknown
+          results_check_enabled?: boolean
           updated_at?: string
         }
         Update: {
@@ -1829,9 +1831,67 @@ export type Database = {
           marketing_coming_soon_enabled?: boolean | null
           site_public_mode?: string | null
           brand_logo_settings?: unknown
+          results_check_enabled?: boolean
           updated_at?: string
         }
         Relationships: []
+      }
+      result_check_links: {
+        Row: {
+          id: string
+          slug: string
+          course_id: string | null
+          course_name: string
+          batch_id: string | null
+          status: string
+          max_lookups: number | null
+          lookup_count: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          course_id?: string | null
+          course_name: string
+          batch_id?: string | null
+          status?: string
+          max_lookups?: number | null
+          lookup_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          course_id?: string | null
+          course_name?: string
+          batch_id?: string | null
+          status?: string
+          max_lookups?: number | null
+          lookup_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "result_check_links_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "result_check_links_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "course_batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       session_charges: {
         Row: {

@@ -1228,6 +1228,26 @@ export async function updateMarketingComingSoon(enabled: boolean) {
   revalidateSitePublicPaths();
 }
 
+export async function updateResultsCheckEnabled(enabled: boolean) {
+  await requireSuperAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("platform_settings")
+    .update({
+      results_check_enabled: enabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) throw new Error(error.message);
+
+  await logAdminAction("results_check.toggle", "platform_settings", "1", {
+    resultsCheckEnabled: enabled,
+  });
+
+  revalidateSitePublicPaths();
+}
+
 export async function updateBrandLogoSettings(settings: BrandLogoSettings) {
   await requireAdmin();
   const validated = validateBrandLogoSettings(settings);

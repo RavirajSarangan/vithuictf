@@ -12,6 +12,7 @@ import {
   MarketingStatHero,
 } from "@/components/landing/marketing-layout";
 import { MotionStagger, MotionStaggerItem } from "@/components/shared/motion-section";
+import { ResultsCheckCtaButton } from "@/components/landing/results-check-cta-button";
 import { useFeaturedRankings } from "@/hooks/use-data";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { resultsHighlights, resultsStats } from "@/lib/data/results-content";
@@ -101,11 +102,12 @@ export function ResultsShowcaseSection() {
       </div>
 
       <MarketingSectionCta title={t("results.cta")}>
-        <div className="flex justify-center">
+        <div className="flex flex-wrap justify-center gap-3">
           <ButtonLink href="/register" variant="icvf" className="gap-2" size="lg">
             {t("btn.register")}
             <ArrowRight className="size-4" />
           </ButtonLink>
+          <ResultsCheckCtaButton />
         </div>
       </MarketingSectionCta>
     </MarketingSection>

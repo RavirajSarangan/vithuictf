@@ -47,6 +47,7 @@ export type MarketingHomeData = {
   courses: Course[];
   companies: Company[];
   marketingComingSoonEnabled: boolean;
+  resultsCheckEnabled: boolean;
 };
 
 export const EMPTY_MARKETING_HOME_DATA: MarketingHomeData = {
@@ -61,6 +62,7 @@ export const EMPTY_MARKETING_HOME_DATA: MarketingHomeData = {
   courses: [],
   companies: [],
   marketingComingSoonEnabled: false,
+  resultsCheckEnabled: false,
 };
 
 const FETCH_TIMEOUT_MS = 6_000;
@@ -93,7 +95,11 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
     supabase.from("courses").select("*").eq("show_on_home", true).order("sort_order").order("name"),
     supabase.from("course_schedule_summaries").select("*"),
     supabase.from("companies").select("*").order("sort_order"),
-    supabase.from("platform_settings").select("marketing_coming_soon_enabled").eq("id", 1).maybeSingle(),
+    supabase
+      .from("platform_settings")
+      .select("marketing_coming_soon_enabled, results_check_enabled")
+      .eq("id", 1)
+      .maybeSingle(),
   ]);
 
   return {
@@ -112,6 +118,7 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
     companies: (companiesRes.data ?? []).map(mapCompany),
     marketingComingSoonEnabled:
       platformSettingsRes.data?.marketing_coming_soon_enabled ?? false,
+    resultsCheckEnabled: platformSettingsRes.data?.results_check_enabled ?? false,
   };
 }
 

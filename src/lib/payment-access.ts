@@ -8,6 +8,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   marketingComingSoonEnabled: true,
   sitePublicMode: "live",
   brandLogo: DEFAULT_BRAND_LOGO_SETTINGS,
+  resultsCheckEnabled: false,
   updatedAt: new Date(0).toISOString(),
 };
 

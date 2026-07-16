@@ -790,6 +790,7 @@ export function mapPlatformSettings(row: {
   marketing_coming_soon_enabled?: boolean;
   site_public_mode?: string;
   brand_logo_settings?: unknown;
+  results_check_enabled?: boolean;
   updated_at: string;
 }): PlatformSettings {
   const sitePublicMode = row.site_public_mode;
@@ -805,6 +806,7 @@ export function mapPlatformSettings(row: {
     marketingComingSoonEnabled: row.marketing_coming_soon_enabled ?? true,
     sitePublicMode: validMode,
     brandLogo: parseBrandLogoSettings(row.brand_logo_settings),
+    resultsCheckEnabled: row.results_check_enabled ?? false,
     updatedAt: row.updated_at,
   };
 }
