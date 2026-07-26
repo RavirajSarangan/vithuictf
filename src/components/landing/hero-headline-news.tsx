@@ -15,13 +15,14 @@ export function HeroHeadlineNews({ headlineNews }: { headlineNews: HeadlineNews 
   const content = (
     <>
       {hasImage ? (
-        <div className="relative aspect-[4/5] w-32 shrink-0 overflow-hidden rounded-xl bg-icvf-accent/10 ring-1 ring-icvf-navy-dark/10 sm:w-36">
+        <div className="relative w-32 shrink-0 overflow-hidden rounded-xl bg-icvf-accent/10 ring-1 ring-icvf-navy-dark/10 sm:w-36">
           <Image
             src={headlineNews.imageUrl}
             alt={headlineNews.title || "Headline news"}
-            fill
+            width={400}
+            height={500}
             sizes="144px"
-            className="object-contain"
+            className="h-auto w-full object-contain"
           />
         </div>
       ) : (

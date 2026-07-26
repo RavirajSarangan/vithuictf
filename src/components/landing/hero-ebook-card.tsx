@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Download } from "lucide-react";
+import { Download, ExternalLink, FileWarning } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEbooks } from "@/hooks/use-data";
 import { incrementEbookDownload } from "@/lib/actions/ebooks";
-import { toGoogleDriveDownloadUrl, toGoogleDrivePreviewUrl } from "@/lib/google-drive-share-link";
+import {
+  extractGoogleDriveFileId,
+  toGoogleDriveDownloadUrl,
+  toGoogleDrivePreviewUrl,
+} from "@/lib/google-drive-share-link";
 
 export function HeroEbookCard() {
   const ebooks = useEbooks();
@@ -63,14 +67,33 @@ export function HeroEbookCard() {
             <DialogHeader>
               <DialogTitle>{ebook.title}</DialogTitle>
             </DialogHeader>
-            <div className="aspect-4/5 w-full overflow-hidden rounded-xl border border-border bg-muted/30 sm:aspect-video">
-              <iframe
-                src={toGoogleDrivePreviewUrl(ebook.previewUrl)}
-                title={`${ebook.title} preview`}
-                className="h-full w-full"
-                allow="autoplay"
-              />
-            </div>
+            {extractGoogleDriveFileId(ebook.previewUrl) ? (
+              <div className="aspect-4/5 w-full overflow-hidden rounded-xl border border-border bg-muted/30 sm:aspect-video">
+                <iframe
+                  src={toGoogleDrivePreviewUrl(ebook.previewUrl)}
+                  title={`${ebook.title} preview`}
+                  className="h-full w-full"
+                  allow="autoplay"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-muted/30 p-8 text-center">
+                <FileWarning className="size-8 text-muted-foreground" aria-hidden />
+                <p className="text-sm text-muted-foreground">
+                  This preview link isn&apos;t a Google Drive file link (it looks like a folder link),
+                  so it can&apos;t be embedded here.
+                </p>
+                <a
+                  href={ebook.previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-icvf-accent hover:underline"
+                >
+                  Open in Google Drive
+                  <ExternalLink className="size-3.5" aria-hidden />
+                </a>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       ) : null}

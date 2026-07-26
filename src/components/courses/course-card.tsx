@@ -197,17 +197,18 @@ export function CourseCard({
           className
         )}
       >
-        <div className="relative aspect-[5/4] w-full overflow-hidden bg-gradient-to-br from-icvf-navy/10 to-icvf-accent/25">
+        <div className="relative w-full overflow-hidden bg-gradient-to-br from-icvf-navy/10 to-icvf-accent/25">
           {coverImageUrl ? (
             <Image
               src={coverImageUrl}
               alt={title}
-              fill
-              className="object-contain transition-transform duration-300 group-hover:scale-105"
+              width={800}
+              height={800}
+              className="h-auto w-full object-contain transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, 33vw"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-icvf-navy/10 to-icvf-accent/25 text-2xl font-bold text-icvf-navy">
+            <div className="flex aspect-[5/4] w-full items-center justify-center bg-gradient-to-br from-icvf-navy/10 to-icvf-accent/25 text-2xl font-bold text-icvf-navy">
               {courseInitials(title)}
             </div>
           )}
@@ -248,17 +249,18 @@ export function CourseCard({
 
   const body = (
     <MarketingPanel className={cn("flex h-full flex-col overflow-hidden p-0", className)}>
-      <div className="relative aspect-square w-full bg-gradient-to-br from-icvf-navy/10 to-icvf-accent/25">
+      <div className="relative w-full bg-gradient-to-br from-icvf-navy/10 to-icvf-accent/25">
         {coverImageUrl ? (
           <Image
             src={coverImageUrl}
             alt={title}
-            fill
-            className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+            width={800}
+            height={800}
+            className="h-auto w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-icvf-navy/10 to-icvf-accent/25 text-3xl font-bold text-icvf-navy">
+          <div className="flex aspect-square w-full items-center justify-center bg-gradient-to-br from-icvf-navy/10 to-icvf-accent/25 text-3xl font-bold text-icvf-navy">
             {courseInitials(title)}
           </div>
         )}

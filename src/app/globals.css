@@ -889,6 +889,27 @@
   flex-direction: column;
   align-items: center;
   filter: drop-shadow(0 12px 20px rgba(10, 22, 40, 0.35));
+  animation: hero-ebook-float 3.2s ease-in-out infinite;
+}
+
+@keyframes hero-ebook-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes hero-ebook-badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25), 0 0 0 0 color-mix(in srgb, var(--ebook-accent, #f5a623) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25), 0 0 0 6px color-mix(in srgb, var(--ebook-accent, #f5a623) 0%, transparent);
+  }
 }
 
 .hero-ebook-badge {
@@ -906,6 +927,7 @@
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.06em;
+  animation: hero-ebook-badge-pulse 2.4s ease-in-out infinite;
   text-transform: uppercase;
   color: var(--icvf-navy-dark, #1c2547);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
@@ -1151,7 +1173,9 @@
   .hero-founder-island-map-img,
   .hero-founder-island-map-svg,
   .hero-trust-marquee,
-  .hero-learning-chips-marquee {
+  .hero-learning-chips-marquee,
+  .hero-ebook-card,
+  .hero-ebook-badge {
     animation: none;
   }
 
