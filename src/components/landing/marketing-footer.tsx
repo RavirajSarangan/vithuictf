@@ -9,6 +9,7 @@ import { BRAND } from "@/lib/constants";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { LanguageToggle } from "@/components/landing/language-toggle";
 import { SecurityComplianceBadges } from "@/components/shared/security-compliance-badges";
+import { FooterAskAiRow } from "@/components/landing/footer-ask-ai-row";
 import { MarketingFooterJaffnaStrip } from "@/components/landing/marketing-footer-jaffna-strip";
 import { socialIcons } from "@/components/shared/social-icons";
 import { resolveMarketingHref } from "@/lib/marketing-nav";
@@ -379,6 +380,16 @@ export function MarketingFooter() {
           transition={{ duration: 0.45, ease: EASE }}
         >
           <SecurityComplianceBadges variant="marketing" className="w-full max-w-full" />
+        </motion.div>
+
+        <motion.div
+          className="mt-8"
+          initial={false}
+          whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.45, ease: EASE }}
+        >
+          <FooterAskAiRow />
         </motion.div>
 
         <motion.div

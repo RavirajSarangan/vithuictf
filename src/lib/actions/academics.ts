@@ -6,6 +6,7 @@ import {
   getSessionProfile,
   requireAcademicsStaff,
   requireAdmin,
+  requireFeatureAccess,
 } from "@/lib/actions/auth";
 import { getActionFailureMessage, runDataAction, type DataActionResult } from "@/lib/actions/action-result";
 import { revalidateStudentPortalPaths } from "@/lib/revalidation-paths";
@@ -1069,7 +1070,7 @@ export async function markAttendance(
   sessionId: string,
   records: { studentId: string; status: AttendanceStatus }[]
 ) {
-  const profile = await requireAcademicsStaff();
+  const profile = await requireFeatureAccess("attendance_students");
   const supabase = await createClient();
 
   if (!records.length) throw new Error("No attendance records provided");
@@ -1153,7 +1154,7 @@ export async function updateStudent(
     ictGrade?: string;
   }
 ) {
-  await requireAcademicsStaff();
+  await requireFeatureAccess("attendance_students");
   const supabase = await createClient();
 
   const { data: before } = await supabase

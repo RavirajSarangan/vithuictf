@@ -35,6 +35,7 @@ import { ArrowLeft, Loader2, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatSriLankaWhatsAppDisplay } from "@/lib/validation/sri-lanka-phone";
 import { StudentEnrollmentPanel } from "@/components/academics/student-enrollment-panel";
+import { StudentSessionPanel } from "@/components/admin/student-session-panel";
 import { EnrollmentStatusBadge } from "@/components/academics/enrollment-status-badge";
 import { approveStudentRegistration, rejectStudentRegistration } from "@/lib/actions/academics";
 import { useAuth } from "@/providers/auth-provider";
@@ -288,6 +289,8 @@ export default function AdminStudentDetailPage() {
           />
         </CardContent>
       </Card>
+
+      <StudentSessionPanel studentRowId={student.id} />
     </div>
   );
 }

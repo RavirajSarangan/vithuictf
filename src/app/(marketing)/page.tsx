@@ -7,18 +7,19 @@ import { MarketingDataProvider } from "@/contexts/marketing-data-context";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
 import { localizedFaq } from "@/lib/seo/faq";
 import { getMarketingHomeData } from "@/lib/marketing-data";
+import type { FAQ } from "@/types";
 
 export default async function HomePage({ locale = "en" }: { locale?: MarketingLocale }) {
   const data = await getMarketingHomeData();
-  const faqsForSchema = data.faqs.map((f) => localizedFaq(f, locale));
+  const faqsForSchema = data.faqs.map((f: FAQ) => localizedFaq(f, locale));
 
   return (
     <MarketingDataProvider data={data}>
       <HomePageJsonLd faqs={faqsForSchema} reviews={data.successStories} locale={locale} />
-      <HeroSection />
+      <HeroSection headlineNews={data.headlineNews} />
       <CoursesMarqueeSection />
       <MarketingHomeSections />
-      <WhatsAppFloatButton />
+      <WhatsAppFloatButton phoneNumber={data.whatsappContactNumber} />
     </MarketingDataProvider>
   );
 }

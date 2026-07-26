@@ -1,5 +1,5 @@
 const ALLOWED_TAGS = new Set([
-  "p", "br", "strong", "b", "em", "i", "u", "s",
+  "p", "br", "hr", "strong", "b", "em", "i", "u", "s",
   "h2", "h3", "h4", "ul", "ol", "li", "blockquote",
   "a", "img", "figure", "figcaption", "span", "div",
 ]);

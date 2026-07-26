@@ -12,6 +12,7 @@ export const LOGIN_ERROR = {
   CONTENT_TEAM_ONLY: "CONTENT_TEAM_ONLY",
   PAPER_CENTER_ONLY: "PAPER_CENTER_ONLY",
   STUDENT_ID_ONLY: "STUDENT_ID_ONLY",
+  FACULTY_ONLY: "FACULTY_ONLY",
 } as const;
 
 export type LoginErrorCode = (typeof LOGIN_ERROR)[keyof typeof LOGIN_ERROR];

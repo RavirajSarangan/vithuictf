@@ -42,6 +42,10 @@ const AboutFounderSection = dynamic(
   () => import("@/components/landing/about-founder-section").then((m) => m.AboutFounderSection),
   { loading: sectionLoading }
 );
+const AcademicStaffSection = dynamic(
+  () => import("@/components/landing/academic-staff-section").then((m) => m.AcademicStaffSection),
+  { loading: sectionLoading }
+);
 const LmsPlatformSection = dynamic(
   () => import("@/components/landing/lms-platform-section").then((m) => m.LmsPlatformSection),
   { loading: sectionLoading }
@@ -91,6 +95,9 @@ export function MarketingHomeSections() {
       </LazySection>
       <LazySection>
         <AboutFounderSection />
+      </LazySection>
+      <LazySection>
+        <AcademicStaffSection />
       </LazySection>
       <LazySection>
         <LmsPlatformSection />

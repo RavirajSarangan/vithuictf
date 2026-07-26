@@ -37,7 +37,9 @@ import { genericTableSummary } from "@/lib/table-insights";
 import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { AdminMarketingVisibilityPanel } from "@/components/admin/admin-marketing-visibility-panel";
 import { AdminAnnouncementsPanel } from "@/components/admin/admin-announcements-panel";
+import { AdminHeadlineNewsPanel } from "@/components/admin/admin-headline-news-panel";
 import { AdminEmailTestPanel } from "@/components/admin/admin-email-test-panel";
+import { AdminEbooksPanel } from "@/components/admin/admin-ebooks-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -109,6 +111,8 @@ export default function AdminHomePage() {
       <TabsList className="flex flex-wrap">
         <TabsTrigger value="visibility">Visibility</TabsTrigger>
         <TabsTrigger value="announcements">Announcements</TabsTrigger>
+        <TabsTrigger value="headline-news">Headline News</TabsTrigger>
+        <TabsTrigger value="ebooks">E-book</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
         <TabsTrigger value="stats">Site Stats</TabsTrigger>
         <TabsTrigger value="network">Network</TabsTrigger>
@@ -123,6 +127,12 @@ export default function AdminHomePage() {
       </TabsContent>
       <TabsContent value="announcements">
         <AdminAnnouncementsPanel />
+      </TabsContent>
+      <TabsContent value="headline-news">
+        <AdminHeadlineNewsPanel />
+      </TabsContent>
+      <TabsContent value="ebooks">
+        <AdminEbooksPanel />
       </TabsContent>
       <TabsContent value="email">
         <AdminEmailTestPanel />

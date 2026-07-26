@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GraduationCap, ShieldCheck } from "lucide-react";
 import { useAuth, getRoleRedirect } from "@/providers/auth-provider";
@@ -29,7 +29,15 @@ export function StudentLoginForm() {
   const [loading, setLoading] = useState(false);
   const { signInWithStudentId } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useMarketingText();
+
+  useEffect(() => {
+    if (searchParams.get("reason") === "session-replaced") {
+      toast.info("You were signed out because your account was used to sign in from another device.");
+      router.replace("/login");
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +62,7 @@ export function StudentLoginForm() {
           CONTENT_TEAM_ONLY: "auth.contentTeamOnly",
           PAPER_CENTER_ONLY: "auth.paperCenterOnly",
           STUDENT_ID_ONLY: "auth.studentIdOnly",
+          FACULTY_ONLY: "auth.loginFailed",
         } as const;
         toast.error(t(keyMap[err.message]));
       } else {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { autoSyncStaffPortalAccounts } from "@/lib/actions/staff-portal-sync";
 import { createClient } from "@/lib/supabase/client";
-import { mapContentManager, mapPaperCenterStaff, mapTeacher } from "@/lib/supabase/mappers";
+import { mapContentManager, mapFacultyStaffAccount, mapPaperCenterStaff, mapTeacher } from "@/lib/supabase/mappers";
 import type { PeopleRosterEntry } from "@/types";
 
 export function usePeopleRoster() {
@@ -24,7 +24,7 @@ export function usePeopleRoster() {
       }
 
       const supabase = createClient();
-      const [teachersRes, adminsRes, contentRes, paperCenterRes] = await Promise.all([
+      const [teachersRes, adminsRes, contentRes, paperCenterRes, facultyStaffRes] = await Promise.all([
         supabase.from("teachers").select("*").order("display_name"),
         supabase
           .from("profiles")
@@ -36,6 +36,7 @@ export function usePeopleRoster() {
           .from("paper_center_staff")
           .select("*, paper_centers(name, slug)")
           .order("display_name"),
+        supabase.from("faculty_staff").select("*").order("display_name"),
       ]);
 
       if (cancelled) return;
@@ -100,6 +101,22 @@ export function usePeopleRoster() {
           whatsapp: staff.whatsapp,
           paperCenterGrades: staff.grades,
           sourceTable: "paper_center_staff",
+        });
+      }
+
+      for (const row of facultyStaffRes.data ?? []) {
+        const staff = mapFacultyStaffAccount(row);
+        entries.push({
+          id: staff.id,
+          userId: staff.userId,
+          displayName: staff.displayName,
+          email: staff.email,
+          staffUsername: staff.staffUsername,
+          role: "faculty_staff",
+          active: staff.active,
+          subjects: staff.subjects,
+          courseIds: staff.courseIds,
+          sourceTable: "faculty_staff",
         });
       }
 

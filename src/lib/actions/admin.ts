@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { safeRevalidatePath as revalidatePath } from "@/lib/safe-revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
-import { requireStaff, requireAdmin, requireSuperAdmin, signUpWithRole, getSessionProfile } from "@/lib/actions/auth";
+import { requireStaff, requireAdmin, requireSuperAdmin, requireFeatureAccess, signUpWithRole, getSessionProfile } from "@/lib/actions/auth";
 import { logAdminAction } from "@/lib/audit";
 import { sendStaffWelcomeEmail, sendStudentWelcomeEmail } from "@/lib/actions/email";
 import { sendEmail } from "@/lib/email/send";
@@ -1248,6 +1248,27 @@ export async function updateResultsCheckEnabled(enabled: boolean) {
   revalidateSitePublicPaths();
 }
 
+export async function updateWhatsappContactNumber(phoneNumber: string) {
+  await requireSuperAdmin();
+  const supabase = await createClient();
+  const trimmed = phoneNumber.trim();
+  const { error } = await supabase
+    .from("platform_settings")
+    .update({
+      whatsapp_contact_number: trimmed || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) throw new Error(error.message);
+
+  await logAdminAction("whatsapp_contact_number.update", "platform_settings", "1", {
+    whatsappContactNumber: trimmed || null,
+  });
+
+  revalidateSitePublicPaths();
+}
+
 export async function updateBrandLogoSettings(settings: BrandLogoSettings) {
   await requireAdmin();
   const validated = validateBrandLogoSettings(settings);
@@ -1436,7 +1457,7 @@ export async function uploadAdminAsset(formData: FormData): Promise<string> {
 }
 
 export async function uploadBlogImage(formData: FormData): Promise<string> {
-  await requireAdmin();
+  await requireFeatureAccess("blog");
 
   const file = formData.get("file");
   const folder = String(formData.get("folder") ?? "blog");
@@ -1703,6 +1724,143 @@ export async function uploadIctfTeamImage(formData: FormData): Promise<string> {
   return uploadAdminStorageObject(path, buffer, uploadContentType);
 }
 
+// --- Academic Staff (super admin only) ---
+
+export type AcademicStaffMemberInput = {
+  name: string;
+  role: string;
+  affiliate?: string;
+  bio?: string;
+  photoUrl?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
+function academicStaffMemberRow(data: AcademicStaffMemberInput) {
+  return {
+    name: data.name.trim(),
+    role: data.role.trim(),
+    affiliate: data.affiliate?.trim() ?? "",
+    bio: data.bio?.trim() ?? "",
+    photo_url: data.photoUrl?.trim() ?? "",
+    is_active: data.isActive ?? true,
+    sort_order: data.sortOrder ?? 0,
+  };
+}
+
+function revalidateAcademicStaffPaths() {
+  revalidatePath("/");
+  revalidatePath("/admin/academic-staff");
+}
+
+export async function addAcademicStaffMember(data: AcademicStaffMemberInput): Promise<ActionResult> {
+  try {
+    await requireSuperAdmin();
+    const supabase = await createClient();
+    const { error } = await supabase.from("academic_staff").insert(academicStaffMemberRow(data));
+    if (error) return actionFailure(error, "Failed to add staff member");
+    revalidateAcademicStaffPaths();
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Failed to add staff member");
+  }
+}
+
+export async function updateAcademicStaffMember(
+  id: string,
+  data: AcademicStaffMemberInput
+): Promise<ActionResult> {
+  try {
+    await requireSuperAdmin();
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("academic_staff")
+      .update(academicStaffMemberRow(data))
+      .eq("id", id);
+    if (error) return actionFailure(error, "Failed to update staff member");
+    revalidateAcademicStaffPaths();
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Failed to update staff member");
+  }
+}
+
+export async function deleteAcademicStaffMember(id: string): Promise<ActionResult> {
+  try {
+    await requireSuperAdmin();
+    const supabase = await createClient();
+    const { error } = await supabase.from("academic_staff").delete().eq("id", id);
+    if (error) return actionFailure(error, "Delete failed");
+    revalidateAcademicStaffPaths();
+    return actionSuccess();
+  } catch (error) {
+    return actionFailure(error, "Delete failed");
+  }
+}
+
+export async function uploadAcademicStaffImage(formData: FormData): Promise<string> {
+  await requireSuperAdmin();
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("No file provided");
+  }
+
+  const { COURSE_IMAGE_ACCEPT, resolveImageContentType } = await import(
+    "@/lib/images/admin-image-constants"
+  );
+  const contentType = resolveImageContentType(file) || file.type;
+  const allowedTypes = new Set(COURSE_IMAGE_ACCEPT.split(",").map((t) => t.trim()));
+  if (!allowedTypes.has(contentType)) {
+    throw new Error("Upload a JPEG, PNG, WebP, SVG, or GIF image");
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("Image must be 10 MB or smaller");
+  }
+
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+
+  if (contentType !== "image/svg+xml" && contentType !== "image/gif") {
+    const sharp = (await import("sharp")).default;
+    const metadata = await sharp(inputBuffer).metadata();
+    const width = metadata.width ?? 0;
+    const height = metadata.height ?? 0;
+    if (width <= 0 || height <= 0) {
+      throw new Error("Could not read image dimensions");
+    }
+    const ratio = width / height;
+    if (Math.abs(ratio - 1) > 0.02) {
+      throw new Error(`Staff photo must be square (1:1). Uploaded image is ${width}×${height}px.`);
+    }
+  }
+
+  const { prepareRasterBufferUpload } = await import("@/lib/images/process-raster-upload");
+
+  let buffer: Buffer;
+  let uploadContentType: string;
+  let ext: string;
+
+  if (contentType === "image/svg+xml") {
+    buffer = inputBuffer;
+    uploadContentType = contentType;
+    ext = "svg";
+  } else {
+    const processed = await prepareRasterBufferUpload(
+      inputBuffer,
+      contentType,
+      contentType === "image/gif" ? "general" : "square"
+    );
+    buffer = processed.buffer;
+    uploadContentType = processed.contentType;
+    ext = processed.ext;
+  }
+
+  const path = `academic-staff/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+
+  const { uploadAdminStorageObject } = await import("@/lib/storage/upload-admin-object");
+  return uploadAdminStorageObject(path, buffer, uploadContentType);
+}
+
 const MARKETING_ANNOUNCEMENT_CONTENT_TYPES: MarketingAnnouncementContentType[] = [
   "image_only",
   "text_only",
@@ -1827,6 +1985,76 @@ export async function deleteMarketingAnnouncement(id: string) {
   revalidateMarketingAnnouncementPaths();
 }
 
+export type HeadlineNewsInput = {
+  tagLabel?: string;
+  title: string;
+  caption?: string;
+  imageUrl?: string;
+  linkLabel?: string;
+  linkUrl?: string;
+  priority?: number;
+  isActive?: boolean;
+};
+
+function validateHeadlineNewsInput(data: HeadlineNewsInput): void {
+  if (!data.title?.trim()) {
+    throw new Error("Title is required");
+  }
+}
+
+function headlineNewsPayload(data: HeadlineNewsInput) {
+  return {
+    tag_label: data.tagLabel?.trim() || "News",
+    title: data.title.trim(),
+    caption: data.caption?.trim() ?? "",
+    image_url: data.imageUrl?.trim() ?? "",
+    link_label: data.linkLabel?.trim() ?? "",
+    link_url: data.linkUrl?.trim() ?? "",
+    priority: data.priority ?? 0,
+    is_active: data.isActive ?? true,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function revalidateHeadlineNewsPaths() {
+  revalidateMarketingPaths();
+  revalidatePath("/admin/home");
+}
+
+export async function addHeadlineNews(data: HeadlineNewsInput) {
+  await requireAdmin();
+  validateHeadlineNewsInput(data);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("headline_news").insert(headlineNewsPayload(data));
+  if (error) throw new Error(error.message);
+
+  revalidateHeadlineNewsPaths();
+}
+
+export async function updateHeadlineNews(id: string, data: HeadlineNewsInput) {
+  await requireAdmin();
+  validateHeadlineNewsInput(data);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("headline_news")
+    .update(headlineNewsPayload(data))
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateHeadlineNewsPaths();
+}
+
+export async function deleteHeadlineNews(id: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("headline_news").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateHeadlineNewsPaths();
+}
+
 // --- Blog CMS ---
 
 export type BlogCategoryInput = {
@@ -1936,7 +2164,7 @@ function revalidateBlogAdminPaths(slugs: string[] = []) {
 }
 
 export async function addBlogCategory(data: BlogCategoryInput) {
-  await requireAdmin();
+  await requireFeatureAccess("blog");
   const payload = blogCategoryPayload(data);
   await assertUniqueBlogCategorySlug(payload.slug);
 
@@ -1948,7 +2176,7 @@ export async function addBlogCategory(data: BlogCategoryInput) {
 }
 
 export async function updateBlogCategory(id: string, data: BlogCategoryInput) {
-  await requireAdmin();
+  await requireFeatureAccess("blog");
   const payload = blogCategoryPayload(data);
   await assertUniqueBlogCategorySlug(payload.slug, id);
 
@@ -1960,7 +2188,7 @@ export async function updateBlogCategory(id: string, data: BlogCategoryInput) {
 }
 
 export async function deleteBlogCategory(id: string) {
-  await requireAdmin();
+  await requireFeatureAccess("blog");
   const supabase = await createClient();
   const { error } = await supabase.from("blog_categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -1969,7 +2197,7 @@ export async function deleteBlogCategory(id: string) {
 }
 
 export async function addBlogPost(data: BlogPostInput) {
-  await requireAdmin();
+  await requireFeatureAccess("blog");
   const profile = await getSessionProfile();
   const withAuthor: BlogPostInput = {
     ...data,
@@ -1987,7 +2215,7 @@ export async function addBlogPost(data: BlogPostInput) {
 }
 
 export async function updateBlogPost(id: string, data: BlogPostInput) {
-  await requireAdmin();
+  await requireFeatureAccess("blog");
 
   const supabase = await createClient();
   const { data: existing, error: fetchError } = await supabase
@@ -2011,7 +2239,7 @@ export async function updateBlogPost(id: string, data: BlogPostInput) {
 }
 
 export async function deleteBlogPost(id: string) {
-  await requireAdmin();
+  await requireFeatureAccess("blog");
 
   const supabase = await createClient();
   const { data: existing } = await supabase

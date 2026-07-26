@@ -17,7 +17,7 @@ import {
 import { GlassCard } from "@/components/shared/glass-card";
 import type { Course, Payment } from "@/types";
 
-const COLORS = ["#273461", "#F5A623", "#22C55E", "#64748B"];
+export const COLORS = ["#273461", "#F5A623", "#22C55E", "#64748B"];
 
 interface AdminAnalyticsChartsProps {
   enrollmentData: { name: string; students: number }[];

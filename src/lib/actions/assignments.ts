@@ -2,46 +2,17 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
-import { getSessionProfile, requireAcademicsStaff } from "@/lib/actions/auth";
+import { getSessionProfile, requireAcademicsStaff, requireFeatureAccess } from "@/lib/actions/auth";
 import { actionFailure, type ActionResult } from "@/lib/actions/action-result";
 import { safeRevalidatePath } from "@/lib/safe-revalidate";
 import { notifyBatchStudentsPortal } from "@/lib/academics/batch-notifications";
 import { mapAssignment, mapAssignmentSubmission } from "@/lib/supabase/mappers";
+import { sanitizeFileName, uploadToBucket, validateUpload } from "@/lib/storage-upload";
 import type { Assignment, AssignmentSubmission } from "@/types";
-
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
-const ALLOWED_EXTENSIONS = new Set([
-  "pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt",
-  "png", "jpg", "jpeg", "webp", "zip",
-]);
 
 function revalidateAssignmentPaths() {
   safeRevalidatePath("/academics/assignments");
   safeRevalidatePath("/assignments");
-}
-
-function sanitizeFileName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120);
-}
-
-function validateUpload(file: File): string | null {
-  if (file.size <= 0) return "The selected file is empty";
-  if (file.size > MAX_FILE_BYTES) return "File must be 20 MB or smaller";
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (!ALLOWED_EXTENSIONS.has(ext)) return `File type .${ext || "?"} is not supported`;
-  return null;
-}
-
-async function uploadToBucket(bucket: string, path: string, file: File): Promise<string> {
-  if (!isAdminClientConfigured()) throw new Error("File storage is not configured");
-  const admin = createAdminClient();
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const { error } = await admin.storage.from(bucket).upload(path, buffer, {
-    contentType: file.type || "application/octet-stream",
-    upsert: false,
-  });
-  if (error) throw new Error(error.message);
-  return path;
 }
 
 export async function getStaffAssignments(batchId?: string): Promise<Assignment[]> {
@@ -117,7 +88,7 @@ export async function getAssignmentDetail(assignmentId: string): Promise<{
 
 export async function createAssignment(formData: FormData): Promise<ActionResult> {
   try {
-    const profile = await requireAcademicsStaff();
+    const profile = await requireFeatureAccess("assignments");
     const supabase = await createClient();
 
     const batchId = String(formData.get("batchId") ?? "");

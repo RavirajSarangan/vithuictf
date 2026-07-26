@@ -3,7 +3,9 @@
     "allow": [
       "Bash(echo \"eslint exit: $?\")",
       "Bash(curl -s -o /dev/null -w \"no-auth cron status: %{http_code}\\\\n\" http://localhost:3000/api/cron/birthday-wishes)",
-      "Bash(node /private/tmp/claude-501/-Users-venomxtechnology-Pictures-VITHUSAN-/0ec21a49-9e28-448d-aefb-707705676615/scratchpad/birthday-test.mjs setup)"
+      "Bash(node /private/tmp/claude-501/-Users-venomxtechnology-Pictures-VITHUSAN-/0ec21a49-9e28-448d-aefb-707705676615/scratchpad/birthday-test.mjs setup)",
+      "Bash(curl -s -o /dev/null -w \"homepage: %{http_code}\\\\n\" \"https://www.ictf.lk/\")",
+      "Bash(curl -s -o /dev/null -w \"admin/home: %{http_code}\\\\n\" \"https://www.ictf.lk/admin/home\")"
     ]
   }
 }

@@ -173,6 +173,7 @@ export type MarketingUiKey =
   | "footer.description"
   | "footer.marquee.lms"
   | "footer.marquee.results"
+  | "footer.askAi"
   | "footer.builtBy"
   | "contact.badge"
   | "contact.title"
@@ -687,6 +688,7 @@ const UI: Record<MarketingUiKey, UiEntry> = {
   },
   "footer.marquee.lms": { en: "LMS Portal", ta: "LMS போர்டல்" },
   "footer.marquee.results": { en: "Student Results", ta: "மாணவர் முடிவுகள்" },
+  "footer.askAi": { en: "Ask AI About Us", ta: "AI-டம் எங்களைப் பற்றி கேளுங்கள்", si: "අප ගැන AI ගෙන් අසන්න" },
   "footer.builtBy": {
     en: "Built by ICTF Digital",
     ta: "ICTF Digital மூலம் உருவாக்கப்பட்டது",

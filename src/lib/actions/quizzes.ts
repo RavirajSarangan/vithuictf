@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
-import { getSessionProfile, requireAcademicsStaff } from "@/lib/actions/auth";
+import { getSessionProfile, requireAcademicsStaff, requireFeatureAccess } from "@/lib/actions/auth";
 import { actionFailure, type ActionResult } from "@/lib/actions/action-result";
 import { safeRevalidatePath } from "@/lib/safe-revalidate";
 import { mapQuiz, mapQuizAttempt, mapQuizQuestion } from "@/lib/supabase/mappers";
@@ -20,8 +20,9 @@ function validateQuestionInput(input: {
   points: number;
 }): string | null {
   if (input.prompt.trim().length < 3) return "Question prompt must be at least 3 characters";
-  const options = input.options.map((o) => o.trim()).filter(Boolean);
-  if (options.length < 2 || options.length > 5) return "Provide between 2 and 5 answer options";
+  if (input.options.length !== 4) return "Provide exactly 4 answer options";
+  const options = input.options.map((o) => o.trim());
+  if (options.some((o) => !o)) return "All 4 answer options are required";
   if (input.correctIndex < 0 || input.correctIndex >= options.length) {
     return "Mark one of the options as correct";
   }
@@ -115,7 +116,7 @@ export async function createQuiz(data: {
   maxAttempts: number;
 }): Promise<ActionResult<{ id: string }>> {
   try {
-    const profile = await requireAcademicsStaff();
+    const profile = await requireFeatureAccess("quizzes_exams");
     const supabase = await createClient();
 
     if (!data.courseId) return { ok: false, error: "Course is required" };

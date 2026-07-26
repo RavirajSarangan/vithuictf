@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { ButtonLink } from "@/components/shared/button-link";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, Sparkles } from "lucide-react";
+import { RiWhatsappFill } from "@remixicon/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { MarketingAnnouncement } from "@/types";
@@ -100,6 +101,12 @@ function isDownloadUrl(url: string, label: string): boolean {
   return extensions.some(ext => path.endsWith(ext)) || label.toLowerCase().includes("download");
 }
 
+function isWhatsAppUrl(url: string): boolean {
+  if (!url) return false;
+  const host = url.toLowerCase();
+  return host.includes("whatsapp.com") || host.includes("wa.me");
+}
+
 function AnnouncementBody({
   announcement,
   className,
@@ -108,6 +115,7 @@ function AnnouncementBody({
   className?: string;
 }) {
   const style = announcement.displayStyle;
+  const isPromoWhatsApp = style === "promo" && isWhatsAppUrl(announcement.ctaUrl);
   const [downloading, setDownloading] = useState(false);
 
   const handleDownload = async (url: string, title: string) => {
@@ -147,6 +155,23 @@ function AnnouncementBody({
         className
       )}
     >
+      {style === "promo" && showTitle(announcement) && (
+        <div
+          className={cn(
+            "inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
+            isPromoWhatsApp
+              ? "bg-[#25D366]/10 text-[#128c43]"
+              : "bg-icvf-accent/15 text-icvf-accent-hover"
+          )}
+        >
+          {isPromoWhatsApp ? (
+            <RiWhatsappFill className="size-3.5" aria-hidden />
+          ) : (
+            <Sparkles className="size-3.5" aria-hidden />
+          )}
+          {isPromoWhatsApp ? "Official Channel" : "Announcement"}
+        </div>
+      )}
       {showTitle(announcement) && (
         <DialogTitle
           className={cn(
@@ -174,7 +199,10 @@ function AnnouncementBody({
           className={cn(
             "pt-1",
             style === "promo" &&
-              "-mx-6 -mb-6 mt-2 border-t border-icvf-gold/20 bg-gradient-to-r from-icvf-navy-dark to-[#0d2137] px-6 py-4"
+              cn(
+                "-mx-6 -mb-6 mt-2 border-t bg-gradient-to-r from-icvf-navy-dark to-[#0d2137] px-6 py-5 shadow-inner",
+                isPromoWhatsApp ? "border-white/10" : "border-icvf-accent/20"
+              )
           )}
         >
           {isDownloadUrl(announcement.ctaUrl, announcement.ctaLabel) ? (
@@ -185,7 +213,7 @@ function AnnouncementBody({
               className={cn(
                 "gap-2 font-heading transition-all",
                 style === "promo"
-                  ? "w-full bg-icvf-gold text-icvf-navy-dark hover:bg-icvf-gold/90 sm:w-auto"
+                  ? "w-full bg-icvf-accent text-icvf-navy-dark shadow-lg shadow-icvf-accent/20 hover:bg-icvf-accent/90 sm:w-auto"
                   : "bg-icvf-accent text-white hover:bg-icvf-accent/90"
               )}
             >
@@ -202,10 +230,14 @@ function AnnouncementBody({
               target={announcement.ctaUrl.startsWith("http") ? "_blank" : undefined}
               rel={announcement.ctaUrl.startsWith("http") ? "noopener noreferrer" : undefined}
               className={cn(
+                "gap-2 font-heading",
                 style === "promo" &&
-                  "w-full bg-icvf-gold text-icvf-navy-dark hover:bg-icvf-gold/90 sm:w-auto"
+                  (isPromoWhatsApp
+                    ? "w-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 hover:bg-[#20bd5a] sm:w-auto"
+                    : "w-full bg-icvf-accent text-icvf-navy-dark shadow-lg shadow-icvf-accent/20 hover:bg-icvf-accent/90 sm:w-auto")
               )}
             >
+              {isPromoWhatsApp && <RiWhatsappFill className="size-4" aria-hidden />}
               {announcement.ctaLabel}
             </ButtonLink>
           )}

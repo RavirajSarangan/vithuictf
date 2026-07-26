@@ -13,6 +13,8 @@ import {
   shouldBypassSiteGate,
 } from "@/lib/site-access";
 import { isAdminOnlyRoute, isSuperAdminOnlyRoute } from "@/lib/admin-access";
+import { ACADEMICS_FEATURE_ROUTES } from "@/lib/staff-feature-routes";
+import { FACULTY_FEATURE_ROUTES } from "@/lib/faculty-feature-routes";
 import type { UserRole } from "@/types";
 
 const studentRoutes: Record<string, UserRole[]> = {
@@ -26,6 +28,7 @@ const studentRoutes: Record<string, UserRole[]> = {
   "/announcements": ["student"],
   "/assignments": ["student"],
   "/quizzes": ["student"],
+  "/exams": ["student"],
   "/achievements": ["student"],
   "/leaderboard": ["student"],
   "/profile-card": ["student"],
@@ -61,6 +64,9 @@ function redirectForRole(role: UserRole, request: NextRequest): NextResponse {
   if (role === "paper_center_staff") {
     return NextResponse.redirect(new URL("/paper-center/dashboard", request.url));
   }
+  if (role === "faculty_staff") {
+    return NextResponse.redirect(new URL("/faculty/dashboard", request.url));
+  }
   if (role === "parent") {
     return NextResponse.redirect(new URL("/parent/dashboard", request.url));
   }
@@ -72,6 +78,7 @@ function loginPathForRoute(pathname: string): string {
   if (pathname.startsWith("/academics")) return "/login/staff";
   if (pathname.startsWith("/staff")) return "/login/social-tracking";
   if (pathname.startsWith("/paper-center")) return "/login/paper-center";
+  if (pathname.startsWith("/faculty")) return "/login/faculty";
   if (pathname.startsWith("/parent")) return "/login";
   return "/login";
 }
@@ -121,12 +128,16 @@ export async function proxy(request: NextRequest) {
   let response = nextWithPathname(request, pathname);
   let role: UserRole | null = null;
   let session: { role: UserRole } | null = null;
+  let sessionReplaced = false;
+  let disabledFeatures: string[] = [];
 
   if (needsAuthSession(pathname, request)) {
     const result = await updateSession(request, pathname);
     response = result.supabaseResponse;
     role = (result.role as UserRole | null) ?? null;
     session = result.user && role ? { role } : null;
+    sessionReplaced = result.sessionReplaced;
+    disabledFeatures = result.disabledFeatures;
   }
 
   if (isSitePublicModeGated(siteMode) && !shouldBypassSiteGate(role)) {
@@ -148,9 +159,16 @@ export async function proxy(request: NextRequest) {
   }
 
   for (const [prefix, roles] of Object.entries(studentRoutes)) {
+    // /results/check is a public, unauthenticated lookup page — it must not
+    // inherit the logged-in-student-only protection applied to /results.
+    if (prefix === "/results" && pathname.startsWith("/results/check")) continue;
     if (pathname.startsWith(prefix)) {
       if (!session) {
-        return NextResponse.redirect(new URL("/login", request.url));
+        const loginUrl = new URL("/login", request.url);
+        if (sessionReplaced) {
+          loginUrl.searchParams.set("reason", "session-replaced");
+        }
+        return NextResponse.redirect(loginUrl);
       }
       if (!roles.includes(session.role)) {
         return redirectForRole(session.role, request);
@@ -193,6 +211,15 @@ export async function proxy(request: NextRequest) {
     if (!["super_admin", "admin", "teacher"].includes(session.role)) {
       return redirectForRole(session.role, request);
     }
+    // Per-teacher feature toggles — admin/super_admin always bypass.
+    if (session.role === "teacher" && disabledFeatures.length) {
+      const disabledFeature = ACADEMICS_FEATURE_ROUTES.find(
+        ({ prefix, featureKey }) => pathname.startsWith(prefix) && disabledFeatures.includes(featureKey)
+      );
+      if (disabledFeature) {
+        return NextResponse.redirect(new URL("/academics/dashboard", request.url));
+      }
+    }
   }
 
   if (pathname.startsWith("/staff")) {
@@ -213,6 +240,27 @@ export async function proxy(request: NextRequest) {
     }
     if (session.role !== "paper_center_staff") {
       return redirectForRole(session.role, request);
+    }
+  }
+
+  if (pathname.startsWith("/faculty")) {
+    if (pathname === "/faculty" || pathname === "/faculty/") {
+      return NextResponse.redirect(new URL("/faculty/dashboard", request.url));
+    }
+    if (!session) {
+      return NextResponse.redirect(new URL("/login/faculty", request.url));
+    }
+    if (!["super_admin", "admin", "faculty_staff"].includes(session.role)) {
+      return redirectForRole(session.role, request);
+    }
+    // Per-faculty-staff feature toggles — admin/super_admin always bypass.
+    if (session.role === "faculty_staff" && disabledFeatures.length) {
+      const disabledFeature = FACULTY_FEATURE_ROUTES.find(
+        ({ prefix, featureKey }) => pathname.startsWith(prefix) && disabledFeatures.includes(featureKey)
+      );
+      if (disabledFeature) {
+        return NextResponse.redirect(new URL("/faculty/dashboard", request.url));
+      }
     }
   }
 

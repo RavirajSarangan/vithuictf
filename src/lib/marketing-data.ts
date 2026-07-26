@@ -1,12 +1,16 @@
 import { cache } from "react";
 import { createPublicClient } from "@/lib/supabase/server";
 import { filterVisibleFolders, filterVisibleItems } from "@/lib/pass-papers-utils";
+import { BRAND } from "@/lib/constants";
 import {
+  mapAcademicStaffMember,
   mapClassProgram,
   mapCompany,
   mapCourse,
+  mapEbook,
   mapFaq,
   mapFeaturedRanking,
+  mapHeadlineNews,
   mapHomeAbout,
   mapIctfTeamMember,
   mapMarketingAnnouncement,
@@ -19,11 +23,14 @@ import {
   mergeCourseSchedules,
 } from "@/lib/supabase/mappers";
 import type {
+  AcademicStaffMember,
   ClassProgram,
   Company,
   Course,
+  Ebook,
   FAQ,
   FeaturedRanking,
+  HeadlineNews,
   HomeAbout,
   IctfTeamMember,
   MarketingAnnouncement,
@@ -38,6 +45,7 @@ import type {
 export type MarketingHomeData = {
   siteStats: SiteStats | null;
   homeAbout: HomeAbout | null;
+  headlineNews: HeadlineNews | null;
   networkStats: NetworkStats | null;
   paperCenters: PaperCenter[];
   featuredRankings: FeaturedRanking[];
@@ -46,13 +54,17 @@ export type MarketingHomeData = {
   classPrograms: ClassProgram[];
   courses: Course[];
   companies: Company[];
+  academicStaff: AcademicStaffMember[];
+  ebooks: Ebook[];
   marketingComingSoonEnabled: boolean;
   resultsCheckEnabled: boolean;
+  whatsappContactNumber: string;
 };
 
 export const EMPTY_MARKETING_HOME_DATA: MarketingHomeData = {
   siteStats: null,
   homeAbout: null,
+  headlineNews: null,
   networkStats: null,
   paperCenters: [],
   featuredRankings: [],
@@ -61,8 +73,11 @@ export const EMPTY_MARKETING_HOME_DATA: MarketingHomeData = {
   classPrograms: [],
   courses: [],
   companies: [],
+  academicStaff: [],
+  ebooks: [],
   marketingComingSoonEnabled: false,
   resultsCheckEnabled: false,
+  whatsappContactNumber: BRAND.contact.whatsapp,
 };
 
 const FETCH_TIMEOUT_MS = 6_000;
@@ -73,6 +88,7 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
   const [
     siteStatsRes,
     homeAboutRes,
+    headlineNewsRes,
     networkStatsRes,
     paperCentersRes,
     featuredRankingsRes,
@@ -83,9 +99,18 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
     courseSchedulesRes,
     companiesRes,
     platformSettingsRes,
+    academicStaffRes,
+    ebooksRes,
   ] = await Promise.all([
     supabase.from("site_stats").select("*").eq("id", 1).maybeSingle(),
     supabase.from("home_about").select("*").eq("id", 1).maybeSingle(),
+    supabase
+      .from("headline_news")
+      .select("*")
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
     supabase.from("network_stats").select("*").eq("id", 1).maybeSingle(),
     supabase.from("paper_centers").select("*").order("sort_order"),
     supabase.from("featured_rankings").select("*").order("sort_order"),
@@ -97,14 +122,27 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
     supabase.from("companies").select("*").order("sort_order"),
     supabase
       .from("platform_settings")
-      .select("marketing_coming_soon_enabled, results_check_enabled")
+      .select("marketing_coming_soon_enabled, results_check_enabled, whatsapp_contact_number")
       .eq("id", 1)
       .maybeSingle(),
+    supabase
+      .from("academic_staff")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("name"),
+    supabase
+      .from("ebooks")
+      .select("*")
+      .eq("published", true)
+      .order("sort_order")
+      .order("created_at", { ascending: false }),
   ]);
 
   return {
     siteStats: siteStatsRes.data ? mapSiteStats(siteStatsRes.data) : null,
     homeAbout: homeAboutRes.data ? mapHomeAbout(homeAboutRes.data) : null,
+    headlineNews: headlineNewsRes.data ? mapHeadlineNews(headlineNewsRes.data) : null,
     networkStats: networkStatsRes.data ? mapNetworkStats(networkStatsRes.data) : null,
     paperCenters: (paperCentersRes.data ?? []).map(mapPaperCenter),
     featuredRankings: (featuredRankingsRes.data ?? []).map(mapFeaturedRanking),
@@ -116,9 +154,13 @@ async function fetchMarketingHomeData(): Promise<MarketingHomeData> {
       courseSchedulesRes.data
     ),
     companies: (companiesRes.data ?? []).map(mapCompany),
+    academicStaff: (academicStaffRes.data ?? []).map(mapAcademicStaffMember),
+    ebooks: (ebooksRes.data ?? []).map(mapEbook),
     marketingComingSoonEnabled:
       platformSettingsRes.data?.marketing_coming_soon_enabled ?? false,
     resultsCheckEnabled: platformSettingsRes.data?.results_check_enabled ?? false,
+    whatsappContactNumber:
+      platformSettingsRes.data?.whatsapp_contact_number || BRAND.contact.whatsapp,
   };
 }
 
@@ -378,3 +420,4 @@ const getActiveMarketingAnnouncementCached = cache(async (): Promise<MarketingAn
     return null;
   }
 });
+

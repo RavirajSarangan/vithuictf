@@ -30,7 +30,7 @@ export function CoursesMarqueeSection() {
     <Link
       key={`${course.id}-${index}`}
       href={course.slug ? `/courses/${course.slug}` : "/register"}
-      className="group block w-64 shrink-0 sm:w-72"
+      className="group block w-72 shrink-0 sm:w-80"
       aria-hidden={shouldLoop && index >= courses.length}
       tabIndex={shouldLoop && index >= courses.length ? -1 : undefined}
     >

@@ -39,7 +39,7 @@ const resultSchema = z.object({
   marks: z.number().min(0).max(100),
   maxMarks: z.number().min(1).max(100),
   rank: z.number().min(0),
-  term: z.string().min(1, "Term is required"),
+  term: z.string(),
   resultDate: z.string().min(1, "Date is required"),
 });
 
@@ -48,6 +48,7 @@ type ResultFormValues = z.infer<typeof resultSchema>;
 export default function AdminResultsPage() {
   const { data, refresh } = useAdminResults();
   const { data: students } = useAdminStudents();
+  const [activeTab, setActiveTab] = useState<ResultsTab>("results");
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -55,6 +56,7 @@ export default function AdminResultsPage() {
 
   const handleBulkDelete = useBulkDeleteHandler(bulkDeleteResults, "result", refresh);
   const summaryItems = useMemo(() => resultTableSummary(data), [data]);
+  const studentMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
 
   const form = useForm<ResultFormValues>({
     resolver: zodResolver(resultSchema),
@@ -112,37 +114,63 @@ export default function AdminResultsPage() {
         }
       />
 
-      {data.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          title="No results yet"
-          description="Add exam results for your students"
-          action={
-            <Button  onClick={() => setOpen(true)}>
-              <Plus className="mr-2 size-4" /> Add Result
-            </Button>
-          }
-          
-        />
-      ) : (
-        <AdminTableSection
-          data={data}
-          columns={[
-            { key: "examTitle", label: "Exam" },
-            { key: "subject", label: "Subject" },
-            { key: "grade", label: "Grade" },
-            { key: "marks", label: "Marks" },
-            { key: "rank", label: "Rank" },
-            { key: "term", label: "Term" },
-          ]}
-          summaryItems={summaryItems}
-          getSelectionInsights={resultSelectionInsights}
-          entityLabel="result"
-          onBulkDelete={handleBulkDelete}
-          onDelete={(id) => setDeleteTargetId(id)}
-          onActionComplete={refresh}
-        />
-      )}
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as ResultsTab)}
+        className="flex flex-col gap-4"
+      >
+        <TabsList>
+          <TabsTrigger value="results">Results</TabsTrigger>
+          <TabsTrigger value="links">Check-result links</TabsTrigger>
+        </TabsList>
+
+        {activeTab === "results" ? (
+          <TabsContent value="results">
+            {data.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title="No results yet"
+                description="Add exam results for your students"
+                action={
+                  <Button  onClick={() => setOpen(true)}>
+                    <Plus className="mr-2 size-4" /> Add Result
+                  </Button>
+                }
+
+              />
+            ) : (
+              <AdminTableSection
+                data={data}
+                columns={[
+                  {
+                    key: "studentId",
+                    label: "Student",
+                    render: (row) => studentMap.get(row.studentId)?.displayName ?? "—",
+                  },
+                  { key: "examTitle", label: "Exam" },
+                  { key: "subject", label: "Subject" },
+                  { key: "grade", label: "Grade" },
+                  { key: "marks", label: "Marks" },
+                  { key: "rank", label: "Rank" },
+                  { key: "term", label: "Term", render: (row) => row.term || "—" },
+                ]}
+                summaryItems={summaryItems}
+                getSelectionInsights={resultSelectionInsights}
+                entityLabel="result"
+                onBulkDelete={handleBulkDelete}
+                onDelete={(id) => setDeleteTargetId(id)}
+                onActionComplete={refresh}
+              />
+            )}
+          </TabsContent>
+        ) : null}
+
+        {activeTab === "links" ? (
+          <TabsContent value="links">
+            <ResultCheckLinksPanel />
+          </TabsContent>
+        ) : null}
+      </Tabs>
 
       <DeleteConfirmDialog
         open={!!deleteTargetId}

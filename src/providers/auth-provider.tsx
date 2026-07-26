@@ -14,6 +14,7 @@ import type { RegisterStudentInput } from "@/lib/validation/register-student";
 import { createClient } from "@/lib/supabase/client";
 import { mapProfile } from "@/lib/supabase/mappers";
 import { loginInstituteStaff, loginStudentPortal, registerStudentAccount, assertLoginRateLimit } from "@/lib/actions/auth";
+import { revokeCurrentStudentSession } from "@/lib/actions/student-sessions";
 import { EMAIL_PATTERN, LOGIN_ERROR } from "@/lib/auth/login-errors";
 import { getComingSoonPath } from "@/lib/portal-access";
 
@@ -413,6 +414,9 @@ export function AuthProvider({
 
   const signOut = useCallback(
     async (redirectTo?: string) => {
+      if (user?.role === "student") {
+        await revokeCurrentStudentSession().catch(() => {});
+      }
       const supabase = createClient();
       await supabase.auth.signOut();
       applyUser(null);
@@ -426,7 +430,7 @@ export function AuthProvider({
         }
       }
     },
-    [router, applyUser]
+    [router, applyUser, user]
   );
 
   const refreshUser = useCallback(async () => {
@@ -492,6 +496,8 @@ export function getRoleRedirect(role: UserRole): string {
       return "/staff/tracking";
     case "paper_center_staff":
       return "/paper-center/dashboard";
+    case "faculty_staff":
+      return "/faculty/dashboard";
     case "parent":
       return "/parent/dashboard";
     default:

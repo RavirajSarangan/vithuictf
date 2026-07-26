@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requireAcademicsStaff, requireAdmin } from "@/lib/actions/auth";
+import { requireAcademicsStaff, requireAdmin, requireFeatureAccess } from "@/lib/actions/auth";
 import { actionFailure, type ActionResult } from "@/lib/actions/action-result";
 import { safeRevalidatePath } from "@/lib/safe-revalidate";
 import { notifyBatchStudentsPortal } from "@/lib/academics/batch-notifications";
@@ -39,7 +39,7 @@ export async function getBatchReportCardOverview(
 
 export async function publishReportCards(batchId: string, term: string): Promise<ActionResult> {
   try {
-    const profile = await requireAcademicsStaff();
+    const profile = await requireFeatureAccess("announcements_report_cards");
     const supabase = await createClient();
 
     const data = await assembleBatchReportCards(supabase, batchId, term);

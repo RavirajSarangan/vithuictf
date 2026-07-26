@@ -11,6 +11,7 @@ export const IMMEDIATE_AUTH_PREFIXES = [
   "/payments",
   "/assignments",
   "/quizzes",
+  "/exams",
   "/achievements",
   "/leaderboard",
   "/profile-card",
@@ -21,6 +22,7 @@ export const IMMEDIATE_AUTH_PREFIXES = [
   "/staff",
   "/academics",
   "/paper-center",
+  "/faculty",
 ] as const;
 
 export function shouldDeferAuth(pathname: string): boolean {

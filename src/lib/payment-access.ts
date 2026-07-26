@@ -9,6 +9,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   sitePublicMode: "live",
   brandLogo: DEFAULT_BRAND_LOGO_SETTINGS,
   resultsCheckEnabled: false,
+  whatsappContactNumber: null,
   updatedAt: new Date(0).toISOString(),
 };
 

@@ -17,12 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-function attendanceBadgeVariant(percent: number): "default" | "outline" | "destructive" {
-  if (percent < 75) return "destructive";
-  if (percent < 85) return "outline";
-  return "default";
-}
+import { attendanceBadgeVariant } from "@/lib/attendance-format";
 
 export default function AcademicsReportsPage() {
   const { data: batches, loading: batchesLoading } = useBatches();

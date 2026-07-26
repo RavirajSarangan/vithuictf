@@ -10,6 +10,7 @@ import {
   mapAssignmentSubmission,
   mapCourse,
   mapExam,
+  mapExamWrittenSubmission,
   mapQuiz,
   mapQuizAttempt,
   mapLeaderboard,
@@ -380,6 +381,60 @@ export function useStudentQuizzes(studentId?: string) {
   return { quizzes: data, loading: Boolean(studentId) && loading, refresh };
 }
 
+
+export function useStudentExams(studentId?: string) {
+  const [data, setData] = useState<Exam[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    if (!studentId) return;
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const supabase = createClient();
+      // RLS limits exams to the student's enrolled courses/batches.
+      const [{ data: examRows }, { data: attemptRows }, { data: submissionRows }] = await Promise.all([
+        supabase
+          .from("exams")
+          .select("*, courses(name), course_batches(name)")
+          .eq("is_online_exam", true)
+          .order("exam_date", { ascending: false }),
+        supabase.from("quiz_attempts").select("quiz_id").eq("student_id", studentId),
+        supabase.from("exam_written_submissions").select("*").eq("student_id", studentId),
+      ]);
+      if (cancelled) return;
+
+      const attemptCountByQuiz = new Map<string, number>();
+      for (const row of attemptRows ?? []) {
+        attemptCountByQuiz.set(row.quiz_id, (attemptCountByQuiz.get(row.quiz_id) ?? 0) + 1);
+      }
+      const submissionByExam = new Map(
+        (submissionRows ?? []).map((row) => [row.exam_id, mapExamWrittenSubmission(row)])
+      );
+
+      setData(
+        (examRows ?? []).map((row) => {
+          const exam = mapExam(row);
+          return {
+            ...exam,
+            myQuizAttemptCount: exam.quizId ? attemptCountByQuiz.get(exam.quizId) ?? 0 : 0,
+            myWrittenSubmission: submissionByExam.get(exam.id) ?? null,
+          };
+        })
+      );
+      setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId, version]);
+
+  return { exams: data, loading: Boolean(studentId) && loading, refresh };
+}
 
 export function useStudentBilling(studentId?: string) {
   const summariesFetcher = useCallback(async () => {

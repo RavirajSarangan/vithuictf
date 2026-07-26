@@ -582,7 +582,12 @@ export type Database = {
           created_by: string | null
           exam_date: string
           id: string
+          is_online_exam: boolean
+          mcq_question_paper_name: string | null
+          mcq_question_paper_path: string | null
+          published: boolean
           published_at: string | null
+          quiz_id: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["exam_status"]
           subject: string
@@ -591,6 +596,10 @@ export type Database = {
           title: string
           total_marks: number
           weight: number
+          written_enabled: boolean
+          written_question_paper_name: string | null
+          written_question_paper_path: string | null
+          written_submission_deadline: string | null
         }
         Insert: {
           batch_id?: string | null
@@ -599,7 +608,12 @@ export type Database = {
           created_by?: string | null
           exam_date: string
           id?: string
+          is_online_exam?: boolean
+          mcq_question_paper_name?: string | null
+          mcq_question_paper_path?: string | null
+          published?: boolean
           published_at?: string | null
+          quiz_id?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["exam_status"]
           subject?: string
@@ -608,6 +622,10 @@ export type Database = {
           title: string
           total_marks?: number
           weight?: number
+          written_enabled?: boolean
+          written_question_paper_name?: string | null
+          written_question_paper_path?: string | null
+          written_submission_deadline?: string | null
         }
         Update: {
           batch_id?: string | null
@@ -616,7 +634,12 @@ export type Database = {
           created_by?: string | null
           exam_date?: string
           id?: string
+          is_online_exam?: boolean
+          mcq_question_paper_name?: string | null
+          mcq_question_paper_path?: string | null
+          published?: boolean
           published_at?: string | null
+          quiz_id?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["exam_status"]
           subject?: string
@@ -625,6 +648,10 @@ export type Database = {
           title?: string
           total_marks?: number
           weight?: number
+          written_enabled?: boolean
+          written_question_paper_name?: string | null
+          written_question_paper_path?: string | null
+          written_submission_deadline?: string | null
         }
         Relationships: [
           {
@@ -634,7 +661,113 @@ export type Database = {
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "exams_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      exam_written_submissions: {
+        Row: {
+          exam_id: string
+          feedback: string | null
+          file_name: string
+          file_path: string
+          id: string
+          marks: number | null
+          note: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["exam_written_status"]
+          student_id: string
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          exam_id: string
+          feedback?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          marks?: number | null
+          note?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["exam_written_status"]
+          student_id: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          exam_id?: string
+          feedback?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          marks?: number | null
+          note?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["exam_written_status"]
+          student_id?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_written_submissions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_written_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faculty_staff: {
+        Row: {
+          active: boolean
+          course_ids: string[]
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          staff_username: string
+          subjects: string[]
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          course_ids?: string[]
+          created_at?: string
+          display_name: string
+          email: string
+          id?: string
+          staff_username: string
+          subjects?: string[]
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          course_ids?: string[]
+          created_at?: string
+          display_name?: string
+          email?: string
+          id?: string
+          staff_username?: string
+          subjects?: string[]
+          user_id?: string
+        }
+        Relationships: []
       }
       faqs: {
         Row: {
@@ -684,6 +817,42 @@ export type Database = {
           score?: number
           sort_order?: number
           student_name?: string
+        }
+        Relationships: []
+      }
+      academic_staff: {
+        Row: {
+          affiliate: string
+          bio: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          photo_url: string
+          role: string
+          sort_order: number
+        }
+        Insert: {
+          affiliate?: string
+          bio?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          photo_url?: string
+          role: string
+          sort_order?: number
+        }
+        Update: {
+          affiliate?: string
+          bio?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          photo_url?: string
+          role?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -741,6 +910,48 @@ export type Database = {
           sort_order?: number
           whatsapp?: string
           youtube_url?: string
+        }
+        Relationships: []
+      }
+      headline_news: {
+        Row: {
+          caption: string
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_label: string
+          link_url: string
+          priority: number
+          tag_label: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          caption?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_label?: string
+          link_url?: string
+          priority?: number
+          tag_label?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          caption?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_label?: string
+          link_url?: string
+          priority?: number
+          tag_label?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1836,6 +2047,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ebooks: {
+        Row: {
+          id: string
+          title: string
+          subtitle: string
+          cover_image_url: string
+          badge_label: string
+          footer_label: string
+          accent_color: string
+          preview_url: string | null
+          drive_link: string | null
+          download_count: number
+          published: boolean
+          sort_order: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          subtitle?: string
+          cover_image_url?: string
+          badge_label?: string
+          footer_label?: string
+          accent_color?: string
+          preview_url?: string | null
+          drive_link?: string | null
+          download_count?: number
+          published?: boolean
+          sort_order?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          subtitle?: string
+          cover_image_url?: string
+          badge_label?: string
+          footer_label?: string
+          accent_color?: string
+          preview_url?: string | null
+          drive_link?: string | null
+          download_count?: number
+          published?: boolean
+          sort_order?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       result_check_links: {
         Row: {
           id: string
@@ -2394,6 +2659,48 @@ export type Database = {
         }
         Relationships: []
       }
+      student_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          student_row_id: string | null
+          session_marker: string
+          ip_address: string | null
+          user_agent: string | null
+          device_label: string | null
+          created_at: string
+          last_seen_at: string
+          revoked_at: string | null
+          revoked_reason: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          student_row_id?: string | null
+          session_marker: string
+          ip_address?: string | null
+          user_agent?: string | null
+          device_label?: string | null
+          created_at?: string
+          last_seen_at?: string
+          revoked_at?: string | null
+          revoked_reason?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          student_row_id?: string | null
+          session_marker?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          device_label?: string | null
+          created_at?: string
+          last_seen_at?: string
+          revoked_at?: string | null
+          revoked_reason?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       course_schedule_summaries: {
@@ -2418,6 +2725,10 @@ export type Database = {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
+      touch_student_session: {
+        Args: { p_session_marker: string }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_parent_of: { Args: { p_student_id: string }; Returns: boolean }
@@ -2433,6 +2744,7 @@ export type Database = {
     Enums: {
       course_level: "OL" | "AL" | "University" | "Professional"
       exam_status: "scheduled" | "grading" | "published"
+      exam_written_status: "submitted" | "reviewed" | "graded"
       notification_type: "result" | "announcement" | "achievement" | "class"
       submission_status: "submitted" | "graded" | "returned"
       whatsapp_message_type:
@@ -2462,7 +2774,7 @@ export type Database = {
       pass_paper_exam_type: "ol" | "al" | "scholarship" | "other"
       session_mode: "physical" | "online"
       session_type: "recurring" | "one_off"
-      user_role: "student" | "parent" | "teacher" | "admin" | "super_admin" | "content_manager" | "paper_center_staff"
+      user_role: "student" | "parent" | "teacher" | "admin" | "super_admin" | "content_manager" | "paper_center_staff" | "faculty_staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3053,7 +3365,7 @@ export const Constants = {
       resource_type: ["pdf", "video"],
       session_mode: ["physical", "online"],
       session_type: ["recurring", "one_off"],
-      user_role: ["student", "parent", "teacher", "admin", "super_admin", "content_manager", "paper_center_staff"],
+      user_role: ["student", "parent", "teacher", "admin", "super_admin", "content_manager", "paper_center_staff", "faculty_staff"],
     },
   },
   storage: {

@@ -220,6 +220,7 @@ export function peopleTabCountsSummary(
     },
     { label: "Content", value: entries.filter((e) => e.role === "content_manager").length },
     { label: "Paper center", value: entries.filter((e) => e.role === "paper_center_staff").length },
+    { label: "Faculty", value: entries.filter((e) => e.role === "faculty_staff").length },
   ];
 }
 
@@ -362,6 +363,17 @@ export function announcementTableSummary(
   ];
 }
 
+export function headlineNewsTableSummary(
+  items: { isActive?: boolean }[]
+): SummaryCardItem[] {
+  const active = items.filter((i) => i.isActive !== false).length;
+  return [
+    { label: "Total", value: items.length },
+    { label: "Active", value: active, variant: "success" },
+    { label: "Inactive", value: items.length - active },
+  ];
+}
+
 export function passPaperItemTableSummary(
   items: { published?: boolean }[]
 ): SummaryCardItem[] {
@@ -402,6 +414,42 @@ export function attendanceReportSummary(
   return [
     { label: "Students", value: rows.length },
     { label: "Below 75%", value: low, variant: low > 0 ? "warning" : "default" },
+  ];
+}
+
+export function absenteeSelectionInsights(
+  rows: { attendancePercent: number; absent: number }[]
+): SelectionInsight[] {
+  const avgPercent = rows.length
+    ? Math.round(rows.reduce((s, r) => s + r.attendancePercent, 0) / rows.length)
+    : 0;
+  const totalAbsences = rows.reduce((s, r) => s + r.absent, 0);
+  return [
+    { label: "Avg attendance %", value: avgPercent },
+    { label: "Total absences", value: totalAbsences },
+  ];
+}
+
+export function courseGrowthTableSummary(
+  rows: { deltaEnrollments: number }[]
+): SummaryCardItem[] {
+  const gaining = rows.filter((r) => r.deltaEnrollments > 0).length;
+  const declining = rows.filter((r) => r.deltaEnrollments < 0).length;
+  return [
+    { label: "Courses", value: rows.length },
+    { label: "Gaining", value: gaining, variant: "success" },
+    { label: "Declining", value: declining, variant: declining > 0 ? "warning" : "default" },
+    { label: "Flat", value: rows.length - gaining - declining },
+  ];
+}
+
+export function courseGrowthSelectionInsights(
+  rows: { courseName: string; deltaEnrollments: number }[]
+): SelectionInsight[] {
+  const totalDelta = rows.reduce((s, r) => s + r.deltaEnrollments, 0);
+  return [
+    { label: "Net delta", value: totalDelta },
+    ...insightsFromCounts(countByField(rows, (r) => r.courseName), 3),
   ];
 }
 

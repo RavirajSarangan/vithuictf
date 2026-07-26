@@ -2,18 +2,20 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
-import { requireAcademicsStaff, requireAdmin } from "@/lib/actions/auth";
+import { requireAcademicsStaff, requireAdmin, requireFeatureAccess } from "@/lib/actions/auth";
 import { actionFailure, type ActionResult } from "@/lib/actions/action-result";
 import { safeRevalidatePath } from "@/lib/safe-revalidate";
 import { notifyBatchStudentsPortal } from "@/lib/academics/batch-notifications";
 import { gradeForMarks } from "@/lib/grades";
 import { mapExam } from "@/lib/supabase/mappers";
+import { sanitizeFileName, uploadToBucket, validateUpload } from "@/lib/storage-upload";
 import type { Exam } from "@/types";
 
 function revalidateExamPaths() {
   safeRevalidatePath("/academics/exams");
   safeRevalidatePath("/results");
   safeRevalidatePath("/dashboard");
+  safeRevalidatePath("/exams");
 }
 
 export type MarkSheetRow = {
@@ -28,14 +30,15 @@ export async function getStaffExams(batchId?: string): Promise<Exam[]> {
   await requireAcademicsStaff();
   const supabase = await createClient();
 
-  let query = supabase
+  // Online exams (batch_id NULL, is_online_exam true) are course-wide by
+  // design and must still show up in the staff list alongside batch exams.
+  const baseQuery = supabase
     .from("exams")
     .select("*, courses(name), course_batches(name)")
-    .not("batch_id", "is", null)
+    .or("batch_id.not.is.null,is_online_exam.eq.true")
     .order("exam_date", { ascending: false });
-  if (batchId) query = query.eq("batch_id", batchId);
 
-  const { data: rows, error } = await query;
+  const { data: rows, error } = batchId ? await baseQuery.eq("batch_id", batchId) : await baseQuery;
   if (error) throw new Error(error.message);
 
   const exams = (rows ?? []).map(mapExam);
@@ -81,7 +84,7 @@ export async function createExam(input: {
   weight: number;
 }): Promise<ActionResult> {
   try {
-    const profile = await requireAcademicsStaff();
+    const profile = await requireFeatureAccess("quizzes_exams");
     const supabase = await createClient();
 
     const title = input.title.trim();
@@ -420,5 +423,332 @@ export async function unpublishExamResults(examId: string): Promise<ActionResult
     return { ok: true };
   } catch (error) {
     return actionFailure(error, "Failed to unpublish results");
+  }
+}
+
+// --- Online exam portal (Part 1 MCQ + Part 2 written) -----------------
+//
+// Kept as separate functions from createExam/updateExam/getMarkSheet above
+// rather than threading optional fields through them: those are the
+// already-shipped batch-required marks/report-card flow, and online exams
+// are deliberately course-wide (batch optional) with a stricter
+// super-admin-only write gate — mixing the two risks regressing the
+// existing flow for no benefit.
+
+export async function getExamById(examId: string): Promise<Exam> {
+  await requireAcademicsStaff();
+  const supabase = await createClient();
+
+  const { data: row, error } = await supabase
+    .from("exams")
+    .select("*, courses(name), course_batches(name)")
+    .eq("id", examId)
+    .single();
+  if (error || !row) throw new Error(error?.message ?? "Exam not found");
+
+  return mapExam(row);
+}
+
+type DraftQuestionInput = {
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+  points: number;
+};
+
+function parseDraftQuestions(raw: string): DraftQuestionInput[] | null {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter(
+      (q): q is DraftQuestionInput =>
+        typeof q === "object" &&
+        q !== null &&
+        typeof (q as DraftQuestionInput).prompt === "string" &&
+        Array.isArray((q as DraftQuestionInput).options)
+    );
+  } catch {
+    return null;
+  }
+}
+
+export async function createOnlineExam(formData: FormData): Promise<ActionResult> {
+  try {
+    const profile = await requireFeatureAccess("quizzes_exams");
+    const supabase = await createClient();
+
+    const courseId = String(formData.get("courseId") ?? "");
+    const title = String(formData.get("title") ?? "").trim();
+    const subject = String(formData.get("subject") ?? "").trim();
+    const term = String(formData.get("term") ?? "").trim();
+    const examDate = String(formData.get("examDate") ?? "");
+    const totalMarks = Number(formData.get("totalMarks") ?? 100);
+    const weight = Number(formData.get("weight") ?? 1);
+    const authoringMode = String(formData.get("authoringMode") ?? "link");
+    let quizId = String(formData.get("quizId") ?? "") || null;
+    const timeLimitRaw = String(formData.get("timeLimitMinutes") ?? "");
+    const timeLimitMinutes = timeLimitRaw ? Number(timeLimitRaw) : null;
+    const maxAttempts = Math.max(0, Math.round(Number(formData.get("maxAttempts") ?? 0)));
+    const writtenEnabled = formData.get("writtenEnabled") === "true";
+    const deadlineRaw = String(formData.get("writtenSubmissionDeadline") ?? "");
+    const file = formData.get("writtenQuestionPaper");
+    const mcqFile = formData.get("mcqQuestionPaper");
+    const published = formData.get("published") === "true";
+
+    if (!courseId) return { ok: false, error: "Course is required" };
+    if (title.length < 3) return { ok: false, error: "Title must be at least 3 characters" };
+    if (!subject) return { ok: false, error: "Subject is required" };
+    if (!term) return { ok: false, error: "Term is required" };
+    if (!examDate || Number.isNaN(Date.parse(examDate))) {
+      return { ok: false, error: "A valid exam date is required" };
+    }
+    if (!Number.isFinite(totalMarks) || totalMarks < 1 || totalMarks > 1000) {
+      return { ok: false, error: "Total marks must be between 1 and 1000" };
+    }
+    if (!Number.isFinite(weight) || weight <= 0 || weight > 10) {
+      return { ok: false, error: "Weight must be between 0 and 10" };
+    }
+
+    let draftQuestions: DraftQuestionInput[] = [];
+    if (authoringMode === "build") {
+      const parsed = parseDraftQuestions(String(formData.get("questions") ?? "[]"));
+      if (!parsed) return { ok: false, error: "Invalid question data" };
+      draftQuestions = parsed;
+    }
+
+    const hasMcq = authoringMode === "build" ? draftQuestions.length > 0 : Boolean(quizId);
+    if (!hasMcq && !writtenEnabled) {
+      return { ok: false, error: "Enable at least one of Part 1 (MCQ) or Part 2 (written)" };
+    }
+    if (published && authoringMode === "build" && draftQuestions.length === 0 && !writtenEnabled) {
+      return { ok: false, error: "Add at least one question before publishing" };
+    }
+
+    const { data: course, error: courseError } = await supabase
+      .from("courses")
+      .select("id, name")
+      .eq("id", courseId)
+      .single();
+    if (courseError || !course) return actionFailure(courseError, "Course not found or not accessible");
+
+    if (authoringMode === "build") {
+      const { data: newQuiz, error: quizError } = await supabase
+        .from("quizzes")
+        .insert({
+          course_id: courseId,
+          batch_id: null,
+          title,
+          description: "",
+          time_limit_minutes: timeLimitMinutes,
+          max_attempts: maxAttempts,
+          published,
+          created_by: profile.id,
+        })
+        .select("id")
+        .single();
+      if (quizError || !newQuiz) return actionFailure(quizError, "Failed to create quiz for Part 1");
+      quizId = newQuiz.id;
+
+      if (draftQuestions.length) {
+        const rows = draftQuestions.map((q, index) => ({
+          quiz_id: quizId,
+          prompt: q.prompt.trim(),
+          options: q.options.map((o) => o.trim()).filter(Boolean),
+          correct_index: q.correctIndex,
+          points: Math.round(q.points) || 1,
+          position: index + 1,
+        }));
+        const { error: questionsError } = await supabase.from("quiz_questions").insert(rows);
+        if (questionsError) return actionFailure(questionsError, "Failed to save questions");
+      }
+    } else if (quizId) {
+      const { data: quiz, error: quizError } = await supabase
+        .from("quizzes")
+        .select("id, course_id")
+        .eq("id", quizId)
+        .maybeSingle();
+      if (quizError || !quiz) return { ok: false, error: "Selected quiz not found" };
+      if (quiz.course_id !== courseId) {
+        return { ok: false, error: "Selected quiz does not belong to this course" };
+      }
+      if (published) {
+        const { count } = await supabase
+          .from("quiz_questions")
+          .select("id", { count: "exact", head: true })
+          .eq("quiz_id", quizId);
+        if (!count && !writtenEnabled) {
+          return { ok: false, error: "The linked quiz has no questions yet" };
+        }
+      }
+      await supabase
+        .from("quizzes")
+        .update({ time_limit_minutes: timeLimitMinutes, max_attempts: maxAttempts, published })
+        .eq("id", quizId);
+    }
+
+    let writtenQuestionPaperPath: string | null = null;
+    let writtenQuestionPaperName: string | null = null;
+    if (writtenEnabled && file instanceof File && file.size > 0) {
+      const invalid = validateUpload(file);
+      if (invalid) return { ok: false, error: invalid };
+      writtenQuestionPaperName = file.name;
+      writtenQuestionPaperPath = await uploadToBucket(
+        "exam-question-papers",
+        `${courseId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`,
+        file
+      );
+    }
+
+    let mcqQuestionPaperPath: string | null = null;
+    let mcqQuestionPaperName: string | null = null;
+    if (mcqFile instanceof File && mcqFile.size > 0) {
+      const invalid = validateUpload(mcqFile);
+      if (invalid) return { ok: false, error: invalid };
+      mcqQuestionPaperName = mcqFile.name;
+      mcqQuestionPaperPath = await uploadToBucket(
+        "exam-question-papers",
+        `${courseId}/${crypto.randomUUID()}-${sanitizeFileName(mcqFile.name)}`,
+        mcqFile
+      );
+    }
+
+    const { data: created, error } = await supabase
+      .from("exams")
+      .insert({
+        course_id: courseId,
+        batch_id: null,
+        title,
+        subject,
+        exam_date: examDate,
+        total_marks: Math.round(totalMarks),
+        term,
+        weight,
+        status: "scheduled" as const,
+        created_by: profile.id,
+        is_online_exam: true,
+        published,
+        quiz_id: quizId,
+        mcq_question_paper_path: mcqQuestionPaperPath,
+        mcq_question_paper_name: mcqQuestionPaperName,
+        written_enabled: writtenEnabled,
+        written_question_paper_path: writtenQuestionPaperPath,
+        written_question_paper_name: writtenQuestionPaperName,
+        written_submission_deadline: deadlineRaw ? new Date(deadlineRaw).toISOString() : null,
+      })
+      .select("id")
+      .single();
+    if (error || !created) return actionFailure(error, "Failed to create online exam");
+
+    revalidateExamPaths();
+    return { ok: true };
+  } catch (error) {
+    return actionFailure(error, "Failed to create online exam");
+  }
+}
+
+export async function updateOnlineExam(examId: string, formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAcademicsStaff();
+    const supabase = await createClient();
+
+    const { data: exam } = await supabase
+      .from("exams")
+      .select("id, course_id, written_question_paper_path, mcq_question_paper_path")
+      .eq("id", examId)
+      .maybeSingle();
+    if (!exam) return { ok: false, error: "Exam not found" };
+
+    const quizId = String(formData.get("quizId") ?? "") || null;
+    const timeLimitRaw = String(formData.get("timeLimitMinutes") ?? "");
+    const timeLimitMinutes = timeLimitRaw ? Number(timeLimitRaw) : null;
+    const maxAttempts = Math.max(0, Math.round(Number(formData.get("maxAttempts") ?? 0)));
+    const writtenEnabled = formData.get("writtenEnabled") === "true";
+    const deadlineRaw = String(formData.get("writtenSubmissionDeadline") ?? "");
+    const file = formData.get("writtenQuestionPaper");
+    const mcqFile = formData.get("mcqQuestionPaper");
+    const published = formData.get("published") === "true";
+
+    if (!quizId && !writtenEnabled) {
+      return { ok: false, error: "Enable at least one of Part 1 (MCQ) or Part 2 (written)" };
+    }
+
+    if (quizId) {
+      const { data: quiz } = await supabase
+        .from("quizzes")
+        .select("id, course_id")
+        .eq("id", quizId)
+        .maybeSingle();
+      if (!quiz) return { ok: false, error: "Selected quiz not found" };
+      if (quiz.course_id !== exam.course_id) {
+        return { ok: false, error: "Selected quiz does not belong to this exam's course" };
+      }
+      if (published) {
+        const { count } = await supabase
+          .from("quiz_questions")
+          .select("id", { count: "exact", head: true })
+          .eq("quiz_id", quizId);
+        if (!count && !writtenEnabled) {
+          return { ok: false, error: "Add at least one question before publishing" };
+        }
+      }
+      await supabase
+        .from("quizzes")
+        .update({ time_limit_minutes: timeLimitMinutes, max_attempts: maxAttempts, published })
+        .eq("id", quizId);
+    }
+
+    const update: {
+      quiz_id: string | null;
+      written_enabled: boolean;
+      written_submission_deadline: string | null;
+      published: boolean;
+      written_question_paper_path?: string;
+      written_question_paper_name?: string;
+      mcq_question_paper_path?: string;
+      mcq_question_paper_name?: string;
+    } = {
+      quiz_id: quizId,
+      written_enabled: writtenEnabled,
+      written_submission_deadline: deadlineRaw ? new Date(deadlineRaw).toISOString() : null,
+      published,
+    };
+
+    if (writtenEnabled && file instanceof File && file.size > 0) {
+      const invalid = validateUpload(file);
+      if (invalid) return { ok: false, error: invalid };
+      const previousPath = exam.written_question_paper_path;
+      update.written_question_paper_name = file.name;
+      update.written_question_paper_path = await uploadToBucket(
+        "exam-question-papers",
+        `${exam.course_id}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`,
+        file
+      );
+      if (previousPath && isAdminClientConfigured()) {
+        await createAdminClient().storage.from("exam-question-papers").remove([previousPath]);
+      }
+    }
+
+    if (mcqFile instanceof File && mcqFile.size > 0) {
+      const invalid = validateUpload(mcqFile);
+      if (invalid) return { ok: false, error: invalid };
+      const previousMcqPath = exam.mcq_question_paper_path;
+      update.mcq_question_paper_name = mcqFile.name;
+      update.mcq_question_paper_path = await uploadToBucket(
+        "exam-question-papers",
+        `${exam.course_id}/${crypto.randomUUID()}-${sanitizeFileName(mcqFile.name)}`,
+        mcqFile
+      );
+      if (previousMcqPath && isAdminClientConfigured()) {
+        await createAdminClient().storage.from("exam-question-papers").remove([previousMcqPath]);
+      }
+    }
+
+    const { error } = await supabase.from("exams").update(update).eq("id", examId);
+    if (error) return actionFailure(error, "Failed to update online exam");
+
+    revalidateExamPaths();
+    return { ok: true };
+  } catch (error) {
+    return actionFailure(error, "Failed to update online exam");
   }
 }

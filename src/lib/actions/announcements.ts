@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
-import { getSessionProfile, requireAcademicsStaff } from "@/lib/actions/auth";
+import { getSessionProfile, requireAcademicsStaff, requireFeatureAccess } from "@/lib/actions/auth";
 import { actionFailure, type ActionResult, type DataActionResult } from "@/lib/actions/action-result";
 import { safeRevalidatePath } from "@/lib/safe-revalidate";
 import { notifyBatchesStudentsPortal } from "@/lib/academics/batch-notifications";
@@ -115,7 +115,7 @@ export async function getAnnouncementThread(announcementId: string): Promise<{
 
 export async function createAnnouncement(formData: FormData): Promise<ActionResult> {
   try {
-    const profile = await requireAcademicsStaff();
+    const profile = await requireFeatureAccess("announcements_report_cards");
     const supabase = await createClient();
 
     const batchIds = formData.getAll("batchIds").map(String).filter(Boolean);

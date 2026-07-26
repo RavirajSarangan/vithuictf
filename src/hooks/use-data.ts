@@ -25,6 +25,8 @@ export {
   useNetworkStats,
   useFeaturedRankings,
   useHomeAbout,
+  useAcademicStaff,
+  useEbooks,
 } from "./use-marketing-data-hooks";
 
 export {
@@ -32,6 +34,7 @@ export {
   useAdminStudents,
   useAdminCourses,
   useAdminIctfTeam,
+  useAdminAcademicStaff,
   useAdminTeachers,
   useAdminStaff,
   useAdminParents,
@@ -44,11 +47,13 @@ export {
   useAdminPaperCenters,
   useAdminFeaturedRankings,
   useAdminMarketingAnnouncements,
+  useAdminHeadlineNews,
   useAdminBlogPosts,
   useAdminBlogCategories,
   useAdminAnalytics,
   useAdminRevenueTrend,
   useContactInquiries,
+  useAdminEbooks,
 } from "./use-admin-data";
 
 export { useSocialTracking, useContentManagers } from "./use-social-tracking";

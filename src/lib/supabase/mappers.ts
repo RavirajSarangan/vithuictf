@@ -1,4 +1,5 @@
 import type {
+  AcademicStaffMember,
   Achievement,
   ActivityItem,
   AnnouncementReply,
@@ -12,13 +13,17 @@ import type {
   ClassSessionStatus,
   ContactInquiry,
   ContentManager,
+  Ebook,
   ExamPaperBatch,
   ExamPaperSubmission,
   PaperCenterStaff,
   Course,
   CourseBatch,
   Exam,
+  ExamWrittenSubmission,
+  FacultyStaffAccount,
   FAQ,
+  HeadlineNews,
   IctfTeamMember,
   LeaderboardEntry,
   Notification,
@@ -47,6 +52,8 @@ import type {
   SocialPlatform,
   SocialTrackingWeek,
   Student,
+  StudentSession,
+  StudentSessionRevokedReason,
   StudentSocialLinks,
   SuccessStory,
   Teacher,
@@ -136,6 +143,23 @@ export function mapStudent(row: StudentRow): Student {
   };
 }
 
+export function mapStudentSession(
+  row: Omit<Database["public"]["Tables"]["student_sessions"]["Row"], "session_marker">
+): StudentSession {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    studentRowId: row.student_row_id ?? undefined,
+    ipAddress: row.ip_address ?? undefined,
+    userAgent: row.user_agent ?? undefined,
+    deviceLabel: row.device_label ?? undefined,
+    createdAt: row.created_at,
+    lastSeenAt: row.last_seen_at,
+    revokedAt: row.revoked_at,
+    revokedReason: row.revoked_reason as StudentSessionRevokedReason | null,
+  };
+}
+
 export function mapCourse(row: Database["public"]["Tables"]["courses"]["Row"]): Course {
   const manualDays = row.class_days ?? [];
   return {
@@ -207,6 +231,22 @@ export function mapIctfTeamMember(
   };
 }
 
+export function mapAcademicStaffMember(
+  row: Database["public"]["Tables"]["academic_staff"]["Row"]
+): AcademicStaffMember {
+  return {
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    affiliate: row.affiliate,
+    bio: row.bio,
+    photoUrl: row.photo_url,
+    isActive: row.is_active,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+  };
+}
+
 export function mapResult(row: ResultRow): Result {
   return {
     id: row.id,
@@ -265,6 +305,22 @@ export function mapTeacher(row: Database["public"]["Tables"]["teachers"]["Row"])
     certified: row.certified,
     courseIds: row.course_ids ?? [],
     active: row.active ?? true,
+  };
+}
+
+export function mapFacultyStaffAccount(
+  row: Database["public"]["Tables"]["faculty_staff"]["Row"]
+): FacultyStaffAccount {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    displayName: row.display_name,
+    email: row.email,
+    staffUsername: row.staff_username,
+    subjects: row.subjects,
+    courseIds: row.course_ids,
+    active: row.active,
+    createdAt: row.created_at,
   };
 }
 
@@ -442,6 +498,72 @@ export function mapQuizAttempt(
   };
 }
 
+// Faculty portal clones of mapQuiz/mapQuizQuestion/mapQuizAttempt above —
+// faculty_quizzes/faculty_quiz_questions/faculty_quiz_attempts have identical
+// column shapes to their teacher-side counterparts (see
+// 20260726095000_faculty_quizzes.sql), just different table/FK names, so the
+// same Database["public"]["Tables"]["quizzes"/...]["Row"] row shapes are
+// reused here for typing — only the join relation names (faculty_batches
+// instead of course_batches) and the returned generic Quiz/QuizQuestion/
+// QuizAttempt shapes differ.
+export function mapFacultyQuiz(
+  row: Database["public"]["Tables"]["quizzes"]["Row"] & {
+    courses?: { name: string } | null;
+    faculty_batches?: { name: string } | null;
+  }
+): Quiz {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    batchId: row.batch_id,
+    courseName: row.courses?.name,
+    batchName: row.faculty_batches?.name,
+    title: row.title,
+    description: row.description,
+    timeLimitMinutes: row.time_limit_minutes,
+    maxAttempts: row.max_attempts,
+    published: row.published,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapFacultyQuizQuestion(
+  row: Database["public"]["Tables"]["quiz_questions"]["Row"],
+  { includeAnswer = true }: { includeAnswer?: boolean } = {}
+): QuizQuestion {
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    position: row.position,
+    prompt: row.prompt,
+    options: Array.isArray(row.options) ? (row.options as string[]) : [],
+    ...(includeAnswer ? { correctIndex: row.correct_index } : {}),
+    points: row.points,
+  };
+}
+
+export function mapFacultyQuizAttempt(
+  row: Database["public"]["Tables"]["quiz_attempts"]["Row"] & {
+    students?: { display_name: string; student_id: string } | null;
+  }
+): QuizAttempt {
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    studentId: row.student_id,
+    studentName: row.students?.display_name,
+    studentCode: row.students?.student_id,
+    answers:
+      row.answers && typeof row.answers === "object" && !Array.isArray(row.answers)
+        ? (row.answers as Record<string, number>)
+        : {},
+    score: row.score,
+    maxScore: row.max_score,
+    completedAt: row.completed_at,
+  };
+}
+
 export function mapCertificate(row: Database["public"]["Tables"]["certificates"]["Row"]): Certificate {
   const extended = row as Database["public"]["Tables"]["certificates"]["Row"] & {
     verify_code?: string;
@@ -541,6 +663,37 @@ export function mapExam(
     weight: Number(row.weight),
     status: row.status,
     publishedAt: row.published_at,
+    quizId: row.quiz_id,
+    isOnlineExam: row.is_online_exam,
+    published: row.published,
+    mcqQuestionPaperPath: row.mcq_question_paper_path,
+    mcqQuestionPaperName: row.mcq_question_paper_name,
+    writtenEnabled: row.written_enabled,
+    writtenQuestionPaperPath: row.written_question_paper_path,
+    writtenQuestionPaperName: row.written_question_paper_name,
+    writtenSubmissionDeadline: row.written_submission_deadline,
+  };
+}
+
+export function mapExamWrittenSubmission(
+  row: Database["public"]["Tables"]["exam_written_submissions"]["Row"] & {
+    students?: { display_name: string; student_id: string } | null;
+  }
+): ExamWrittenSubmission {
+  return {
+    id: row.id,
+    examId: row.exam_id,
+    studentId: row.student_id,
+    studentName: row.students?.display_name,
+    studentCode: row.students?.student_id,
+    filePath: row.file_path,
+    fileName: row.file_name,
+    note: row.note,
+    status: row.status,
+    marks: row.marks,
+    feedback: row.feedback,
+    reviewedAt: row.reviewed_at,
+    submittedAt: row.submitted_at,
   };
 }
 
@@ -771,6 +924,62 @@ export function mapMarketingAnnouncement(
   };
 }
 
+type EbookRow = {
+  id: string;
+  title: string;
+  subtitle: string;
+  cover_image_url: string;
+  badge_label: string;
+  footer_label: string;
+  accent_color: string;
+  preview_url: string | null;
+  drive_link: string | null;
+  download_count: number;
+  published: boolean;
+  sort_order: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export function mapEbook(row: EbookRow): Ebook {
+  return {
+    id: row.id,
+    title: row.title,
+    subtitle: row.subtitle,
+    coverImageUrl: row.cover_image_url,
+    badgeLabel: row.badge_label,
+    footerLabel: row.footer_label,
+    accentColor: row.accent_color,
+    previewUrl: row.preview_url,
+    driveLink: row.drive_link,
+    downloadCount: row.download_count,
+    published: row.published,
+    sortOrder: row.sort_order,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapHeadlineNews(
+  row: Database["public"]["Tables"]["headline_news"]["Row"]
+): HeadlineNews {
+  return {
+    id: row.id,
+    tagLabel: row.tag_label,
+    title: row.title,
+    caption: row.caption,
+    imageUrl: row.image_url,
+    linkLabel: row.link_label,
+    linkUrl: row.link_url,
+    priority: row.priority,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export function mapSiteStats(row: Database["public"]["Tables"]["site_stats"]["Row"]): SiteStats {
   return {
     students: row.students,
@@ -791,6 +1000,7 @@ export function mapPlatformSettings(row: {
   site_public_mode?: string;
   brand_logo_settings?: unknown;
   results_check_enabled?: boolean;
+  whatsapp_contact_number?: string | null;
   updated_at: string;
 }): PlatformSettings {
   const sitePublicMode = row.site_public_mode;
@@ -807,6 +1017,7 @@ export function mapPlatformSettings(row: {
     sitePublicMode: validMode,
     brandLogo: parseBrandLogoSettings(row.brand_logo_settings),
     resultsCheckEnabled: row.results_check_enabled ?? false,
+    whatsappContactNumber: row.whatsapp_contact_number ?? null,
     updatedAt: row.updated_at,
   };
 }

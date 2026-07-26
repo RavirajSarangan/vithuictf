@@ -12,12 +12,14 @@ import {
   deletePaperCenter,
   deleteFeaturedRanking,
   deleteMarketingAnnouncement,
+  deleteHeadlineNews,
   deleteBlogCategory,
   deleteBlogPost,
 } from "@/lib/actions/admin";
 import { deleteContentManager } from "@/lib/actions/content-team";
 import { deleteManagedPaperCenter } from "@/lib/actions/paper-centers";
 import { deletePaperCenterStaff } from "@/lib/actions/paper-center-staff";
+import { deleteFacultyStaff } from "@/lib/actions/faculty-staff";
 import { deleteExamPaperBatch } from "@/lib/actions/exam-papers";
 import { deletePassPaperFolder, deletePassPaperItem } from "@/lib/actions/pass-papers";
 import { deleteSubjectCategory, deleteCalendarSession } from "@/lib/actions/calendar";
@@ -122,6 +124,10 @@ export async function bulkDeleteMarketingAnnouncements(ids: string[]): Promise<B
   return runBulkDelete(ids, deleteMarketingAnnouncement);
 }
 
+export async function bulkDeleteHeadlineNews(ids: string[]): Promise<BulkDeleteResult> {
+  return runBulkDelete(ids, deleteHeadlineNews);
+}
+
 export async function bulkDeleteExamPaperBatches(ids: string[]): Promise<BulkDeleteResult> {
   return runBulkDelete(ids, deleteExamPaperBatch);
 }
@@ -143,7 +149,7 @@ export async function bulkDeletePassPaperItems(ids: string[]): Promise<BulkDelet
 export type PeopleBulkEntry = {
   id: string;
   userId: string;
-  role: "teacher" | "admin" | "super_admin" | "content_manager" | "paper_center_staff";
+  role: "teacher" | "admin" | "super_admin" | "content_manager" | "paper_center_staff" | "faculty_staff";
 };
 
 export async function bulkDeletePeople(entries: PeopleBulkEntry[]): Promise<BulkDeleteResult> {
@@ -159,6 +165,7 @@ export async function bulkDeletePeople(entries: PeopleBulkEntry[]): Promise<Bulk
       else if (entry.role === "admin") await deleteAdmin(entry.userId);
       else if (entry.role === "content_manager") await deleteContentManager(entry.id);
       else if (entry.role === "paper_center_staff") await deletePaperCenterStaff(entry.id);
+      else if (entry.role === "faculty_staff") await deleteFacultyStaff(entry.id);
       else throw new Error("Unsupported role");
       return entry.id;
     })

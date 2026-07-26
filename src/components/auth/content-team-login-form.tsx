@@ -56,6 +56,7 @@ export function ContentTeamLoginForm() {
           CONTENT_TEAM_ONLY: "auth.contentTeamOnly",
           PAPER_CENTER_ONLY: "auth.paperCenterOnly",
           STUDENT_ID_ONLY: "auth.studentIdOnly",
+          FACULTY_ONLY: "auth.loginFailed",
         } as const;
         toast.error(t(keyMap[err.message]));
       } else {

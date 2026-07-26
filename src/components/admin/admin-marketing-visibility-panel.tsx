@@ -3,16 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { updateMarketingComingSoon, updateSitePublicMode } from "@/lib/actions/admin";
+import {
+  updateMarketingComingSoon,
+  updateResultsCheckEnabled,
+  updateSitePublicMode,
+  updateWhatsappContactNumber,
+} from "@/lib/actions/admin";
 import { syncClientCachesAfterAdminSave } from "@/lib/client-cache-sync";
 import { usePlatformSettings } from "@/hooks/use-data";
+import { useAuth } from "@/providers/auth-provider";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Eye, EyeOff, ExternalLink, Loader2, Wrench } from "lucide-react";
+import { Eye, EyeOff, ExternalLink, Loader2, MessageCircle, Search, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import type { SitePublicMode } from "@/types";
 
@@ -47,18 +54,25 @@ function siteModeBadgeLabel(mode: SitePublicMode): string {
 
 export function AdminMarketingVisibilityPanel() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const { settings, loading, refresh } = usePlatformSettings();
   const [saving, setSaving] = useState(false);
   const [siteMode, setSiteMode] = useState<SitePublicMode>(settings.sitePublicMode);
   const [homepageBlur, setHomepageBlur] = useState(settings.marketingComingSoonEnabled);
+  const [resultsCheckEnabled, setResultsCheckEnabled] = useState(settings.resultsCheckEnabled);
+  const [whatsappNumber, setWhatsappNumber] = useState(settings.whatsappContactNumber ?? "");
   const [settingsKey, setSettingsKey] = useState(
-    () => `${settings.sitePublicMode}-${settings.marketingComingSoonEnabled}`
+    () =>
+      `${settings.sitePublicMode}-${settings.marketingComingSoonEnabled}-${settings.resultsCheckEnabled}-${settings.whatsappContactNumber}`
   );
 
-  const nextSettingsKey = `${settings.sitePublicMode}-${settings.marketingComingSoonEnabled}`;
+  const nextSettingsKey = `${settings.sitePublicMode}-${settings.marketingComingSoonEnabled}-${settings.resultsCheckEnabled}-${settings.whatsappContactNumber}`;
   const siteModeDirty = siteMode !== settings.sitePublicMode;
   const homepageBlurDirty = homepageBlur !== settings.marketingComingSoonEnabled;
-  const dirty = siteModeDirty || homepageBlurDirty;
+  const resultsCheckDirty = isSuperAdmin && resultsCheckEnabled !== settings.resultsCheckEnabled;
+  const whatsappNumberDirty = isSuperAdmin && whatsappNumber !== (settings.whatsappContactNumber ?? "");
+  const dirty = siteModeDirty || homepageBlurDirty || resultsCheckDirty || whatsappNumberDirty;
   const siteIsLive = settings.sitePublicMode === "live";
   const draftSiteIsLive = siteMode === "live";
 
@@ -66,6 +80,8 @@ export function AdminMarketingVisibilityPanel() {
     setSettingsKey(nextSettingsKey);
     setSiteMode(settings.sitePublicMode);
     setHomepageBlur(settings.marketingComingSoonEnabled);
+    setResultsCheckEnabled(settings.resultsCheckEnabled);
+    setWhatsappNumber(settings.whatsappContactNumber ?? "");
   }
 
   if (loading) {
@@ -84,6 +100,12 @@ export function AdminMarketingVisibilityPanel() {
       }
       if (homepageBlurDirty) {
         await updateMarketingComingSoon(homepageBlur);
+      }
+      if (resultsCheckDirty) {
+        await updateResultsCheckEnabled(resultsCheckEnabled);
+      }
+      if (whatsappNumberDirty) {
+        await updateWhatsappContactNumber(whatsappNumber);
       }
       refresh();
       syncClientCachesAfterAdminSave();
@@ -234,6 +256,64 @@ export function AdminMarketingVisibilityPanel() {
           </p>
         )}
       </GlassCard>
+
+      {isSuperAdmin && (
+        <GlassCard className="p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Search className="size-5 text-icvf-accent" aria-hidden />
+                <h3 className="text-lg font-semibold">Result checking</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Controls the public &quot;Check Your Result&quot; button on the homepage and the
+                /results/check pages. Super admin only.
+              </p>
+            </div>
+            <Badge variant="outline" className="shrink-0 border-input text-muted-foreground">
+              {resultsCheckEnabled ? "Enabled" : "Disabled"}
+            </Badge>
+          </div>
+
+          <div className="mt-6 flex items-center justify-between gap-4 rounded-xl border border-border bg-black/20 px-4 py-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="results-check-enabled">Enable public result checking</Label>
+              <p className="text-xs text-muted-foreground">
+                When off, the homepage button disappears and check-result links show as unavailable.
+              </p>
+            </div>
+            <Switch
+              id="results-check-enabled"
+              checked={resultsCheckEnabled}
+              onCheckedChange={setResultsCheckEnabled}
+              disabled={saving}
+            />
+          </div>
+        </GlassCard>
+      )}
+
+      {isSuperAdmin && (
+        <GlassCard className="p-6">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="size-5 text-icvf-accent" aria-hidden />
+            <h3 className="text-lg font-semibold">WhatsApp contact number</h3>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Number the floating WhatsApp button on the homepage opens a chat with. Include the
+            country code (e.g. +94774591161).
+          </p>
+          <div className="mt-4 grid gap-2">
+            <Label htmlFor="whatsapp-contact-number">Phone number</Label>
+            <Input
+              id="whatsapp-contact-number"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              placeholder="+94774591161"
+              disabled={saving}
+            />
+          </div>
+        </GlassCard>
+      )}
 
       {dirty && (
         <Button

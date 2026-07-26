@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
+  mapAcademicStaffMember,
   mapClassProgram,
   mapCourse,
   mergeCourseSchedules,
+  mapEbook,
   mapFaq,
   mapFeaturedRanking,
   mapHomeAbout,
@@ -15,8 +17,10 @@ import {
   mapSuccessStory,
 } from "@/lib/supabase/mappers";
 import type {
+  AcademicStaffMember,
   ClassProgram,
   Course,
+  Ebook,
   FAQ,
   FeaturedRanking,
   HomeAbout,
@@ -136,6 +140,24 @@ export function usePaperCenters() {
   return marketing?.paperCenters ?? data;
 }
 
+export function useEbooks(): Ebook[] {
+  const marketing = useMarketingData();
+  const [data, setData] = useState<Ebook[]>([]);
+
+  useEffect(() => {
+    if (marketing) return;
+
+    createClient()
+      .from("ebooks")
+      .select("*")
+      .eq("published", true)
+      .order("sort_order")
+      .then(({ data: rows }) => setData((rows ?? []).map(mapEbook)));
+  }, [marketing]);
+
+  return marketing?.ebooks ?? data;
+}
+
 
 export function useNetworkStats() {
   const marketing = useMarketingData();
@@ -190,5 +212,25 @@ export function useHomeAbout() {
   }, [marketing]);
 
   return marketing?.homeAbout ?? data;
+}
+
+
+export function useAcademicStaff() {
+  const marketing = useMarketingData();
+  const [data, setData] = useState<AcademicStaffMember[]>([]);
+
+  useEffect(() => {
+    if (marketing) return;
+
+    createClient()
+      .from("academic_staff")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("name")
+      .then(({ data: rows }) => setData((rows ?? []).map(mapAcademicStaffMember)));
+  }, [marketing]);
+
+  return marketing?.academicStaff ?? data;
 }
 

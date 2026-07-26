@@ -400,7 +400,7 @@ async function assertSignUpAuthorized(role: UserRole, studentMeta?: RegisterStud
     return;
   }
 
-  if (role === "teacher" || role === "admin" || role === "content_manager") {
+  if (role === "teacher" || role === "admin" || role === "content_manager" || role === "faculty_staff") {
     await requireAdmin();
     return;
   }
@@ -570,6 +570,63 @@ export async function requireAcademicsStaff() {
   return profile;
 }
 
+export type StaffFeatureKey =
+  | "quizzes_exams"
+  | "assignments"
+  | "attendance_students"
+  | "announcements_report_cards"
+  | "blog";
+
+/**
+ * Academics staff gate + per-teacher feature toggle. Default-allow: a
+ * teacher with no row (or an enabled row) passes; only an explicit
+ * `enabled = false` row blocks them. Admin/super_admin always bypass the
+ * per-teacher toggle entirely — this system only ever scopes individual
+ * teachers, not admins.
+ */
+export async function requireFeatureAccess(featureKey: StaffFeatureKey) {
+  const profile = await requireAcademicsStaff();
+  if (profile.role !== "teacher") return profile;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("staff_feature_permissions")
+    .select("enabled")
+    .eq("user_id", profile.id)
+    .eq("feature_key", featureKey)
+    .maybeSingle();
+
+  if (data && data.enabled === false) {
+    throw new Error("Unauthorized: this feature is not enabled for your account");
+  }
+  return profile;
+}
+
+/**
+ * Faculty portal equivalent of requireFeatureAccess. Reuses the same
+ * staff_feature_permissions table (keyed by user_id, not role) — this is a
+ * deliberate exception to "full duplication" for the faculty build: the
+ * toggle *infrastructure* is shared, the toggled *feature data* (faculty
+ * quizzes/assignments/etc.) lives in fully separate tables.
+ */
+export async function requireFacultyFeatureAccess(featureKey: StaffFeatureKey) {
+  const profile = await requireFacultyStaff();
+  if (profile.role !== "faculty_staff") return profile;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("staff_feature_permissions")
+    .select("enabled")
+    .eq("user_id", profile.id)
+    .eq("feature_key", featureKey)
+    .maybeSingle();
+
+  if (data && data.enabled === false) {
+    throw new Error("Unauthorized: this feature is not enabled for your account");
+  }
+  return profile;
+}
+
 export async function requireTrackingStaff() {
   const profile = await getSessionProfile();
   if (!profile || !["admin", "super_admin", "content_manager"].includes(profile.role)) {
@@ -684,6 +741,95 @@ export async function loginPaperCenterPortal(
   }
 }
 
+/** Faculty portal gate — allows admin/super_admin too, mirrors requireAcademicsStaff. */
+export async function requireFacultyStaff() {
+  const profile = await getSessionProfile();
+  if (!profile || !["super_admin", "admin", "faculty_staff"].includes(profile.role)) {
+    throw new Error("Unauthorized: faculty staff access required");
+  }
+  return profile;
+}
+
+async function resolveFacultyStaffLoginMatch(
+  staffUsername: string
+): Promise<{ email: string; userId: string }> {
+  if (!isAdminClientConfigured()) {
+    throw new Error("Login is temporarily unavailable. Please try again later.");
+  }
+
+  const normalizedUsername = normalizeStaffUsername(staffUsername);
+  if (!normalizedUsername || !USERNAME_PATTERN.test(normalizedUsername)) {
+    throw new Error(LOGIN_ERROR.STAFF_USERNAME_INVALID);
+  }
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("faculty_staff")
+    .select("email, staff_username, active, user_id")
+    .ilike("staff_username", normalizedUsername)
+    .maybeSingle();
+
+  if (error || !data?.email || !data.user_id) {
+    throw new Error(LOGIN_ERROR.STAFF_USERNAME_NOT_FOUND);
+  }
+
+  if (data.active === false) {
+    throw new Error("Your faculty account is deactivated. Contact an administrator.");
+  }
+
+  return { email: data.email.trim().toLowerCase(), userId: data.user_id };
+}
+
+/** Faculty portal login — username + password only. */
+export async function loginFacultyPortal(
+  staffUsername: string,
+  password: string
+): Promise<LoginActionResult> {
+  try {
+    await assertLoginRateLimit(staffUsername);
+    const { email: resolvedEmail, userId } = await resolveFacultyStaffLoginMatch(staffUsername);
+    const supabase = await createClient();
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email: resolvedEmail,
+      password,
+    });
+
+    if (error) {
+      return loginActionFailure(error);
+    }
+    if (!authData.user) {
+      return { ok: false, error: "Sign in failed" };
+    }
+
+    if (authData.user.id !== userId) {
+      await supabase.auth.signOut();
+      return { ok: false, error: "This username is linked to a different account. Contact an administrator." };
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (!profile) {
+      await supabase.auth.signOut();
+      return { ok: false, error: "Profile not found" };
+    }
+
+    const mapped = mapProfile(profile);
+    if (mapped.role !== "faculty_staff") {
+      await supabase.auth.signOut();
+      return loginActionFailure(new Error(LOGIN_ERROR.FACULTY_ONLY));
+    }
+
+    await syncProfileRoleToJwt(authData.user.id, mapped.role);
+    return { ok: true, redirectTo: "/faculty/dashboard" };
+  } catch (error) {
+    return loginActionFailure(error);
+  }
+}
+
 function normalizeStudentLoginId(studentId: string): string {
   const trimmed = studentId.trim().toUpperCase();
   if (!trimmed) return "";
@@ -786,7 +932,7 @@ export async function loginStudentPortal(
     const admin = createAdminClient();
     const { data: studentRow, error: studentError } = await admin
       .from("students")
-      .select("email, active, user_id")
+      .select("id, email, active, user_id")
       .eq("student_id", normalized)
       .maybeSingle();
 
@@ -835,6 +981,9 @@ export async function loginStudentPortal(
       await supabase.auth.signOut();
       return loginActionFailure(new Error(LOGIN_ERROR.STUDENT_ID_ONLY));
     }
+
+    const { createStudentSessionOnLogin } = await import("@/lib/actions/student-sessions");
+    await createStudentSessionOnLogin(authData.user.id, studentRow.id);
 
     return { ok: true, redirectTo: "/dashboard" };
   } catch (error) {

@@ -43,6 +43,8 @@ export function formatAccountRole(role: string): string {
       return "content team member";
     case "paper_center_staff":
       return "paper center staff";
+    case "faculty_staff":
+      return "faculty staff";
     case "student":
       return "student";
     case "parent":

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Globe, Monitor, Radio, Video } from "lucide-react";
 import { HeroFounderIslandMap } from "@/components/landing/hero-founder-island-map";
+import { HeroEbookCard } from "@/components/landing/hero-ebook-card";
 import { HeroDecor } from "@/components/landing/hero-decor";
 import { MarketingSessionActionsWithAuth } from "@/components/landing/marketing-session-actions-auth";
 import { HeroIctFeatureCards, HeroIctTopicPills } from "@/components/landing/hero-ict-features";
@@ -13,6 +14,7 @@ import {
 } from "@/components/landing/hero-mobile-highlights";
 
 import { MarketingContainer } from "@/components/landing/marketing-layout";
+import { HeroHeadlineNews } from "@/components/landing/hero-headline-news";
 import { scrollToMarketingSection } from "@/lib/marketing-scroll";
 import { resultsHighlights } from "@/lib/data/results-content";
 import { trustPills } from "@/lib/data/marketing-content";
@@ -21,6 +23,7 @@ import { useMarqueeInView } from "@/hooks/use-marquee-in-view";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import type { HeadlineNews } from "@/types";
 
 const HERO_FOUNDER_IMAGE = "/landing/hero-founder.webp";
 const heroTrustIcons = [Video, Globe, Monitor, Radio] as const;
@@ -143,7 +146,7 @@ function HeroFounderPhoto({ className, src }: { className?: string; src: string 
   );
 }
 
-export function HeroSection() {
+export function HeroSection({ headlineNews = null }: { headlineNews?: HeadlineNews | null }) {
   const { t, locale, field } = useMarketingText();
   const pathname = usePathname();
   const about = useHomeAbout();
@@ -161,6 +164,7 @@ export function HeroSection() {
       <HeroDecor />
 
       <MarketingContainer className="hero-section-main relative z-10 flex w-full min-w-0 flex-1 flex-col min-h-0 overflow-x-visible pt-2 pb-0 sm:pt-6 lg:overflow-visible lg:pt-10 lg:pb-6">
+        <HeroEbookCard />
         <div className="hero-section-grid flex w-full min-w-0 max-w-full flex-col gap-3 overflow-x-visible sm:gap-4 lg:grid lg:grid-cols-[1.02fr_0.98fr] lg:items-end lg:gap-14 lg:overflow-x-visible">
           <div className="hero-content-col relative order-1 min-w-0 w-full max-w-full shrink-0 overflow-x-visible lg:order-2 lg:overflow-x-clip">
             <p className="hero-enter hero-enter-1 hero-badge-pulse mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-icvf-navy/70 sm:mb-4 sm:text-xs sm:tracking-[0.2em]">
@@ -183,6 +187,8 @@ export function HeroSection() {
               <span className="lg:hidden">{t("hero.subtitleMobile")}</span>
               <span className="hidden lg:inline">{t("hero.subtitle")}</span>
             </p>
+
+            <HeroHeadlineNews headlineNews={headlineNews} />
 
             <div className="lg:hidden overflow-x-visible">
               <HeroMobileProofStrip />

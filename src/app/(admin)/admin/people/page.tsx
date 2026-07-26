@@ -30,6 +30,12 @@ import {
   resetPaperCenterStaffPassword,
   setPaperCenterStaffActive,
 } from "@/lib/actions/paper-center-staff";
+import {
+  addFacultyStaff,
+  deleteFacultyStaff,
+  resetFacultyStaffPassword,
+  setFacultyStaffActive,
+} from "@/lib/actions/faculty-staff";
 import { useAdminCourses } from "@/hooks/use-data";
 import { usePeopleRoster } from "@/hooks/use-people-roster";
 import { usePaperCentersList } from "@/hooks/use-exam-papers";
@@ -56,6 +62,7 @@ import type { PeopleRosterEntry, PaperCenterGrade } from "@/types";
 import { GradeCheckboxes } from "@/components/paper-centers/grade-checkboxes";
 import { formatPaperCenterGradeLabel } from "@/lib/paper-centers/grades";
 import { validateSriLankaWhatsApp, formatSriLankaWhatsAppDisplay } from "@/lib/validation/sri-lanka-phone";
+import { StaffFeaturePermissionsDialog } from "@/components/admin/staff-feature-permissions-dialog";
 import { Clapperboard, FileText, KeyRound, Loader2, Pencil, Plus, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
@@ -63,7 +70,7 @@ import { canCreateAdmins, canManageAdmins } from "@/lib/admin-access";
 import { PasswordInput } from "@/components/ui/password-input";
 import { USERNAME_PATTERN } from "@/lib/validation/register-student";
 
-type PeopleTab = "all" | "staff" | "admins" | "content" | "paperCenter";
+type PeopleTab = "all" | "staff" | "admins" | "content" | "paperCenter" | "faculty";
 
 const staffSchema = z
   .object({
@@ -157,11 +164,37 @@ const paperCenterSchema = z
     }
   });
 
+const facultyStaffSchema = z
+  .object({
+    displayName: z.string().min(2, "Name must be at least 2 characters"),
+    staffUsername: z
+      .string()
+      .min(3, "Username is required")
+      .refine((value) => USERNAME_PATTERN.test(value.trim().toLowerCase()), {
+        message: "Use 3–20 letters, numbers, or underscores",
+      }),
+    email: z.string().email("Enter a valid email"),
+    password: z.string().optional(),
+    confirmPassword: z.string().optional(),
+    courseIds: z.array(z.string()).optional(),
+  })
+  .superRefine((values, ctx) => {
+    const password = values.password?.trim() ?? "";
+    const confirm = values.confirmPassword?.trim() ?? "";
+    if (password && password.length < 8) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Use at least 8 characters", path: ["password"] });
+    }
+    if (password !== confirm) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Passwords do not match", path: ["confirmPassword"] });
+    }
+  });
+
 function roleBadge(role: PeopleRosterEntry["role"]) {
   if (role === "super_admin") return <Badge className="bg-amber-700">Super Admin</Badge>;
   if (role === "admin") return <Badge className="bg-icvf-navy">Admin</Badge>;
   if (role === "content_manager") return <Badge variant="secondary">Content</Badge>;
   if (role === "paper_center_staff") return <Badge variant="secondary">Paper Center</Badge>;
+  if (role === "faculty_staff") return <Badge className="bg-purple-700">Faculty</Badge>;
   return <Badge className="bg-icvf-accent">Staff</Badge>;
 }
 
@@ -216,6 +249,7 @@ function PeoplePageContent() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
   const [paperCenterOpen, setPaperCenterOpen] = useState(false);
+  const [facultyOpen, setFacultyOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<PeopleRosterEntry | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<PeopleRosterEntry | null>(null);
@@ -263,6 +297,18 @@ function PeoplePageContent() {
     },
   });
 
+  const facultyForm = useForm<z.infer<typeof facultyStaffSchema>>({
+    resolver: zodResolver(facultyStaffSchema),
+    defaultValues: {
+      displayName: "",
+      staffUsername: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      courseIds: [],
+    },
+  });
+
   const selectedPaperCenterId = paperCenterForm.watch("paperCenterId");
   const selectedPaperCenterGrades = useMemo(() => {
     const center = paperCenters.find((item) => item.id === selectedPaperCenterId);
@@ -278,6 +324,7 @@ function PeoplePageContent() {
     if (tab === "admins") return data.filter((e) => e.role === "admin" || e.role === "super_admin");
     if (tab === "content") return data.filter((e) => e.role === "content_manager");
     if (tab === "paperCenter") return data.filter((e) => e.role === "paper_center_staff");
+    if (tab === "faculty") return data.filter((e) => e.role === "faculty_staff");
     return data;
   }, [data, tab]);
 
@@ -428,6 +475,35 @@ function PeoplePageContent() {
     }
   };
 
+  const handleAddFaculty = async (values: z.infer<typeof facultyStaffSchema>) => {
+    setSubmitting(true);
+    try {
+      const result = await addFacultyStaff({
+        displayName: values.displayName,
+        staffUsername: values.staffUsername,
+        email: values.email,
+        subjects: [],
+        courseIds: values.courseIds ?? [],
+        password: values.password?.trim() || undefined,
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      refresh();
+      setFacultyOpen(false);
+      facultyForm.reset();
+      toast.success("Faculty staff account created");
+      if (result.tempPassword) {
+        toast.info(`Temporary password: ${result.tempPassword}`, { duration: 12000 });
+      }
+    } catch (e) {
+      toast.error(getActionErrorMessage(e, "Failed to add faculty staff"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const performDelete = async (entry: PeopleRosterEntry) => {
     if (entry.role === "teacher") await deleteStaffMember(entry.id);
     else if (entry.role === "admin") await deleteAdmin(entry.userId);
@@ -438,6 +514,8 @@ function PeoplePageContent() {
       await deleteContentManager(entry.id);
     } else if (entry.role === "paper_center_staff") {
       await deletePaperCenterStaff(entry.id);
+    } else if (entry.role === "faculty_staff") {
+      await deleteFacultyStaff(entry.id);
     }
     refresh();
     toast.success("Account removed");
@@ -480,6 +558,8 @@ function PeoplePageContent() {
         await setContentManagerActive(entry.id, !entry.active);
       } else if (entry.role === "paper_center_staff") {
         await setPaperCenterStaffActive(entry.id, !entry.active);
+      } else if (entry.role === "faculty_staff") {
+        await setFacultyStaffActive(entry.id, !entry.active);
       } else {
         return;
       }
@@ -515,6 +595,12 @@ function PeoplePageContent() {
         }
       } else if (entry.role === "paper_center_staff") {
         const result = await resetPaperCenterStaffPassword(entry.id);
+        toast.success("Password reset");
+        if (result.tempPassword) {
+          toast.info(`New password for ${result.email}: ${result.tempPassword}`, { duration: 12000 });
+        }
+      } else if (entry.role === "faculty_staff") {
+        const result = await resetFacultyStaffPassword(entry.id);
         toast.success("Password reset");
         if (result.tempPassword) {
           toast.info(`New password for ${result.email}: ${result.tempPassword}`, { duration: 12000 });
@@ -578,6 +664,13 @@ function PeoplePageContent() {
         description: "Add staff members to grant portal access",
       };
     }
+    if (tab === "faculty") {
+      return {
+        icon: Users,
+        title: "No faculty staff yet",
+        description: "Add faculty staff to grant access to the Faculty Portal",
+      };
+    }
     return {
       icon: Users,
       title: "No accounts yet",
@@ -606,6 +699,13 @@ function PeoplePageContent() {
       return (
         <Button onClick={() => setPaperCenterOpen(true)}>
           <Plus className="mr-2 size-4" /> Add Paper Center Staff
+        </Button>
+      );
+    }
+    if (tab === "faculty") {
+      return (
+        <Button onClick={() => setFacultyOpen(true)}>
+          <Plus className="mr-2 size-4" /> Add Faculty Staff
         </Button>
       );
     }
@@ -706,6 +806,9 @@ function PeoplePageContent() {
                 <ShieldCheck className="mr-1 size-3.5" /> Promote
               </Button>
             )}
+            {(row.role === "teacher" || row.role === "faculty_staff") && manageAdmins && (
+              <StaffFeaturePermissionsDialog userId={row.userId} displayName={row.displayName} />
+            )}
             {row.role === "admin" && manageAdmins && (
               <Button type="button" variant="outline" size="sm" onClick={() => void handleDemote(row)}>
                 Demote
@@ -714,7 +817,8 @@ function PeoplePageContent() {
             {(row.role === "teacher" ||
               row.role === "admin" ||
               row.role === "content_manager" ||
-              row.role === "paper_center_staff") && (
+              row.role === "paper_center_staff" ||
+              row.role === "faculty_staff") && (
               <Button type="button" variant="outline" size="sm" onClick={() => void handleResetPassword(row)}>
                 <KeyRound className="mr-1 size-3.5" /> Reset
               </Button>
@@ -748,6 +852,7 @@ function PeoplePageContent() {
           <TabsTrigger value="staff">Staff</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="content">Content Team</TabsTrigger>
+          <TabsTrigger value="faculty">Faculty</TabsTrigger>
           {manageAdmins && <TabsTrigger value="paperCenter">Paper Center</TabsTrigger>}
         </TabsList>
 
@@ -1069,6 +1174,69 @@ function PeoplePageContent() {
               )} />
               <Button type="submit" disabled={submitting}>
                 {submitting ? <><Loader2 className="mr-2 size-4 animate-spin" /> Creating…</> : "Create Account"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={facultyOpen} onOpenChange={setFacultyOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Faculty Staff</DialogTitle>
+          </DialogHeader>
+          <Form {...facultyForm}>
+            <form onSubmit={facultyForm.handleSubmit(handleAddFaculty)} className="flex flex-col gap-4">
+              <FormField control={facultyForm.control} name="displayName" render={({ field }) => (
+                <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={facultyForm.control} name="staffUsername" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl><Input {...field} placeholder="e.g. faculty_jsmith" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={facultyForm.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl><Input type="email" {...field} /></FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Must be unique. Do not use an existing admin login email.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={facultyForm.control} name="password" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Account password</FormLabel>
+                  <FormControl>
+                    <PasswordInput autoComplete="new-password" {...field} />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">Leave blank to auto-generate a temporary password.</p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={facultyForm.control} name="confirmPassword" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput autoComplete="new-password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={facultyForm.control} name="courseIds" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assigned courses</FormLabel>
+                  <FormControl>
+                    <CourseCheckboxes value={field.value ?? []} onChange={field.onChange} courses={courses} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <Button type="submit" disabled={submitting}>
+                {submitting ? <><Loader2 className="mr-2 size-4 animate-spin" /> Creating…</> : "Create Faculty Staff"}
               </Button>
             </form>
           </Form>

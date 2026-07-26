@@ -5,7 +5,8 @@ export type UserRole =
   | "admin"
   | "super_admin"
   | "content_manager"
-  | "paper_center_staff";
+  | "paper_center_staff"
+  | "faculty_staff";
 
 export type CourseLevel = "OL" | "AL" | "University" | "Professional";
 
@@ -70,6 +71,21 @@ export interface Student {
   registrationReviewedBy?: string | null;
 }
 
+export type StudentSessionRevokedReason = "new_login" | "manual_logout" | "admin_force" | "expired";
+
+export interface StudentSession {
+  id: string;
+  userId: string;
+  studentRowId?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  deviceLabel?: string;
+  createdAt: string;
+  lastSeenAt: string;
+  revokedAt?: string | null;
+  revokedReason?: StudentSessionRevokedReason | null;
+}
+
 export interface StudentEnrollmentDetail {
   enrollmentId: string;
   courseId: string;
@@ -121,12 +137,25 @@ export interface Teacher {
   active: boolean;
 }
 
+export interface FacultyStaffAccount {
+  id: string;
+  userId: string;
+  displayName: string;
+  email: string;
+  staffUsername: string;
+  subjects: string[];
+  courseIds: string[];
+  active: boolean;
+  createdAt: string;
+}
+
 export type PeopleRosterRole =
   | "teacher"
   | "admin"
   | "super_admin"
   | "content_manager"
-  | "paper_center_staff";
+  | "paper_center_staff"
+  | "faculty_staff";
 
 export type PassPaperLayout = "grid" | "list" | "folder";
 export type PassPaperMedium = "sinhala" | "tamil" | "english";
@@ -272,7 +301,7 @@ export interface PeopleRosterEntry {
   paperCenterStaffRole?: PaperCenterStaffRole;
   whatsapp?: string;
   paperCenterGrades?: PaperCenterGrade[];
-  sourceTable: "teachers" | "profiles" | "content_managers" | "paper_center_staff";
+  sourceTable: "teachers" | "profiles" | "content_managers" | "paper_center_staff" | "faculty_staff";
 }
 
 export interface Course {
@@ -304,6 +333,7 @@ export interface Course {
 }
 
 export type ExamStatus = "scheduled" | "grading" | "published";
+export type ExamWrittenStatus = "submitted" | "reviewed" | "graded";
 
 export interface Exam {
   id: string;
@@ -324,6 +354,37 @@ export interface Exam {
   /** Populated per-context: staff lists get counts. */
   marksEnteredCount?: number;
   studentCount?: number;
+  /** Online exam portal (Part 1 MCQ + Part 2 written) fields. */
+  quizId?: string | null;
+  isOnlineExam: boolean;
+  /** Draft/publish switch for online exams only; ignored for batch exams. */
+  published: boolean;
+  /** Display-only reference PDF of the original MCQ paper; grading uses quiz_questions, not this. */
+  mcqQuestionPaperPath?: string | null;
+  mcqQuestionPaperName?: string | null;
+  writtenEnabled: boolean;
+  writtenQuestionPaperPath?: string | null;
+  writtenQuestionPaperName?: string | null;
+  writtenSubmissionDeadline?: string | null;
+  /** Populated per-context: the student portal list gets each student's own status. */
+  myQuizAttemptCount?: number;
+  myWrittenSubmission?: ExamWrittenSubmission | null;
+}
+
+export interface ExamWrittenSubmission {
+  id: string;
+  examId: string;
+  studentId: string;
+  studentName?: string;
+  studentCode?: string;
+  filePath: string;
+  fileName: string;
+  note: string;
+  status: ExamWrittenStatus;
+  marks?: number | null;
+  feedback?: string | null;
+  reviewedAt?: string | null;
+  submittedAt: string;
 }
 
 export interface Result {
@@ -683,6 +744,24 @@ export interface ResultCheckLink {
   updatedAt: string;
 }
 
+export interface Ebook {
+  id: string;
+  title: string;
+  subtitle: string;
+  coverImageUrl: string;
+  badgeLabel: string;
+  footerLabel: string;
+  accentColor: string;
+  previewUrl: string | null;
+  driveLink: string | null;
+  downloadCount: number;
+  published: boolean;
+  sortOrder: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ContactInquiry {
   id: string;
   name: string;
@@ -733,6 +812,19 @@ export interface IctfTeamMember {
   dateOfBirth: string;
   lastBirthdayWishSent: string;
   isLead: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+
+export interface AcademicStaffMember {
+  id: string;
+  name: string;
+  role: string;
+  affiliate: string;
+  bio: string;
+  photoUrl: string;
+  isActive: boolean;
   sortOrder: number;
   createdAt: string;
 }
@@ -851,6 +943,20 @@ export interface MarketingAnnouncement {
   updatedAt: string;
 }
 
+export interface HeadlineNews {
+  id: string;
+  tagLabel: string;
+  title: string;
+  caption: string;
+  imageUrl: string;
+  linkLabel: string;
+  linkUrl: string;
+  priority: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SiteStats {
   students: number;
   courses: number;
@@ -888,6 +994,7 @@ export interface PlatformSettings {
   sitePublicMode: SitePublicMode;
   brandLogo: BrandLogoSettings;
   resultsCheckEnabled: boolean;
+  whatsappContactNumber?: string | null;
   updatedAt: string;
 }
 

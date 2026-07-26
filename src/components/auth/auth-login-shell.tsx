@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdminLoginForm } from "@/components/auth/admin-login-form";
 import { AuthLoginBrandAside } from "@/components/auth/auth-login-brand-aside";
 import { ContentTeamLoginForm } from "@/components/auth/content-team-login-form";
+import { FacultyLoginForm } from "@/components/auth/faculty-login-form";
 import { PaperCenterLoginForm } from "@/components/auth/paper-center-login-form";
 import { StaffLoginForm } from "@/components/auth/staff-login-form";
 import { StudentLoginForm } from "@/components/auth/student-login-form";
@@ -14,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BRAND } from "@/lib/constants";
 import { useMarketingText } from "@/hooks/use-marketing-text";
 
-type AuthLoginVariant = "student" | "staff" | "admin" | "socialTracking" | "paperCenter";
+type AuthLoginVariant = "student" | "staff" | "admin" | "socialTracking" | "paperCenter" | "facultyStaff";
 
 function LoginFormFallback() {
   return (
@@ -50,8 +51,14 @@ function LoginFormByVariant({
       return <ContentTeamLoginForm />;
     case "paperCenter":
       return <PaperCenterLoginForm centerName={centerName} centerSlug={centerSlug} />;
+    case "facultyStaff":
+      return <FacultyLoginForm />;
     default:
-      return <StudentLoginForm />;
+      return (
+        <Suspense fallback={<LoginFormFallback />}>
+          <StudentLoginForm />
+        </Suspense>
+      );
   }
 }
 
