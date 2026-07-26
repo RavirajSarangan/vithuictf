@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { Download, ExternalLink, FileWarning } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MarketingCtaBand, MarketingSection } from "@/components/landing/marketing-layout";
-import { MotionStagger, MotionStaggerItem } from "@/components/shared/motion-section";
 import { useEbooks } from "@/hooks/use-data";
 import { incrementEbookDownload } from "@/lib/actions/ebooks";
 import {
@@ -14,7 +11,7 @@ import {
   toGoogleDrivePreviewUrl,
 } from "@/lib/google-drive-share-link";
 
-export function EbookPromoSection() {
+export function HeroEbookCard() {
   const ebooks = useEbooks();
   const ebook = ebooks[0];
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -46,52 +43,34 @@ export function EbookPromoSection() {
   };
 
   return (
-    <MarketingSection id="ebook" tone="light">
-      <MotionStagger stagger={0.12}>
-        <MotionStaggerItem>
-          <MarketingCtaBand className="text-left">
-            <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
-              <div>
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-icvf-navy-dark"
-                  style={{ backgroundColor: ebook.accentColor }}
-                >
-                  <Download className="size-3.5" aria-hidden />
-                  {ebook.badgeLabel}
-                </span>
-                <h3 className="mt-4 text-2xl font-bold text-white sm:text-3xl">{ebook.title}</h3>
-                {ebook.subtitle ? (
-                  <p className="mt-3 max-w-xl text-white/70">{ebook.subtitle}</p>
-                ) : null}
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Button variant="icvf" size="lg" onClick={handleDownload} disabled={!ebook.driveLink}>
-                    <Download className="size-4" aria-hidden />
-                    {ebook.badgeLabel} {ebook.footerLabel}
-                  </Button>
-                  {ebook.previewUrl ? (
-                    <Button
-                      variant="icvf-outline"
-                      size="lg"
-                      onClick={() => setPreviewOpen(true)}
-                    >
-                      Preview
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
+    <>
+      <div className="hero-ebook-card" style={{ ["--ebook-accent" as string]: ebook.accentColor }}>
+        <button
+          type="button"
+          className="hero-ebook-badge"
+          onClick={handleDownload}
+          disabled={!ebook.driveLink}
+          aria-label={`${ebook.badgeLabel} ${ebook.title}`}
+        >
+          <Download className="size-3" aria-hidden />
+          {ebook.badgeLabel}
+        </button>
 
-              <div className="mx-auto w-40 shrink-0 sm:w-48">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={ebook.coverImageUrl}
-                  alt={ebook.title}
-                  className="w-full rounded-xl shadow-2xl ring-1 ring-white/10"
-                />
-              </div>
-            </div>
-          </MarketingCtaBand>
-        </MotionStaggerItem>
-      </MotionStagger>
+        <div className="hero-ebook-panel">
+          <button
+            type="button"
+            className="hero-ebook-cover-wrap"
+            onClick={() => ebook.previewUrl && setPreviewOpen(true)}
+            disabled={!ebook.previewUrl}
+            aria-label={`Preview ${ebook.title}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={ebook.coverImageUrl} alt={ebook.title} className="hero-ebook-cover" />
+          </button>
+
+          <p className="hero-ebook-footer">{ebook.footerLabel}</p>
+        </div>
+      </div>
 
       {ebook.previewUrl ? (
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
@@ -129,6 +108,6 @@ export function EbookPromoSection() {
           </DialogContent>
         </Dialog>
       ) : null}
-    </MarketingSection>
+    </>
   );
 }
