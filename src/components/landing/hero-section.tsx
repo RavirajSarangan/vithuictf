@@ -4,7 +4,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Globe, Monitor, Radio, Video } from "lucide-react";
 import { HeroFounderIslandMap } from "@/components/landing/hero-founder-island-map";
-import { HeroEbookCard } from "@/components/landing/hero-ebook-card";
 import { HeroDecor } from "@/components/landing/hero-decor";
 import { MarketingSessionActionsWithAuth } from "@/components/landing/marketing-session-actions-auth";
 import { HeroIctFeatureCards, HeroIctTopicPills } from "@/components/landing/hero-ict-features";
@@ -164,7 +163,6 @@ export function HeroSection({ headlineNews = null }: { headlineNews?: HeadlineNe
       <HeroDecor />
 
       <MarketingContainer className="hero-section-main relative z-10 flex w-full min-w-0 flex-1 flex-col min-h-0 overflow-x-visible pt-2 pb-0 sm:pt-6 lg:overflow-visible lg:pt-10 lg:pb-6">
-        <HeroEbookCard />
         <div className="hero-section-grid flex w-full min-w-0 max-w-full flex-col gap-3 overflow-x-visible sm:gap-4 lg:grid lg:grid-cols-[1.02fr_0.98fr] lg:items-end lg:gap-14 lg:overflow-x-visible">
           <div className="hero-content-col relative order-1 min-w-0 w-full max-w-full shrink-0 overflow-x-visible lg:order-2 lg:overflow-x-clip">
             <p className="hero-enter hero-enter-1 hero-badge-pulse mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-icvf-navy/70 sm:mb-4 sm:text-xs sm:tracking-[0.2em]">

@@ -26,6 +26,10 @@ const ResultsShowcaseSection = dynamic(
   () => import("@/components/landing/results-showcase-section").then((m) => m.ResultsShowcaseSection),
   { loading: sectionLoading }
 );
+const EbookPromoSection = dynamic(
+  () => import("@/components/landing/ebook-promo-section").then((m) => m.EbookPromoSection),
+  { loading: sectionLoading }
+);
 const IslandwidePresenceSection = dynamic(
   () => import("@/components/landing/islandwide-presence-section").then((m) => m.IslandwidePresenceSection),
   { loading: sectionLoading }
@@ -83,6 +87,9 @@ export function MarketingHomeSections() {
     <>
       <LazySection>
         <ResultsShowcaseSection />
+      </LazySection>
+      <LazySection>
+        <EbookPromoSection />
       </LazySection>
       <LazySection>
         <IslandwidePresenceSection />
