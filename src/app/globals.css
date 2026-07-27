@@ -880,10 +880,10 @@
   position: absolute;
   top: -0.5rem;
   right: 0.5rem;
-  /* .hero-content-col sits at z-index: 20 — this must clear it so the hero
-     title text (which shares this stacking context) never intercepts clicks
-     on the card. */
-  z-index: 25;
+  /* .hero-content-col sits at z-index: 20 normally, but bumps to 25 below
+     1024px (see the max-width: 1023px rule further down) — must clear both
+     so the hero title text never intercepts clicks/taps on the card. */
+  z-index: 30;
   display: flex;
   width: clamp(4.25rem, 18vw, 6.5rem);
   flex-direction: column;
