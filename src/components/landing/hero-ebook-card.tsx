@@ -74,12 +74,12 @@ export function HeroEbookCard() {
 
       {ebook.previewUrl ? (
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="max-w-3xl gap-3 p-4 sm:p-6">
+          <DialogContent className="max-w-2xl gap-3 p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>{ebook.title}</DialogTitle>
             </DialogHeader>
             {extractGoogleDriveFileId(ebook.previewUrl) ? (
-              <div className="aspect-4/5 w-full overflow-hidden rounded-xl border border-border bg-muted/30 sm:aspect-video">
+              <div className="h-[75vh] max-h-168 w-full overflow-hidden rounded-xl border border-border bg-muted/30">
                 <iframe
                   src={toGoogleDrivePreviewUrl(ebook.previewUrl)}
                   title={`${ebook.title} preview`}
