@@ -1012,6 +1012,17 @@
 }
 
 @media (min-width: 1024px) {
+  /* Only safe on the left from here up — below this breakpoint the hero
+     grid is single-column and the title text spans full width, so there's
+     no left-side gap to sit in without overlapping it (see the two-column
+     lg:grid-cols split on .hero-section-grid). */
+  .hero-ebook-card {
+    left: 0.5rem;
+    right: auto;
+  }
+}
+
+@media (min-width: 1024px) {
   .hero-founder-stage .hero-founder-map-backdrop {
     inset: -6% -8% 0 -58%;
   }
