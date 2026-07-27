@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Download, ExternalLink, FileWarning } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEbooks } from "@/hooks/use-data";
 import { incrementEbookDownload } from "@/lib/actions/ebooks";
@@ -78,6 +79,16 @@ export function HeroEbookCard() {
             <DialogHeader>
               <DialogTitle>{ebook.title}</DialogTitle>
             </DialogHeader>
+            <Button
+              variant="icvf"
+              size="lg"
+              className="w-fit"
+              onClick={handleDownload}
+              disabled={!ebook.driveLink}
+            >
+              <Download className="size-4" aria-hidden />
+              {ebook.badgeLabel} {ebook.footerLabel}
+            </Button>
             {extractGoogleDriveFileId(ebook.previewUrl) ? (
               <div className="h-[75vh] max-h-168 w-full overflow-hidden rounded-xl border border-border bg-muted/30">
                 <iframe
