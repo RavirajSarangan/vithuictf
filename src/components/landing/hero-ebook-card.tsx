@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Download, ExternalLink, FileWarning } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEbooks } from "@/hooks/use-data";
 import { incrementEbookDownload } from "@/lib/actions/ebooks";
 import {
@@ -16,6 +18,7 @@ export function HeroEbookCard() {
   const ebooks = useEbooks();
   const ebook = ebooks[0];
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [coverLoaded, setCoverLoaded] = useState(false);
 
   if (!ebook || !ebook.coverImageUrl) return null;
 
@@ -45,31 +48,41 @@ export function HeroEbookCard() {
 
   return (
     <>
-      <div className="hero-ebook-card" style={{ ["--ebook-accent" as string]: ebook.accentColor }}>
+      <div className="hero-ebook-card">
         <button
           type="button"
-          className="hero-ebook-badge"
           onClick={handleDownload}
           disabled={!ebook.driveLink}
           aria-label={`${ebook.badgeLabel} ${ebook.title}`}
+          className="hero-ebook-badge-pulse relative z-2 -mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.6rem] font-bold tracking-wide text-icvf-navy-dark uppercase shadow-md transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ backgroundColor: ebook.accentColor, ["--ebook-accent" as string]: ebook.accentColor }}
         >
           <Download className="size-3" aria-hidden />
           {ebook.badgeLabel}
         </button>
 
-        <div className="hero-ebook-panel">
+        <div className="relative z-1 flex w-full flex-col items-center gap-1.5 overflow-hidden rounded-2xl border border-icvf-accent/20 bg-gradient-to-b from-icvf-navy via-icvf-navy-dark to-[#0a1628] p-2 shadow-xl">
           <button
             type="button"
-            className="hero-ebook-cover-wrap"
             onClick={() => ebook.previewUrl && setPreviewOpen(true)}
             disabled={!ebook.previewUrl}
             aria-label={`Preview ${ebook.title}`}
+            className="relative block aspect-3/4 w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 disabled:cursor-default"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ebook.coverImageUrl} alt={ebook.title} className="hero-ebook-cover" />
+            {!coverLoaded ? <Skeleton className="absolute inset-0 rounded-lg" /> : null}
+            <Image
+              src={ebook.coverImageUrl}
+              alt={ebook.title}
+              fill
+              sizes="112px"
+              className="object-cover"
+              onLoad={() => setCoverLoaded(true)}
+            />
           </button>
 
-          <p className="hero-ebook-footer">{ebook.footerLabel}</p>
+          <p className="text-center text-[0.55rem] font-bold tracking-[0.14em] text-white/85 uppercase">
+            {ebook.footerLabel}
+          </p>
         </div>
       </div>
 

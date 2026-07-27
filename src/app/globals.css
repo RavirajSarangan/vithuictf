@@ -912,82 +912,11 @@
   }
 }
 
-.hero-ebook-badge {
-  position: relative;
-  z-index: 2;
-  margin-bottom: -0.5rem;
-  display: inline-flex;
-  cursor: pointer;
-  align-items: center;
-  gap: 0.25rem;
-  border: none;
-  border-radius: 999px;
-  background: var(--ebook-accent, #f5a623);
-  padding: 0.25rem 0.6rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+/* Animation-only hook — the badge's shape/color/layout are Tailwind utility
+   classes in hero-ebook-card.tsx; this just wires up the pulse keyframe
+   (which reads --ebook-accent, set inline on the button per-entry). */
+.hero-ebook-badge-pulse {
   animation: hero-ebook-badge-pulse 2.4s ease-in-out infinite;
-  text-transform: uppercase;
-  color: var(--icvf-navy-dark, #1c2547);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s ease;
-}
-
-.hero-ebook-badge:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.hero-ebook-badge:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.hero-ebook-panel {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  border-radius: 1rem;
-  background: linear-gradient(180deg, #16233f 0%, #0a1628 100%);
-  padding: 0.6rem 0.45rem 0.5rem;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
-}
-
-.hero-ebook-cover-wrap {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  overflow: hidden;
-  border-radius: 0.6rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.hero-ebook-cover-wrap:disabled {
-  cursor: default;
-}
-
-.hero-ebook-cover {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.hero-ebook-footer {
-  margin: 0;
-  font-size: 0.55rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  text-align: center;
 }
 
 @media (min-width: 640px) {
@@ -1186,7 +1115,7 @@
   .hero-trust-marquee,
   .hero-learning-chips-marquee,
   .hero-ebook-card,
-  .hero-ebook-badge {
+  .hero-ebook-badge-pulse {
     animation: none;
   }
 
