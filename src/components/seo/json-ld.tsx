@@ -1,5 +1,6 @@
 import { BRAND } from "@/lib/constants";
 import type { MarketingLocale } from "@/contexts/marketing-language-context";
+import { MARKETING_SITE_NAV } from "@/lib/marketing-nav";
 import { localizedPath } from "@/lib/seo/metadata";
 import { DEFAULT_OG_IMAGE, FOUNDER, ORG_GEO, SITE_URL, absoluteUrl, socialSameAs } from "@/lib/seo/site";
 
@@ -104,6 +105,36 @@ export function WebSiteJsonLd({ locale = "en" }: { locale?: MarketingLocale }) {
     inLanguage: ["en-LK", "ta-LK", "si-LK"],
     isAccessibleForFree: true,
     about: { "@id": `${SITE_URL}/#organization` },
+  };
+  return <JsonLdScript data={data} />;
+}
+
+/**
+ * Declares the site's primary navigation as SiteNavigationElement entries.
+ *
+ * Google has never documented this as a sitelinks input — sitelinks are chosen
+ * algorithmically from internal linking and click behaviour, and the nav links in
+ * `MARKETING_SITE_NAV` are what actually move that needle. This markup is a cheap
+ * secondary signal for Bing and AI answer engines, which do read it.
+ *
+ * Deliberately locale-free: the rendered nav links unprefixed paths on every
+ * locale, and several destinations (/courses, /past-papers, /ictf-team) are
+ * English-only, so a localized variant here would emit URLs that 404.
+ */
+export function SiteNavigationJsonLd() {
+  const data: JsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${SITE_URL}/#sitenavigation`,
+    name: `${BRAND.name} site navigation`,
+    numberOfItems: MARKETING_SITE_NAV.length,
+    itemListElement: MARKETING_SITE_NAV.map((item, index) => ({
+      "@type": "SiteNavigationElement",
+      position: index + 1,
+      name: item.name,
+      description: item.description,
+      url: absoluteUrl(item.path),
+    })),
   };
   return <JsonLdScript data={data} />;
 }

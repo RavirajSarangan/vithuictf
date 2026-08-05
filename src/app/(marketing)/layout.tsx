@@ -5,6 +5,7 @@ import { MarketingHeader } from "@/components/landing/marketing-header";
 import { MarketingHashSync } from "@/components/landing/marketing-hash-sync";
 import { MarketingAnnouncementPopup } from "@/components/landing/marketing-announcement-popup";
 import { IcvfSiteCursorLazy } from "@/components/shared/icvf-site-cursor-lazy";
+import { SiteNavigationJsonLd } from "@/components/seo/json-ld";
 import { MarketingLanguageProvider } from "@/contexts/marketing-language-context";
 import { getActiveMarketingAnnouncement } from "@/lib/marketing-data";
 import { getMarketingLocaleFromCookies } from "@/lib/seo/marketing-locale-server";
@@ -21,6 +22,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
     <MarketingLanguageProvider initialLocale={initialLocale}>
       <div className="light min-h-screen min-h-[100dvh] overflow-x-hidden bg-marketing-page text-icvf-text-dark">
         <HtmlLangSync />
+        <SiteNavigationJsonLd />
         <MarketingBrandVariables />
         <MarketingHashSync />
         <IcvfSiteCursorLazy />

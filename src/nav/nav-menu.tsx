@@ -17,6 +17,7 @@ import {
   type NavItemType,
 } from "@/components/ui/navigation-menu";
 import { useMarketingText } from "@/hooks/use-marketing-text";
+import { MARKETING_NAV_PATHS } from "@/lib/marketing-nav";
 import { cn } from "@/lib/utils";
 
 const programsTriggerClass =
@@ -45,38 +46,9 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
   const blogActive = pathname === "/blog" || pathname.startsWith("/blog/");
   const passPapersActive = pathname === "/past-papers" || pathname.startsWith("/past-papers/");
   const ictfTeamActive = pathname === "/ictf-team" || pathname.startsWith("/ictf-team/");
+  const coursesActive = pathname === "/courses" || pathname.startsWith("/courses/");
 
-  const programLinks = useMemo<NavItemType[]>(
-    () => [
-      {
-        title: "O/L ICT",
-        href: "/programs/ol-ict",
-        description: t("hero.liveZoom"),
-        icon: BookOpen,
-      },
-      {
-        title: "A/L ICT",
-        href: "/programs/al-ict",
-        description: t("nav.institute"),
-        icon: GraduationCap,
-      },
-      {
-        title: "Online Zoom",
-        href: "/programs/online-zoom",
-        description: t("hero.lmsPortal"),
-        icon: Video,
-      },
-      {
-        title: t("centers.paperCenters"),
-        href: "/network/paper-centers",
-        description: t("centers.badge"),
-        icon: MapPin,
-        badge: t("marketing.comingSoon.title"),
-        disabled: true,
-      },
-    ],
-    [t]
-  );
+  const programLinks = useMarketingProgramLinks();
 
   return (
     <NavigationMenu viewport={false} {...props}>
@@ -105,7 +77,19 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
             <Link
-              href="/ictf-team"
+              href={MARKETING_NAV_PATHS.courses}
+              className={cn(navLinkClass, coursesActive && "font-semibold text-white")}
+              aria-current={coursesActive ? "page" : undefined}
+            >
+              {t("nav.courses")}
+            </Link>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <NavigationMenuLink asChild>
+            <Link
+              href={MARKETING_NAV_PATHS.team}
               className={cn(navLinkClass, ictfTeamActive && "font-semibold text-white")}
               aria-current={ictfTeamActive ? "page" : undefined}
             >
@@ -117,7 +101,7 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
             <Link
-              href="/past-papers"
+              href={MARKETING_NAV_PATHS.pastPapers}
               className={cn(
                 navLinkClass,
                 "inline-flex items-center gap-1.5",
@@ -135,7 +119,7 @@ export function NavMenu(props: ComponentProps<typeof NavigationMenu>) {
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
             <Link
-              href="/blog"
+              href={MARKETING_NAV_PATHS.blog}
               className={cn(navLinkClass, blogActive && "text-white")}
               aria-current={blogActive ? "page" : undefined}
             >
@@ -173,29 +157,28 @@ export function useMarketingProgramLinks() {
     () => [
       {
         title: "O/L ICT",
-        href: "/programs/ol-ict",
+        href: MARKETING_NAV_PATHS.olIct,
         description: t("hero.liveZoom"),
         icon: BookOpen,
       },
       {
         title: "A/L ICT",
-        href: "/programs/al-ict",
+        href: MARKETING_NAV_PATHS.alIct,
         description: t("nav.institute"),
         icon: GraduationCap,
       },
       {
         title: "Online Zoom",
-        href: "/programs/online-zoom",
+        href: MARKETING_NAV_PATHS.onlineZoom,
         description: t("hero.lmsPortal"),
         icon: Video,
       },
       {
+        // Live, indexed page — must stay a real anchor so Googlebot can follow it.
         title: t("centers.paperCenters"),
-        href: "/network/paper-centers",
+        href: MARKETING_NAV_PATHS.paperCenters,
         description: t("centers.badge"),
         icon: MapPin,
-        badge: t("marketing.comingSoon.title"),
-        disabled: true,
       },
     ],
     [t]

@@ -8,7 +8,7 @@ import { buildPassPaperUrl } from "@/lib/pass-papers-utils";
 const LOCALES = ["", "/ta", "/si"] as const;
 
 /** Paths that exist in English only — no /ta or /si alternates in sitemap. */
-const ENGLISH_ONLY_PATHS = new Set(["/blog", "/courses", "/past-papers"]);
+const ENGLISH_ONLY_PATHS = new Set(["/blog", "/courses", "/past-papers", "/ictf-team"]);
 
 function withLocales(path: string): string[] {
   if (ENGLISH_ONLY_PATHS.has(path)) return [path];
@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/blog",
     "/courses",
     "/past-papers",
+    "/ictf-team",
     "/network/paper-centers",
     "/about/founder",
     ...PROGRAM_PAGES.map((p) => p.path),

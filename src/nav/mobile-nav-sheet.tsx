@@ -20,6 +20,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useMarketingText } from "@/hooks/use-marketing-text";
+import { MARKETING_NAV_PATHS } from "@/lib/marketing-nav";
 import { cn } from "@/lib/utils";
 import { useMarketingProgramLinks } from "@/nav/nav-menu";
 
@@ -102,7 +103,19 @@ export function MobileNavSheet({
               {t("nav.about")}
             </MarketingSectionLink>
             <Link
-              href="/ictf-team"
+              href={MARKETING_NAV_PATHS.courses}
+              onClick={close}
+              className={cn(
+                mobileNavLinkClass,
+                (pathname === "/courses" || pathname.startsWith("/courses/")) &&
+                  "font-semibold text-icvf-navy-dark"
+              )}
+              aria-current={pathname.startsWith("/courses") ? "page" : undefined}
+            >
+              {t("nav.courses")}
+            </Link>
+            <Link
+              href={MARKETING_NAV_PATHS.team}
               onClick={close}
               className={cn(
                 mobileNavLinkClass,
@@ -114,7 +127,7 @@ export function MobileNavSheet({
               ICTF Team
             </Link>
             <Link
-              href="/past-papers"
+              href={MARKETING_NAV_PATHS.pastPapers}
               onClick={close}
               className={cn(
                 mobileNavLinkClass,
@@ -129,7 +142,7 @@ export function MobileNavSheet({
               <NavFreeDownloadBadge />
             </Link>
             <Link
-              href="/blog"
+              href={MARKETING_NAV_PATHS.blog}
               onClick={close}
               className={cn(
                 mobileNavLinkClass,

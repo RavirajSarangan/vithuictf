@@ -69,10 +69,10 @@ export const BRAND = {
   },
   footerLinks: {
     quick: [
-      { label: "O/L ICT", href: "/programs/ol-ict" },
-      { label: "A/L ICT", href: "/programs/al-ict" },
-      { label: "Online Zoom", href: "/programs/online-zoom" },
+      { label: "Courses", href: "/courses" },
+      { label: "Past Papers", href: "/past-papers" },
       { label: "Paper Centers", href: "/network/paper-centers" },
+      { label: "ICTF Team", href: "/ictf-team" },
       { label: "Founder", href: "/about/founder" },
       { label: "Blog", href: "/blog" },
       { label: "Results", href: "/#results" },
@@ -80,13 +80,14 @@ export const BRAND = {
       { label: "Register", href: "/register" },
       { label: "Contact", href: "/#contact" },
     ],
+    // Every entry must be a distinct crawlable URL. These previously all pointed at
+    // the same "#programs" fragment, which spent six anchors on one homepage
+    // fragment and gave Google no page to attach the labels to.
     courses: [
-      { label: "Software Engineering", href: "#programs" },
-      { label: "Computer Science", href: "#programs" },
-      { label: "Data Science & Analytics", href: "#programs" },
-      { label: "AI & Machine Learning", href: "#programs" },
-      { label: "Cybersecurity", href: "#programs" },
-      { label: "Cloud & DevOps", href: "#programs" },
+      { label: "O/L ICT", href: "/programs/ol-ict" },
+      { label: "A/L ICT", href: "/programs/al-ict" },
+      { label: "Online Zoom", href: "/programs/online-zoom" },
+      { label: "All ICT Courses", href: "/courses" },
     ],
     portal: [
       { label: "Login", href: "/login" },
